@@ -1,0 +1,16 @@
+[MASTER]
+init-hook='from pylint_plugin_utils import configure; configure()'
+
+[MESSAGES CONTROL]
+# Include Google-style checks
+disable =
+  invalid-name,
+  missing-function-docstring,
+  missing-module-docstring,
+  missing-class-docstring,
+  missing-final-newline,
+  too-few-public-methods
+
+[pylint.extensions]
+# Add Google variable naming check
+variable-rgx = "(([a-z_][a-z0-9_]{2,30})|(_[a-z0-9_]*))$"
