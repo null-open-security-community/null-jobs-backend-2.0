@@ -7,8 +7,10 @@ in the output. However at the time of crud opertions, it won't be present.
 """
 
 import uuid
+
 from rest_framework import serializers
-from .models import Company, Job, User
+
+from apps.jobs.models import Company, Job, User
 
 # read_only=True allows the field to only present in the output
 # however at the time of crud opertions, it won't be present.

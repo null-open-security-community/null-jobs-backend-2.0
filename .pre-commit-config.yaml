@@ -15,6 +15,11 @@ repos:
       - id: debug-statements
       - id: requirements-txt-fixer
 
+  - repo: https://github.com/pre-commit/mirrors-isort
+    rev: v5.9.3  # Use the latest isort version or specify a specific version
+    hooks:
+      - id: isort
+
   - repo: https://github.com/psf/black
     rev: 23.7.0
     hooks:

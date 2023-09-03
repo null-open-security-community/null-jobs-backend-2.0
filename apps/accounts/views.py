@@ -1,32 +1,9 @@
-from rest_framework import viewsets
-from rest_framework.response import Response
-
-# from .serializers import SampleSerializer
-
-
-class SampleViewSet(viewsets.ViewSet):
-    """
-    API endpoint that allows users to be viewed or edited.
-    """
-
-    def retrieve(self, request, pk=None):
-        print(":Here")
-        return Response({"message": "Hello World!"})
-
-
 import datetime
 
 # from django.urls import reverse
 import urllib.parse
 
 import requests
-from apps.accounts.models import *  # .
-from apps.accounts.renderers import UserRenderer  # .
-
-# from Jobapp.models import User
-# from accountapp.serializers import UserRegistrationSerializer, UserLoginSerializer
-from apps.accounts.serializers import *  # .
-from apps.accounts.utils import *  # .
 from django.conf import settings
 from django.contrib.auth import authenticate  # .
 from rest_framework import status  # .
@@ -35,6 +12,11 @@ from rest_framework.response import Response  # .
 from rest_framework.views import APIView  # .
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
+
+from apps.accounts.models import *  # .
+from apps.accounts.renderers import UserRenderer
+from apps.accounts.serializers import *  # .
+from apps.accounts.utils import *  # .
 
 # from django.shortcuts import render
 

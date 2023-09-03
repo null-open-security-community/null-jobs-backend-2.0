@@ -1,13 +1,15 @@
 import uuid
+
 import django.core.exceptions
-from apps.jobs.validators import validationClass
-from rest_framework import viewsets, status
-from apps.jobs.models import Job, User, Company
-from apps.jobs.serializers import JobSerializer, UserSerializer, CompanySerializer
+from django.db.models.expressions import RawSQL
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models.expressions import RawSQL
+
+from apps.jobs.models import Company, Job, User
+from apps.jobs.serializers import CompanySerializer, JobSerializer, UserSerializer
+from apps.jobs.validators import validationClass
 
 # Create your views here.
 # the ModelViewSet provides basic crud methods like create, update etc.

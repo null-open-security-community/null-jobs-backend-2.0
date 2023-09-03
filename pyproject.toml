@@ -1,0 +1,5 @@
+# pyproject.toml
+
+[tool.isort]
+py_version=38
+profile="black"
