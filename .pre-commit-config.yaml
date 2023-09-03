@@ -8,36 +8,13 @@ repos:
       - id: end-of-file-fixer
       - id: check-case-conflict
       - id: check-merge-conflict
-      - id: check-xml
-      - id: check-symlinks
-      - id: check-executables-have-shebangs
-      - id: check-ast
       - id: mixed-line-ending
-      - id: detect-private-key
       - id: detect-aws-credentials
       - id: check-byte-order-marker
       - id: name-tests-test
-      - id: check-toml
-      - id: check-vcs-permalinks
       - id: debug-statements
       - id: requirements-txt-fixer
-      - id: sort-simple-yaml
-      - id: end-of-file-fixer
-      - id: check-merge-conflict
-      - id: check-case-conflict
-      - id: check-json
-      - id: check-yaml
-      - id: detect-private-key
-      - id: mixed-line-ending
-      - id: trailing-whitespace
-      - id: check-byte-order-marker
-      - id: name-tests-test
-      - id: check-toml
-      - id: check-xml
-      - id: check-symlinks
-      - id: check-ast
-      - id: check-executables-have-shebangs
-      - id: check-vcs-permalinks
+
   - repo: https://github.com/psf/black
     rev: 23.7.0
     hooks:
