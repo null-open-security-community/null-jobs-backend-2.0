@@ -5,18 +5,18 @@ import urllib.parse
 
 import requests
 from django.conf import settings
-from django.contrib.auth import authenticate  # .
-from rest_framework import status  # .
-from rest_framework.permissions import IsAuthenticated  # .
-from rest_framework.response import Response  # .
-from rest_framework.views import APIView  # .
+from django.contrib.auth import authenticate
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 
-from apps.accounts.models import *  # .
+from apps.accounts.models import *
 from apps.accounts.renderers import UserRenderer
-from apps.accounts.serializers import *  # .
-from apps.accounts.utils import *  # .
+from apps.accounts.serializers import *
+from apps.accounts.utils import *
 
 # from django.shortcuts import render
 
@@ -216,7 +216,6 @@ class UserChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, format=None):
-        print(request.META.get("Authorization"))
         serializer = UserChangePasswordSerializer(
             data=request.data, context={"user": request.user}
         )
@@ -352,7 +351,6 @@ class CallbackHandleView(APIView):
 class RestrictedPage(APIView):
     renderer_classes = [UserRenderer]
     permission_classes = [IsAuthenticated] if settings.ENABLE_AUTHENTICATION else []
-    print(permission_classes)
 
     def get(self, request, format=None):
         return Response({"msg": "I am a restricted page"}, status=status.HTTP_200_OK)
