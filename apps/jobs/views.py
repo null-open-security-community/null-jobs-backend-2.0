@@ -7,7 +7,7 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from apps.jobs.models import Company, Job, User
+from apps.jobs.models import Applicants, Company, Job, User
 from apps.jobs.serializers import CompanySerializer, JobSerializer, UserSerializer
 from apps.jobs.validators import validationClass
 
@@ -140,6 +140,91 @@ class JobViewSets(viewsets.ModelViewSet):
             user_data, many=True, context={"request": request}
         )
         return Response(serialized_data.data)
+
+    @action(detail=True, methods=["post"])
+    def apply(self, request, pk=None):
+        """Apply job functionality implementation"""
+
+        common_response_parameters = {
+            "status": status.HTTP_400_BAD_REQUEST,
+            "content_type": "application/json",
+        }
+
+        # Change this actions' method to GET later
+        if "user_id" not in request.data:
+            return Response(
+                {"error": "No user-id supplied"}, **common_response_parameters
+            )
+
+        job_id = pk
+        user_id = request.data["user_id"]
+        validator = validationClass()
+
+        def validate_id(uuid, idtype: str, model_class):
+            """perform checks on uuid, and if it
+            exists in the database."""
+
+            if not validator.is_valid_uuid(uuid):
+                return Response(
+                    {"error": f"{idtype} isn't a valid UUID"},
+                    **common_response_parameters,
+                )
+
+            if model_class.objects.filter(pk=uuid).count() < 1:
+                return Response(
+                    {"error": f"This {idtype} doesn't exist"},
+                    **common_response_parameters,
+                )
+
+        # validate, if both of them exists or not
+        # job-id
+        response = validate_id(job_id, "job-id", Job)
+        if response:
+            return response
+
+        # user-id
+        response = validate_id(user_id, "user-id", User)
+        if response:
+            return response
+
+        # Check whether the user has applied for the job before
+        apply_job_status = Applicants.objects.filter(
+            job_id=job_id, user_id=user_id
+        ).exists()
+        if apply_job_status:
+            common_response_parameters["status"] = status.HTTP_200_OK
+            return Response(
+                {"message": "You have already applied for this Job"},
+                **common_response_parameters,
+            )
+
+        # Get the data from the user's database (only resume N cover_letter)
+        applyjob_data = (
+            User.objects.filter(user_id=user_id)
+            .values("resume", "cover_letter")
+            .first()
+        )
+
+        for key, value in applyjob_data.items():
+            if not value:
+                return Response(
+                    {"message": f"You don't have {key} updated"},
+                    **common_response_parameters,
+                )
+
+        # Prepare the overall dictionary to save into the database
+        # Add job-id, user-id to the applyjob_data
+        applyjob_data["job_id"] = job_id
+        applyjob_data["user_id"] = user_id
+
+        # Add this application into the database
+        applyjob = Applicants(**applyjob_data)
+        applyjob.save()
+
+        return Response(
+            {"message": "You have successfully applied for this job"},
+            **common_response_parameters,
+        )
 
 
 class UserViewSets(viewsets.ModelViewSet):

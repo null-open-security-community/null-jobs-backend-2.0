@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "drf_yasg",
     "apps.accounts",
     "apps.jobs",
+    "django_filters",
 ]
 
 MIDDLEWARE = [

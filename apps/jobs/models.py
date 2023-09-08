@@ -4,6 +4,14 @@ from django.db import models
 
 from apps.accounts.models import User as UserAuth
 
+STATUS_CHOICES = (
+    ("under-reviewed", "Under-Reviewed"),
+    ("shortlisted", "Shortlisted"),
+    ("accepted", "Accepted"),
+    ("rejected", "Rejected"),
+    ("on-hold", "On-Hold"),
+)
+
 
 def hex_uuid():
     return uuid.uuid4().hex
@@ -83,6 +91,7 @@ class User(models.Model):
     job = models.ForeignKey(Job, on_delete=models.CASCADE, null=False)
     resume = models.FileField(upload_to="resume/", null=True)
     profile_picture = models.FileField(upload_to="profile_picture/", null=True)
+    cover_letter = models.FileField(upload_to="cover_letter/", null=True)
     company = models.ForeignKey(Company, on_delete=models.CASCADE, null=False)
 
     def __str__(self):
@@ -94,3 +103,22 @@ class User(models.Model):
         else:
             self.resume_file_path = ""
         super().save(*args, **kwargs)
+
+
+class Applicants(models.Model):
+    """Represents apply job model.
+    Currently not assigning job_id as the primary key
+    """
+
+    class Meta:
+        db_table = "tbl_applicants"
+
+    job = models.ForeignKey(Job, on_delete=models.CASCADE, null=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default="applied")
+    created_at = models.DateTimeField(auto_now_add=True)
+    resume = models.FileField(upload_to="resume/", null=True, blank=True)
+    cover_letter = models.FileField(upload_to="cover_letters/", null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_deleted = models.BooleanField(default=False, null=True)
+    is_active = models.BooleanField(default=True, null=True)
