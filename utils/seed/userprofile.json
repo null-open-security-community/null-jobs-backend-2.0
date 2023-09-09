@@ -1,0 +1,77 @@
+[
+    {
+        "model": "jobs.user",
+        "pk": "19006111-a6d6-476e-9e1d-ecb7a6838777",
+        "fields": {
+            "name": "Kartik Narayan",
+            "email": "kartik@outlook.com",
+            "address": "Pune, India",
+            "phone": "9311385333",
+            "about": "Intern at Amazon",
+            "job": "048abdb0-7724-4a67-82a9-ad58f66afb7f",
+            "resume": "",
+            "profile_picture": "",
+            "company": "9a3a7a94-4981-4b78-9b4d-070ad601a392"
+        }
+    },
+    {
+        "model": "jobs.user",
+        "pk": "cc519ec8-389e-44ec-a83c-f1163bfaa12f",
+        "fields": {
+            "name": "Ronin Park",
+            "email": "parkronin@gmail.com",
+            "address": "Gurugram, India",
+            "phone": "9871233412",
+            "about": "Security Analyst | HTB Professional | CTF Player",
+            "job": "87b81fae-fba6-401a-b9fa-08fd7465e93c",
+            "resume": "",
+            "profile_picture": "",
+            "company": "c00e8360-6e46-400d-9506-c9a9e83b06aa"
+        }
+    },
+    {
+        "model": "jobs.user",
+        "pk": "df27792d-e143-4714-b6dd-244a9c956979",
+        "fields": {
+            "name": "John williams",
+            "email": "john.w@gmal.com",
+            "address": "South America",
+            "phone": "23522210444",
+            "about": "Working as a software developer for KPMG",
+            "job": "93cb3aed-8ba6-4bc2-9325-1c98ed289ee5",
+            "resume": "",
+            "profile_picture": "",
+            "company": "34cb1391-e6ff-431e-bf69-1b8cbd1c63ed"
+        }
+    },
+    {
+        "model": "jobs.user",
+        "pk": "ef924503-d7aa-4134-b1dc-583b78afdd0c",
+        "fields": {
+            "name": "Saksham Sharma",
+            "email": "sharmasaks@gmail.com",
+            "address": "Toronto, California",
+            "phone": "23110401259",
+            "about": "HR Intern @ Infosys",
+            "job": "048abdb0-7724-4a67-82a9-ad58f66afb7f",
+            "resume": "",
+            "profile_picture": "",
+            "company": "4a2fa22d-40ab-4c94-99af-1d27fac0438f"
+        }
+    },
+    {
+        "model": "jobs.user",
+        "pk": "fd79727e-5a07-4146-9013-491af2552872",
+        "fields": {
+            "name": "Parth Kumar",
+            "email": "parth@xyz.com",
+            "address": "Ahmedabad, India",
+            "phone": "9812343573",
+            "about": "College Student, Intern @ Null Community",
+            "job": "93cb3aed-8ba6-4bc2-9325-1c98ed289ee5",
+            "resume": "",
+            "profile_picture": "",
+            "company": "5ffdbfef-f913-4b71-a17c-138e3c71e89f"
+        }
+    }
+]

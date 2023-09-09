@@ -3,7 +3,7 @@ from rest_framework import routers
 
 from . import views
 
-app_name = "accounts"
+app_name = "apps.accounts"
 
 # router = routers.DefaultRouter()
 # router.register("", views.SampleViewSet, basename="sample")
@@ -14,8 +14,9 @@ app_name = "accounts"
 # ]
 
 
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
+
 from apps.accounts.views import *
 
 urlpatterns = [
