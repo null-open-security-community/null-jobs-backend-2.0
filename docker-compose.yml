@@ -12,6 +12,8 @@ services:
       - .:/workspace
     depends_on:
       - db
+    env_file:
+      - .env
 
   db:
     image: mysql:latest

@@ -15,6 +15,9 @@ set +a
 # installing requirement
 pip install -r requirements.txt
 
+# install pre-commit
+pip install pre-commit
+
 # start the server
 python manage.py runserver
 ```
