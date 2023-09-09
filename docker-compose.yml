@@ -5,13 +5,28 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    command: bash run.sh
+    image: null-jobs-backend
     ports:
       - "8000:8000"
     volumes:
       - .:/workspace
     depends_on:
       - db
+    env_file:
+      - .env
+
+  bootstrap:
+    build:
+        context: .
+        dockerfile: Dockerfile
+    image: null-jobs-backend
+    depends_on:
+      - db
+      - app
+    volumes:
+      - .:/workspace
+    command: bash -c "python manage.py loaddata utils/seed/company.json && python manage.py loaddata utils/seed/job.json && python manage.py loaddata utils/seed/userprofile.json"
     env_file:
       - .env
 
