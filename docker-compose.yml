@@ -5,13 +5,31 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    command: bash run.sh
+    image: null-jobs-backend
     ports:
       - "8000:8000"
     volumes:
       - .:/workspace
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+
+  bootstrap:
+    build:
+        context: .
+        dockerfile: Dockerfile
+    image: null-jobs-backend
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/workspace
+    command: bash -c "python manage.py loaddata utils/seed/company.json && python manage.py loaddata utils/seed/job.json && python manage.py loaddata utils/seed/userprofile.json"
+    env_file:
+      - .env
 
   db:
     image: mysql:latest
@@ -24,6 +42,11 @@ services:
       MYSQL_PASSWORD: password
     volumes:
       - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
 volumes:
   mysql_data:
