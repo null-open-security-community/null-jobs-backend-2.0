@@ -9,6 +9,7 @@ repos:
       - id: check-case-conflict
       - id: check-merge-conflict
       - id: mixed-line-ending
+      - id: detect-aws-credentials
       - id: check-byte-order-marker
       - id: name-tests-test
       - id: debug-statements
