@@ -12,7 +12,8 @@ services:
     volumes:
       - .:/workspace
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     env_file:
       - .env
 
@@ -22,8 +23,8 @@ services:
         dockerfile: Dockerfile
     image: null-jobs-backend
     depends_on:
-      - db
-      - app
+      db:
+        condition: service_healthy
     volumes:
       - .:/workspace
     command: bash -c "python manage.py loaddata utils/seed/company.json && python manage.py loaddata utils/seed/job.json && python manage.py loaddata utils/seed/userprofile.json"
@@ -41,6 +42,11 @@ services:
       MYSQL_PASSWORD: password
     volumes:
       - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
 volumes:
   mysql_data:
