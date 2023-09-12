@@ -7,9 +7,11 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from apps.jobs.models import Company, Job, User
+from apps.jobs.models import Applicants, Company, Job, User
 from apps.jobs.serializers import CompanySerializer, JobSerializer, UserSerializer
-from apps.jobs.validators import validationClass
+from apps.jobs.utils.validators import validationClass
+
+from .utils.user_permissions import UserTypeCheck
 
 # Create your views here.
 # the ModelViewSet provides basic crud methods like create, update etc.
@@ -69,13 +71,29 @@ class JobViewSets(viewsets.ModelViewSet):
 
             return Response(serialized_job_data.data, status=status.HTTP_200_OK)
 
+    def create(self, request, *args, **kwargs):
+        """Overriding the create method to include permissions"""
+
+        employer_id = request.data.get("employer_id")
+
+        if not employer_id or not UserTypeCheck.is_user_employer(
+            request.data["employer_id"]
+        ):
+            return Response(
+                {
+                    "error": "Permission Denied! You don't have permissions to create jobs"
+                },
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        return super().create(request, *args, **kwargs)
+
     def retrieve(self, request, pk=None):
         """
         retrieve the data of given job id
         """
 
-        validator = validationClass()
-        if not validator.is_valid_uuid(pk):
+        if not validationClass.is_valid_uuid(pk):
             return Response(
                 {"message": f"value {pk} isn't a correct id"},
                 status=status.HTTP_404_NOT_FOUND,
@@ -121,8 +139,7 @@ class JobViewSets(viewsets.ModelViewSet):
         """
 
         # check if pk's value is a valid UUID
-        validator = validationClass()
-        checkUUID = validator.is_valid_uuid(pk)
+        checkUUID = validationClass.is_valid_uuid(pk)
         if not checkUUID:
             return Response(
                 {"message": f"value {pk} isn't a correct id"},
@@ -140,6 +157,131 @@ class JobViewSets(viewsets.ModelViewSet):
             user_data, many=True, context={"request": request}
         )
         return Response(serialized_data.data)
+
+    @action(detail=True, methods=["post"])
+    def apply(self, request, pk=None):
+        """Apply job functionality implementation"""
+
+        common_response_parameters = {
+            "status": status.HTTP_400_BAD_REQUEST,
+            "content_type": "application/json",
+        }
+
+        job_id = pk
+        user_id = request.data["user_id"]
+
+        # validate, if both of them exists or not
+        response_message = validationClass.validate_id(
+            job_id, "job-id", Job
+        ) or validationClass.validate_id(user_id, "user-id", User)
+        if response_message:
+            return Response(
+                response_message,
+                status=status.HTTP_400_BAD_REQUEST,
+                content_type="application/json",
+            )
+
+        # Check whether the user has applied for the job before
+        apply_job_status = Applicants.objects.filter(
+            job_id=job_id, user_id=user_id
+        ).exists()
+        if apply_job_status:
+            common_response_parameters["status"] = status.HTTP_200_OK
+            return Response(
+                {"message": "You have already applied for this Job"},
+                **common_response_parameters,
+            )
+
+        # Get the data from the user's database (only resume N cover_letter)
+        # if any single one of them isn't found, return a message to update that.
+        applyjob_data = (
+            User.objects.filter(user_id=user_id)
+            .values("resume", "cover_letter")
+            .first()
+        )
+
+        for key, value in applyjob_data.items():
+            if not value:
+                return Response(
+                    {"message": f"You don't have {key} updated"},
+                    **common_response_parameters,
+                )
+
+        # Get the employer-id from the database
+        # employer-id always exists in the db, without this job can't be created
+        employer_id = (
+            Job.objects.filter(job_id=job_id)
+            .values("employer_id")
+            .first()["employer_id"]
+        )
+
+        # Prepare the overall dictionary to save into the database
+        # Add job-id, user-id, employer-id to the applyjob_data
+        applyjob_data["job_id"] = job_id
+        applyjob_data["user_id"] = user_id
+        applyjob_data["employer_id"] = employer_id
+
+        # Add this application into the database
+        applyjob = Applicants(**applyjob_data)
+        applyjob.save()
+
+        return Response(
+            {"message": "You have successfully applied for this job"},
+            **common_response_parameters,
+        )
+
+    @action(detail=True, methods=["post"], permission_classes=[UserTypeCheck])
+    def update_application(self, request, pk=None):
+        """This method updates the status of user application"""
+
+        common_response_parameters = {
+            "status": status.HTTP_400_BAD_REQUEST,
+            "content_type": "application/json",
+        }
+
+        # check for status_id
+        if "status" not in request.data or not request.data["status"]:
+            return Response(
+                {"error": "status-id not present or invalid"},
+                **common_response_parameters,
+            )
+
+        # check if job_id is valid & present in db or not
+        response_message = validationClass.validate_id(pk, "job-id", Job)
+        if response_message:
+            return Response(response_message, **common_response_parameters)
+
+        # check if the given employer_id has posted the job (given by job-id)
+        employer_id = request.data["employer_id"]
+        job_employer_id = (
+            Job.objects.filter(job_id=pk)
+            .values("employer_id")
+            .first()["employer_id"]
+            .hex
+        )
+        if job_employer_id != employer_id:
+            return Response(
+                {"error": "This job isn't posted by the given employer id"},
+                status=status.HTTP_406_NOT_ACCEPTABLE,
+                content_type="application/json",
+            )
+
+        # Update the status of current application
+        try:
+            Applicants.objects.filter(employer_id=employer_id).update(
+                status=request.data["status"]
+            )
+        except Exception as err:
+            return Response(
+                {"error": "Something went wrong"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                content_type=common_response_parameters["content_type"],
+            )
+        else:
+            common_response_parameters["status"] = status.HTTP_200_OK
+            return Response(
+                {"message": "Status has been updated!!"}, **common_response_parameters
+            )
 
 
 class UserViewSets(viewsets.ModelViewSet):
@@ -206,39 +348,47 @@ class UserViewSets(viewsets.ModelViewSet):
 
         try:
             jobs_data = None
-            person_data = self.queryset.filter(
-                user_id__in=RawSQL(
-                    """
-                SELECT user_id FROM tbl_user_profile
-                WHERE user_id=%s
-                """,
-                    [pk],
-                )
-            )
+            # get the applications submmited by this user
+            applications = Applicants.objects.filter(user_id=pk).values("job_id")
+            if applications.exists():
+                # get the job_ids
+                applications_count = applications.count()
+                jobs_id = [
+                    applications[n]["job_id"] for n in range(0, applications_count)
+                ]
 
-            if person_data.exists():
-                job_id = person_data.get().job_id.hex
-                # jobs_data=Job.objects.filter(job_id=job_id)
-                jobs_data = Job.objects.filter(
-                    job_id__in=RawSQL(
-                        """
-                    SELECT job_id FROM tbl_job
-                    WHERE job_id=%s
-                    """,
-                        [job_id],
-                    )
+                # get the jobs data
+                jobs_data = Job.objects.filter(job_id__in=jobs_id)
+                # here we serialize the data, for comm.
+                serialized_jobs_data = JobSerializer(
+                    jobs_data, many=True, context={"request": request}
                 )
-
-            # here we serialize the data, for comm.
-            serialized_jobs_data = JobSerializer(
-                jobs_data, many=True, context={"request": request}
-            )
-            return Response(serialized_jobs_data.data)
+                serialized_jobs_data = self.get_application_status(serialized_jobs_data)
+                return Response(serialized_jobs_data.data)
+            else:
+                return Response(
+                    {"message": "You haven't applied to any job"},
+                    status=status.HTTP_200_OK,
+                    content_type="application/json",
+                )
         except django.core.exceptions.ObjectDoesNotExist:
             return Response(
                 {"message": f"person id '{pk}' doesn't exist"},
                 content_type="application/json",
             )
+
+    def get_application_status(self, serialized_data):
+        if not serialized_data:
+            raise Exception("Serialized Data not provided")
+
+        for job_data in serialized_data.data:
+            job_id = job_data.get("job_id")
+            user_application = Applicants.objects.filter(job_id=job_id)
+            if user_application.exists():
+                status = user_application.first().status
+                job_data.update({"status": status})
+
+        return serialized_data
 
 
 class CompanyViewSets(viewsets.ModelViewSet):
