@@ -116,16 +116,7 @@ class JobViewSets(viewsets.ModelViewSet):
 
         for jobdata in serialized_data.data:
             job_id = jobdata.get("job_id")
-            # numberOfApplications = User.objects.filter(job_id=job_id).count()
-            number_of_applicants = User.objects.filter(
-                user_id__in=RawSQL(
-                    """
-                SELECT user_id FROM tbl_user_profile
-                WHERE job_id=%s
-                """,
-                    [job_id],
-                )
-            ).count()
+            number_of_applicants = Applicants.objects.filter(job_id=job_id).count()
             jobdata.update({"Number of Applicants": number_of_applicants})
 
         return serialized_data
