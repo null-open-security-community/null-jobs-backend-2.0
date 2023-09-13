@@ -4,6 +4,7 @@ import pyotp
 from django.core.mail import EmailMessage
 
 
+#Todo: email_template has to be added
 class Util:
     @staticmethod
     def send_email(data):
@@ -14,7 +15,6 @@ class Util:
             to=[data["to_email"]],
         )
         email.send()
-
 
 class OTP:
     @staticmethod
