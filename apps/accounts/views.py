@@ -164,8 +164,8 @@ class UserLoginView(APIView):
             else:
                 token = OTP_DummyToken(user)
                 return Response(
-                    {"msg": "User not verified", "token": token},
-                    status=status.HTTP_409_CONFLICT,
+                    {'msg':'User not verified','token':token,'verify':False},
+                    status=status.HTTP_200_OK
                 )
         else:
             return Response(
