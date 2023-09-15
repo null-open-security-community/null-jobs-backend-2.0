@@ -129,9 +129,9 @@ class OTPVerificationCheckView(APIView):
             payload = GenerateToken.verify_and_get_payload(dummy_token)
             # print(payload)
         except InvalidToken as e:
-            return Response({"error": str(e)}, status=401)
+            return Response({"errors": {"token":str(e)}}, status=401)
         except TokenError as e:
-            return Response({"error": str(e)}, status=400)
+            return Response({"errors": {"token":str(e)}}, status=400)
 
         serializer = OTPVerificationCheckSerializer(
             data=request.data, context={"email": payload.get("email")}
