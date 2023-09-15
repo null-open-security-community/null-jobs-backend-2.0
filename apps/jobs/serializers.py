@@ -10,7 +10,7 @@ import uuid
 
 from rest_framework import serializers
 
-from apps.jobs.models import Company, Job, User
+from apps.jobs.models import Applicants, Company, Job, User
 
 # read_only=True allows the field to only present in the output
 # however at the time of crud opertions, it won't be present.
@@ -27,6 +27,7 @@ class JobSerializer(serializers.ModelSerializer):
     """Job object serializer class"""
 
     job_id = HexUUIDRepresentation(read_only=True)
+    employer_id = HexUUIDRepresentation(read_only=False)
 
     class Meta:
         model = Job
@@ -50,4 +51,14 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
+        fields = "__all__"
+
+
+class ApplicantsSerializer(serializers.ModelSerializer):
+    """Applicants object serializer class"""
+
+    employer_id = HexUUIDRepresentation(read_only=True)
+
+    class Meta:
+        model = Applicants
         fields = "__all__"

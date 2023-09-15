@@ -1,6 +1,6 @@
 asgiref==3.7.2
 astroid==2.15.6
-backports.zoneinfo==0.2.1
+backports.zoneinfo;python_version<"3.9"
 certifi==2023.7.22
 cfgv==3.3.1
 charset-normalizer==3.2.0
@@ -50,3 +50,4 @@ uritemplate==4.1.1
 urllib3==2.0.4
 virtualenv==20.24.2
 wrapt==1.15.0
+python-dotenv
