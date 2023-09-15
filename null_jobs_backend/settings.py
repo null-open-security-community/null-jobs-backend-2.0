@@ -32,6 +32,7 @@ DEBUG = os.environ.get("DJANGO_DEBUG", "") == "True"
 
 ALLOWED_HOSTS = ["139.84.137.26"]
 
+CORS_ORIGIN_ALLOW_ALL = True
 
 # Application definition
 
