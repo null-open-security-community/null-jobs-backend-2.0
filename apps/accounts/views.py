@@ -72,17 +72,8 @@ class GenerateToken:
             # Some other token-related error
             raise TokenError("Token expired")
 
-    # @staticmethod
-    # def delete_token(mytoken):
-    #     try:
-    #         access_token = RefreshToken(mytoken)
-    #         access_token.blacklist()
-    #         # BlacklistedToken.objects.create(token=mytoken)
-    #     except Exception as e:
-    #         raise TokenError(e)
-
-
-def OTP_DummyToken(user):
+   
+def OTP_DummyToken(user,purpose):
     payload = {"email": user.email}
     token = GenerateToken.generate_dummy_jwt_token(payload)
     otp, secret = OTP.generate_otp()
@@ -90,10 +81,17 @@ def OTP_DummyToken(user):
     user.otp_secret = secret
     user.save()
     # Send Email
-    body = f"""OTP to verify your account {otp}
-    This otp is valid only for 5 minutes
-    """
-    data = {"subject": "Verify your account", "body": body, "to_email": user.email}
+    if purpose=="verify":
+        subject="Verify your account"
+        body = f"""OTP to verify your account {otp}
+        This otp is valid only for 5 minutes
+        """
+    elif purpose=="reset-password":
+        subject="OTP to confirm your account"
+        body = f"""OTP is {otp}
+        This otp is valid only for 5 minutes.
+        """
+    data = {"subject": subject , "body": body, "to_email": user.email}
     Util.send_email(data)
     return token
 
@@ -109,7 +107,7 @@ class UserRegistrationView(APIView):
 
         user = User.objects.get(email=email)
         user.provider = "local"
-        token = OTP_DummyToken(user)
+        token = OTP_DummyToken(user,"verify")
         return Response(
             {
                 "msg": "OTP Sent Successfully. Please Check your Email",
@@ -185,26 +183,57 @@ class UserProfileView(APIView):
 
 
 # Password Reset functionality (forget password)
-class SendPasswordResetEmailView(APIView):
+class SendPasswordResetOTPView(APIView):
     renderer_classes = [UserRenderer]
 
     def post(self, request, format=None):
-        serializer = SendPasswordResetEmailSerializer(data=request.data)
+        serializer = SendPasswordResetOTPSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data["user"]
+        token = OTP_DummyToken(user,"reset-password")
         return Response(
-            {"msg": "Password Reset link send. Please Check your Email"},
+            {
+                "msg": "OTP Sent Successfully. Please Check your Email",
+                "token": token,
+            },status=status.HTTP_200_OK)
+
+# View for verifying the otp to reset password
+class ResetPasswordOtpVerifyView(APIView):
+    renderer_classes = [UserRenderer]
+    def post(self, request, format=None):
+        dummy_token = request.query_params.get("token")
+        try:
+            payload = GenerateToken.verify_and_get_payload(dummy_token)
+        except InvalidToken as e:
+            return Response({"errors": {"token":str(e)}}, status=status.HTTP_401_UNAUTHORIZED)
+        except TokenError as e:
+            return Response({"errors": {"token":str(e)}}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = ResetPasswordOtpVerifySerializer(
+            data=request.data, context={"email": payload.get("email")}
+        )
+        serializer.is_valid(raise_exception=True)
+        uid = serializer.validated_data["uid"]
+        token = serializer.validated_data["token"]
+        return Response(
+            {"msg": "Verified Successfully!", "token": token, "uid":uid},
             status=status.HTTP_200_OK,
         )
-
 
 class UserPasswordResetView(APIView):
     renderer_classes = [UserRenderer]
 
-    def post(self, request, uid, token, format=None):
+    def post(self, request, format=None):
+        uid = request.query_params.get("uid")
+        token = request.query_params.get("token")
         serializer = UserPasswordResetSerializer(
             data=request.data, context={"uid": uid, "token": token}
         )
         serializer.is_valid(raise_exception=True)
+        user=serializer.validated_data["user"]
+        body = "Your password is successfully changed.\nLogin to your account to access your account."
+        data = {"subject": "Reset Your Password", "body": body, "to_email": user.email}
+        Util.send_email(data)
         return Response(
             {"msg": "Password Reset Successfully"}, status=status.HTTP_200_OK
         )

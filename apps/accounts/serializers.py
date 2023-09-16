@@ -6,6 +6,7 @@ from rest_framework import serializers
 from apps.accounts.models import User
 from apps.accounts.utils import *
 
+# from apps.accounts.views import OTP_DummyToken
 
 # User registration
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -75,8 +76,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = ["id", "email", "name"]
 
 
-# Serializer for sending the email to user for reset password
-class SendPasswordResetEmailSerializer(serializers.Serializer):
+# Serializer for sending the otp to user's email to verify their request of reset password
+class SendPasswordResetOTPSerializer(serializers.Serializer):
     email = serializers.EmailField(max_length=255)
 
     class Meta:
@@ -86,21 +87,38 @@ class SendPasswordResetEmailSerializer(serializers.Serializer):
         email = attrs.get("email")
         if User.objects.filter(email=email).exists():
             user = User.objects.get(email=email)
-            # urlsafe... only accepts bytes but uid is a number so we used force_bytes to convert uid into bytes
-            uid = urlsafe_base64_encode(force_bytes(user.id))
-            # print("Encoded UID", uid)
-            token = PasswordResetTokenGenerator().make_token(user)
-            # print("Password Reset Token", token)
-            link = "http://localhost:3000/api/user/reset/" + uid + "/" + token
-            # print("Password Reset Link", link)
-            # Send Email
-            body = "Click the link below to Reset Your Password " + link
-            data = {"subject": "Reset Your Password", "body": body, "to_email": email}
-            Util.send_email(data)
+            attrs["user"] = user
             return attrs
         else:
             raise serializers.ValidationError("You are not a Registered User")
 
+# Serializer for verifying the otp to reset password
+class ResetPasswordOtpVerifySerializer(serializers.Serializer):
+    otp = serializers.CharField(max_length=6, style={"input_type": "text"})
+
+    class Meta:
+        fields = ["otp"]
+
+    def validate(self, attrs):
+        try:
+            email = self.context.get("email")
+            otp_value = attrs.get("otp")
+
+            user = User.objects.get(email=email)
+            # print("OTP is",otp_value)
+            if OTP.verify_otp(user, otp_value):
+                # urlsafe... only accepts bytes but uid is a number so we used force_bytes to convert uid into bytes
+                uid = urlsafe_base64_encode(force_bytes(user.id))
+                token = PasswordResetTokenGenerator().make_token(user)
+            else:
+                raise serializers.ValidationError("Invalid OTP")
+
+            attrs["uid"] = uid
+            attrs["token"]=token
+            return attrs
+
+        except User.DoesNotExist:
+            raise serializers.ValidationError("User not found")
 
 # Serializer for updating the new password
 class UserPasswordResetSerializer(serializers.Serializer):
@@ -134,6 +152,7 @@ class UserPasswordResetSerializer(serializers.Serializer):
                 )
             user.set_password(password)
             user.save()
+            attrs["user"]=user
             return attrs
         except DjangoUnicodeDecodeError as identifier:
             PasswordResetTokenGenerator().check_token(user, token)
