@@ -85,10 +85,16 @@ class GenerateToken:
 def OTP_DummyToken(user):
     payload = {"email": user.email}
     token = GenerateToken.generate_dummy_jwt_token(payload)
-    otp, secret = OTP.generate_otp()
-    user.otp = otp
-    user.otp_secret = secret
-    user.save()
+    # for old user
+    if user.otp_secret:
+        otp = OTP.generate_otp(user)
+        user.save()
+    # for new user
+    else:
+        otp, secret = OTP.generate_secret_with_otp()
+        user.otp_secret = secret
+        user.save()
+
     # Send Email
     body = f"""OTP to verify your account {otp}
     This otp is valid only for 5 minutes
