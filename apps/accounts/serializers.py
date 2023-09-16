@@ -187,9 +187,9 @@ class UserChangePasswordSerializer(serializers.Serializer):
                 "New Password can't be same as old password"
             )
         user.dummy_password = password
-        otp, secret = OTP.generate_otp()
-        user.otp = otp
-        user.otp_secret = secret
+        otp = OTP.generate_otp(user)
+        # user.otp = otp
+        # user.otp_secret = secret
         user.save()
         # Send Email
         body = f"""Confirm OTP to change your password {otp}
