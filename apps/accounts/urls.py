@@ -30,11 +30,16 @@ urlpatterns = [
     path("restricted/", RestrictedPage.as_view(), name="restricted"),
     path(
         "forget-password/",
-        SendPasswordResetEmailView.as_view(),
-        name="send-reset-password-email",
+        SendPasswordResetOTPView.as_view(),
+        name="send-reset-password-otp",
     ),
     path(
-        "reset-password/<uid>/<token>/",
+        "forget-password/verify/",
+        ResetPasswordOtpVerifyView.as_view(),
+        name="verify-reset-password-otp",
+    ),
+    path(
+        "reset-password/",
         UserPasswordResetView.as_view(),
         name="reset-password",
     ),

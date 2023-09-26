@@ -1,5 +1,4 @@
 import os
-
 import pyotp
 from django.core.mail import EmailMessage
 
@@ -36,7 +35,7 @@ class OTP:
         time_otp = otp.now()
         return time_otp
 
-    # verift otp
+    # verify otp
     @staticmethod
     def verify_otp(user, otp):
         return pyotp.TOTP(user.otp_secret, interval=300, digits=6).verify(otp)
