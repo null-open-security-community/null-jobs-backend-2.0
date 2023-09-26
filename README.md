@@ -1,5 +1,7 @@
 # null-jobs-backend
-null jobs backend revamping
+Null Jobs Backend Revamping: We are building Null Jobs 2.0, that will have django backend rest framework in backend and react in frontend.
+
+Please feel free to contribute and reach out to us.
 
 ## Setup
 ```
