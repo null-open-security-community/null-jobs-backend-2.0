@@ -10,7 +10,8 @@ class validationClass:
     2. Image files
     """
 
-    def is_valid_uuid(self, value):
+    @staticmethod
+    def is_valid_uuid(value):
         # Expects value in hex format of uuid, returns bool value
         try:
             uuid_value = uuid.UUID(str(value))
@@ -18,6 +19,17 @@ class validationClass:
             return False
         else:
             return str(uuid_value.hex) == str(value)
+
+    @staticmethod
+    def validate_id(uuid, idtype: str, model_class):
+        """perform checks on uuid, and if it
+        exists in the database."""
+
+        if not validationClass.is_valid_uuid(uuid):
+            return {"error": f"{idtype} isn't a valid UUID"}
+
+        if model_class.objects.filter(pk=uuid).count() < 1:
+            return {"error": f"This {idtype} doesn't exist"}
 
     def image_validation(self, image_file):
         # check size

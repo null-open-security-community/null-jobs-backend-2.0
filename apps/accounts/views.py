@@ -76,7 +76,7 @@ class GenerateToken:
 def OTP_DummyToken(user,purpose):
     payload = {"email": user.email}
     token = GenerateToken.generate_dummy_jwt_token(payload)
-
+    
     # for old user
     if user.otp_secret:
         otp = OTP.generate_otp(user)

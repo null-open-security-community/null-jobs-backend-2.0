@@ -18,6 +18,17 @@ pip install -r requirements.txt
 # install pre-commit
 pip install pre-commit
 
+# load the seed files
+Directory: utils/seed
+Command: `python manage.py loaddata utils/seed/filename.json
+NOTE: Load the seed files only in this order
+1. Company
+2. Job
+3. User
+Because, in a recent change, we made User.job_id as a temporary field in the User model,
+so in case where the User.job_id isn't present (maybe the job seeker hasn't applied to any job or isn't working yet),
+so especially in such cases, loading User seed file before Job seed file can result in error.
+
 # start the server
 python manage.py runserver
 ```
