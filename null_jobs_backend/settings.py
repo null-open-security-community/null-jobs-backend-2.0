@@ -12,6 +12,11 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+# Load variables from .env
+load_dotenv()
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -25,8 +30,9 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "UPDATE-ME-DURING-RUNTIME")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DJANGO_DEBUG", "") == "True"
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["139.84.137.26", "localhost"]
 
+CORS_ORIGIN_ALLOW_ALL = True
 
 # Application definition
 
@@ -38,7 +44,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.sites",  # needed for oauth very importatnt
-    "dj_rest_auth", # use for google authentication
+    "dj_rest_auth",  # use for google authentication
     "corsheaders",
     "rest_framework",
     "rest_framework.authtoken",
@@ -47,6 +53,7 @@ INSTALLED_APPS = [
     "drf_yasg",
     "apps.accounts",
     "apps.jobs",
+    "django_filters",
 ]
 
 MIDDLEWARE = [
@@ -114,55 +121,53 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # User Model
-AUTH_USER_MODEL = 'accounts.User'
+AUTH_USER_MODEL = "accounts.User"
 
 # google auth configuration
 SOCIALACCOUNT_PROVIDERS = {
-   'google': {
-       'APP':{
-           "client_id":os.environ.get("GOOGLE_OAUTH_CLIENT_ID"),
-           "secret":os.environ.get("GOOGLE_OAUTH_SECRET"),
-       },
-      'SCOPE': [
-         'profile',
-         'email',
-      ],
-      'AUTH_PARAMS': {
-         'access_type': 'online',
-      }
-   }
+    "google": {
+        "APP": {
+            "client_id": os.environ.get("GOOGLE_OAUTH_CLIENT_ID"),
+            "secret": os.environ.get("GOOGLE_OAUTH_SECRET"),
+        },
+        "SCOPE": [
+            "profile",
+            "email",
+        ],
+        "AUTH_PARAMS": {
+            "access_type": "online",
+        },
+    }
 }
 
 # google auth settings
-ACCOUNT_AUTHENTICATION_METHOD="email"
-ACCOUNT_EMAIL_REQUIRED=True
-ACCOUNT_UNIQUE_EMAIL=True
-ACCOUNT_USERNAME_REQUIRED=False
-ACCOUNT_USER_MODEL_USERNAME_FIELD=None
-GOOGLE_REDIRECT_URI="http://localhost:8000/google/login/callback/"
+ACCOUNT_AUTHENTICATION_METHOD = "email"
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+GOOGLE_REDIRECT_URI = "http://localhost:8000/google/login/callback/"
 
 # dj-rest-auth setting
 JWT_AUTH_SECURE = True
-REST_USE_JWT=True
-JWT_AUTH_COOKIE= 'access_token'
-JWT_AUTH_REFRESH_COOKIE= 'refresh-token'
+REST_USE_JWT = True
+JWT_AUTH_COOKIE = "access_token"
+JWT_AUTH_REFRESH_COOKIE = "refresh-token"
 
-USE_JWT=True
+USE_JWT = True
 
-
-# Email Configuration
-EMAIL_BACKEND="django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST='smtp.gmail.com'
-EMAIL_PORT=587
-EMAIL_HOST_USER= os.environ.get('EMAIL_USER')
-EMAIL_HOST_PASSWORD= os.environ.get('EMAIL_PASS')
-EMAIL_USE_TLS=True
+EMAIL_USE_TLS = True
+EMAIL_HOST = os.getenv("EMAIL_HOST")
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+EMAIL_PORT = os.getenv("EMAIL_PORT")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
 
 # JWT Configuration
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'dj_rest_auth.jwt_auth.JWTCookieAuthentication'   # dj-rest-auth for jwt
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "dj_rest_auth.jwt_auth.JWTCookieAuthentication",  # dj-rest-auth for jwt
     ),
 }
 
@@ -231,7 +236,7 @@ CORS_ALLOWED_ORIGINS = [
 
 AUTHENTICATION_BACKENDS = [
     # Needed to login by username in Django admin, regardless of `allauth`
-    'django.contrib.auth.backends.ModelBackend',
+    "django.contrib.auth.backends.ModelBackend",
 ]
 
 # GOOGLE AUTH

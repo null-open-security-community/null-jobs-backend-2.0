@@ -188,8 +188,6 @@ class UserChangePasswordSerializer(serializers.Serializer):
             )
         user.dummy_password = password
         otp = OTP.generate_otp(user)
-        # user.otp = otp
-        # user.otp_secret = secret
         user.save()
         # Send Email
         body = f"""Confirm OTP to change your password {otp}
