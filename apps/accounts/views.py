@@ -134,9 +134,9 @@ class OTPVerificationCheckView(APIView):
             payload = GenerateToken.verify_and_get_payload(dummy_token)
             # print(payload)
         except InvalidToken as e:
-            return Response({"errors": {"token":str(e)}}, status=401)
+            return Response({"errors": {"token":str(e)}}, status=status.HTTP_401_UNAUTHORIZED)
         except TokenError as e:
-            return Response({"errors": {"token":str(e)}}, status=400)
+            return Response({"errors": {"token":str(e)}}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = OTPVerificationCheckSerializer(
             data=request.data, context={"email": payload.get("email")}
@@ -164,7 +164,7 @@ class UserLoginView(APIView):
             if user.is_verified:
                 token = GenerateToken.get_tokens_for_user(user)
                 return Response(
-                    {"token": token, "msg": "Login Success"}, status=status.HTTP_200_OK
+                    {"token": token, "msg": "Login Success",'verify':True}, status=status.HTTP_200_OK
                 )
             else:
                 token = OTP_DummyToken(user)
@@ -188,7 +188,32 @@ class UserProfileView(APIView):
         serializer = UserProfileSerializer(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
+# LogOut User
+class UserLogOutView(APIView):
+    renderer_classes = [UserRenderer]
+    permission_classes = [IsAuthenticated]
+    def post(self, request, format=None):
+        # breakpoint()
+        try:
+            # token = request.META['HTTP_AUTHORIZATION'].split(' ')[1]
+            # print(token)
+            # access_token = AccessToken(token)
+            # access_token.set_exp(lifetime=datetime.timedelta(minutes=1))
+            # print(access_token)
+            # breakpoint()
+            refresh_token = request.data['refresh_token']
+            token_obj = RefreshToken(refresh_token)
+            token_obj.blacklist()
+            return Response(
+                {
+                    "msg": "LogOut Successfully",
+                    # "token":access_token,
+                },status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {"errors": {"msg":str(e)}},
+                status=status.HTTP_400_BAD_REQUEST)
+        
 # Password Reset functionality (forget password)
 class SendPasswordResetOTPView(APIView):
     renderer_classes = [UserRenderer]
