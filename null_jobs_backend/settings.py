@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     "rest_framework_simplejwt",
+    'rest_framework_simplejwt.token_blacklist',   # used to blacklist the refresh token
     "drf_yasg",
     "apps.accounts",
     "apps.jobs",
@@ -199,14 +200,15 @@ from datetime import timedelta
 DISABLE_TOKEN_EXPIRATION = False
 ENABLE_AUTHENTICATION = True
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=3)
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5)
     if DISABLE_TOKEN_EXPIRATION
     else timedelta(days=365),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=10)
     if DISABLE_TOKEN_EXPIRATION
     else timedelta(days=365),
-    "ROTATE_REFRESH_TOKENS": True,
-    "BLACKLIST_AFTER_ROTATION": True,
+    "ROTATE_REFRESH_TOKENS": False,
+    "BLACKLIST_AFTER_ROTATION": False,
+    "CHECK_REVOKE_TOKEN": True,
     "AUTH_HEADER_TYPES": ("Bearer",),
     "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
     "USER_ID_FIELD": "id",
@@ -227,6 +229,8 @@ CORS_ALLOWED_ORIGINS = [
     # "https://sub.example.com",
     "http://localhost:3000",
     "http://127.0.0.1:3000",  # 3000 port is here for react app
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
 ]
 
 
