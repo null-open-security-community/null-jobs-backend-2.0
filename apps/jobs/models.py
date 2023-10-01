@@ -12,8 +12,6 @@ STATUS_CHOICES = (
     ("on-hold", "On-Hold"),
 )
 
-USER_TYPE = (("Job Seeker", "User/Employee"), ("Employer", "HR/Employer"))
-
 
 def hex_uuid():
     return uuid.uuid4().hex
@@ -66,7 +64,7 @@ class Job(models.Model):
     experience = models.IntegerField(default=0, null=False)
     created_at = models.DateTimeField(auto_now_add=True)  # only add the timestamp once
     updated_at = models.DateTimeField(auto_now=True)  # update timestamp on every save()
-    employer_id = models.UUIDField(null=False, editable=True)
+    employer_id = models.UUIDField(null=False, editable=True, default=None)
 
     def __str__(self):
         return self.job_role
@@ -84,7 +82,7 @@ class User(models.Model):
         db_table = "tbl_user_profile"
 
     user_id = models.UUIDField(
-        primary_key=True, default=hex_uuid, editable=False, null=False
+        primary_key=True, default=None, editable=False, null=False
     )
     name = models.CharField(max_length=30, null=False)
     email = models.CharField(max_length=30, null=False)
@@ -97,18 +95,21 @@ class User(models.Model):
         upload_to="profile_picture/", null=True, default=None
     )
     cover_letter = models.FileField(upload_to="cover_letter/", null=True)
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=False)
-    user_type = models.CharField(max_length=15, choices=USER_TYPE, null=False)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, default=None)
+    user_type = models.CharField(max_length=15, null=False, default=None)
 
     def __str__(self):
         return self.name
 
-    def save(self, *args, **kwargs):
+    def custom_save(self, override_uuid={}, *args, **kwargs):
         if self.resume:
             self.resume_file_path = self.resume.path
         else:
             self.resume_file_path = ""
-        super().save(*args, **kwargs)
+
+        if override_uuid and "user_id" in override_uuid:
+            self.user_id = override_uuid["user_id"]
+        super(User, self).save(*args, **kwargs)
 
 
 class Applicants(models.Model):
