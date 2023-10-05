@@ -27,7 +27,7 @@ services:
         condition: service_healthy
     volumes:
       - .:/workspace
-    command: bash -c "python manage.py loaddata utils/seed/company.json && python manage.py loaddata utils/seed/job.json && python manage.py loaddata utils/seed/userprofile.json"
+    command: bash run_seed_db.sh
     env_file:
       - .env
 
