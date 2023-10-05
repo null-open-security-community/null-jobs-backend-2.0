@@ -1,0 +1,21 @@
+name: Deploy Django App
+
+on:
+  push:
+    branches:
+      - main  # Change this to your main branch name
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Deploy code to remote server
+        run: |
+          ssh-agent bash -c 'ssh-add <(echo "$SSH_PRIVATE_KEY") && rsync -avz --exclude='*.env' --exclude='*.git*' --exclude='*.DS_Store*' --exclude='*.vscode*' ./path/to/your/django/project/* username@your_server_ip:/path/to/remote/django/project/'
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        continue-on-error: true  # Continue even if the deployment fails
