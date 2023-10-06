@@ -1,14 +1,22 @@
 import uuid
+from re import search
 
 import django.core.exceptions
+import jwt
 from django.db.models.expressions import RawSQL
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from apps.accounts.models import User as user_auth
 from apps.jobs.models import Applicants, Company, Job, User
-from apps.jobs.serializers import CompanySerializer, JobSerializer, UserSerializer
+from apps.jobs.serializers import (
+    ApplicantsSerializer,
+    CompanySerializer,
+    JobSerializer,
+    UserSerializer,
+)
 from apps.jobs.utils.validators import validationClass
 
 from .utils.user_permissions import UserTypeCheck
@@ -143,8 +151,8 @@ class JobViewSets(viewsets.ModelViewSet):
         job_id = jobdata.job_id.hex
 
         # get all the users object
-        user_data = User.objects.filter(job_id=job_id)
-        serialized_data = UserSerializer(
+        user_data = Applicants.objects.filter(job_id=job_id)
+        serialized_data = ApplicantsSerializer(
             user_data, many=True, context={"request": request}
         )
         return Response(serialized_data.data)
@@ -289,11 +297,63 @@ class UserViewSets(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
-    def create(self, request, *args, **kwargs):
+    def update(self, request, *args, **kwargs):
         """
         Overriding the create method (used in POST request),
         This method creates a new user profile in the database.
         """
+        common_response_parameters = {
+            "status": status.HTTP_400_BAD_REQUEST,
+            "content_type": "application/json",
+        }
+
+        if request.headers and "AccessToken" in request.headers:
+            # decode the "user_id" from AccessToken
+            try:
+                payload = jwt.decode(
+                    request.headers["AccessToken"], options={"verify_signature": False}
+                )
+            except jwt.exceptions.DecodeError:
+                return Response(
+                    {"error": "AccessToken is not valid"}, **common_response_parameters
+                )
+            except Exception as err:
+                common_response_parameters[
+                    "status"
+                ] = status.HTTP_500_INTERNAL_SERVER_ERROR
+                return Response(
+                    {"error": "Something went wrong"}, **common_response_parameters
+                )
+            else:
+                # check if the user_id is of type UUID or not
+                if payload and "user_id" in payload:
+                    try:
+                        uuid.UUID(payload["user_id"])
+                    except Exception as err:
+                        return Response(
+                            {
+                                "Error": "wrong user information provided in the AccessToken"
+                            },
+                            status=status.HTTP_400_BAD_REQUEST,
+                            content_type="application/json",
+                        )
+                else:
+                    return Response(
+                        {"error": "AccessToken is not valid"},
+                        **common_response_parameters,
+                    )
+        else:
+            common_response_parameters["status"] = status.HTTP_401_UNAUTHORIZED
+            return Response(
+                {"error": "Permission Denied! You can't perform this operation"},
+                **common_response_parameters,
+            )
+
+        # Perform check on data with PUT Request
+        if not request.data:
+            return Response(
+                {"error": "request body can't be empty"}, **common_response_parameters
+            )
 
         validator = validationClass()
 
@@ -318,16 +378,70 @@ class UserViewSets(viewsets.ModelViewSet):
                         status=status.HTTP_406_NOT_ACCEPTABLE,
                     )
 
-        ## Save the data into the database
-        # Update the fields
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        data = serializer.validated_data
-        headers = self.get_success_headers(data)
-        return Response(
-            serializer.data, status=status.HTTP_201_CREATED, headers=headers
-        )
+        # Check if the given user_id actually belongs to the user
+        # This check is necessary because only specific users can update their profile
+
+        # get the user_id from the url path
+        if user_id := search("\w{32}", request.stream.path):
+            user_id = user_id[0]
+
+        # if case, if someone crafts a request in such a way that
+        # user_id in accessToken and user_id in the api path are same
+
+        # perform check on database as well
+        if user_id == payload["user_id"]:
+            # check payload["user_id"] in tbl_user_auth
+            # check for /user/{user_id} performs by-default, we don't have to write for it.
+            try:
+                user_id_auth = user_auth.objects.filter(
+                    user_id=payload["user_id"]
+                ).exists()
+                if not user_id_auth:
+                    common_response_parameters["status"] = status.HTTP_404_NOT_FOUND
+                    return Response(
+                        {"error": "wrong information provided in the AccessToken"},
+                        **common_response_parameters,
+                    )
+            except Exception as err:
+                return Response(
+                    {"error": "Something went wrong"}, **common_response_parameters
+                )
+        else:
+            common_response_parameters["status"] = status.HTTP_401_UNAUTHORIZED
+            return Response(
+                {"error": "given user_id doesn't belong to the user"},
+                **common_response_parameters,
+            )
+
+        # Once everything's fine, update the db table
+        # payload["user_id"] is used in the filter() not the pk present in url
+
+        # get data from the request
+        user_data = request.data
+        try:
+            # update in the tbl_user_profile
+            User.objects.filter(user_id=payload["user_id"]).update(**user_data)
+
+            # update in the tbl_user_auth (only - user_name, user_email, user_type)
+            tbl_user_auth_data = {
+                key: user_data[key]
+                for key in ("name", "email", "user_type")
+                if key in user_data
+            }
+            user_auth.objects.filter(user_id=payload["user_id"]).update(
+                **tbl_user_auth_data
+            )
+        except:
+            common_response_parameters["status"] = status.HTTP_500_INTERNAL_SERVER_ERROR
+            return Response(
+                {"error": "Something went wrong"}, **common_response_parameters
+            )
+        else:
+            user_data = User.objects.get(user_id=payload["user_id"])
+            common_response_parameters["status"] = status.HTTP_200_OK
+            return Response(
+                UserSerializer(user_data).data, **common_response_parameters
+            )
 
     @action(detail=True, methods=["get"])
     def jobs(self, request, pk=None):
