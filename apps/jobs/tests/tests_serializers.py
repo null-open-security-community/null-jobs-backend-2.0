@@ -21,7 +21,7 @@ class JobSerializerTestCase(TestCase):
             "post_date": "2023-10-01",
             "posted": True,
             "experience": 2,
-            "employer_id": "0123456789abcdef0123456789abcdef",
+            "employer_id": "0123456789abcdef0123456789abcdea",
         }
 
     def test_job_serializer_create(self):
@@ -34,13 +34,13 @@ class JobSerializerTestCase(TestCase):
         self.assertEqual(job.post_date, "2023-10-01")
         self.assertTrue(job.posted)
         self.assertEqual(job.experience, 2)
-        self.assertEqual(str(job.employer_id), "0123456789abcdef0123456789abcdef")
+        self.assertEqual(str(job.employer_id), "0123456789abcdef0123456789abcdea")
 
 
 class CompanySerializerTestCase(TestCase):
     def setUp(self):
         self.valid_company_data = {
-            "company_id": "0123456789abcdef0123456789abcdef",
+            "company_id": "0123456789abcdef0123456789abcdea",
             "name": "Test Company",
             "location": "Test Location",
             "about": "Test About",
@@ -132,7 +132,6 @@ class ApplicantsSerializerTestCase(TestCase):
     def setUp(self):
         self.applicants_data = {
             "employer_id": "0123456789abcdef0123456789abcdef",
-            # Other data fields...
         }
 
     def test_applicants_serializer_read_only_fields(self):
