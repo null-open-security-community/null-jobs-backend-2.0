@@ -124,7 +124,7 @@ class UserRegistrationView(APIView):
             "name" : user.name,
             "email": user.email,
             "user_type": user.user_type,
-            "about": "N/A"
+            "about": None
         }
 
         user_instance = user_profile(**dummy_data)

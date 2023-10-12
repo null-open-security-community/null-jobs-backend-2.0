@@ -2,6 +2,7 @@ import uuid
 
 from django.db import models
 
+from apps.jobs.constants import values
 from apps.accounts.models import User as UserAuth
 
 STATUS_CHOICES = (
@@ -26,7 +27,7 @@ class Company(models.Model):
     """
 
     class Meta:
-        db_table = "tbl_company"
+        db_table = values.DB_TABLE_COMPANY
 
     name = models.CharField(max_length=255, null=False)
     location = models.CharField(max_length=255, null=False)
@@ -48,7 +49,7 @@ class Job(models.Model):
     """
 
     class Meta:
-        db_table = "tbl_job"
+        db_table = values.DB_TABLE_JOBS
 
     job_id = models.UUIDField(
         primary_key=True, default=hex_uuid, editable=False, null=False
@@ -79,7 +80,7 @@ class User(models.Model):
     """
 
     class Meta:
-        db_table = "tbl_user_profile"
+        db_table = values.DB_TABLE_USER_PROFILE
 
     user_id = models.UUIDField(
         primary_key=True, default=None, editable=False, null=False
@@ -88,7 +89,7 @@ class User(models.Model):
     email = models.CharField(max_length=30, null=False)
     address = models.TextField(max_length=100, null=False)
     phone = models.CharField(max_length=12, default=None, null=True)
-    about = models.TextField(max_length=100, default=None)
+    about = models.TextField(max_length=100, default=None, null=True)
     job = models.ForeignKey(Job, on_delete=models.CASCADE, null=True, default=None)
     resume = models.FileField(upload_to="resume/", null=True, default=None)
     profile_picture = models.FileField(
@@ -107,8 +108,8 @@ class User(models.Model):
         else:
             self.resume_file_path = ""
 
-        if override_uuid and "user_id" in override_uuid:
-            self.user_id = override_uuid["user_id"]
+        if override_uuid and values.USER_ID in override_uuid:
+            self.user_id = override_uuid[values.USER_ID]
         super(User, self).save(*args, **kwargs)
 
 
