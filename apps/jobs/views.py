@@ -319,7 +319,7 @@ class UserViewSets(viewsets.ModelViewSet):
                     )
         else:
             return response.create_response(
-                response.PERMISSION_DENIED + "You can't perform this operation",
+                response.PERMISSION_DENIED + " You can't perform this operation",
                 status.HTTP_401_UNAUTHORIZED
             )
 
@@ -353,40 +353,25 @@ class UserViewSets(viewsets.ModelViewSet):
                         status=status.HTTP_406_NOT_ACCEPTABLE,
                     )
 
-        # Check if the given user_id actually belongs to the user
-        # This check is necessary because only specific users can update their profile
+        # Get the user-id from access-token, and update will be performed
+        # only on the user-id present in access-token, not the one we get from
+        # the API endpoint. 
 
-        # get the user_id from the url path
-        if user_id := search("\w{32}", request.stream.path):
-            user_id = user_id[0]
-
-        # if case, if someone crafts a request in such a way that
-        # user_id in accessToken and user_id in the api path are same
-
-        # perform check on database as well
-        if user_id == payload[values.USER_ID]:
-            # check payload["user_id"] in tbl_user_auth
-            # check for /user/{user_id} performs by-default, we don't have to write for it.
-            try:
-                user_id_auth = user_auth.objects.filter(
-                    user_id=payload[values.USER_ID]
-                ).exists()
-                if not user_id_auth:
-                    return response.create_response(
-                        response.USER_INFORMATION_INVALID,
-                        status.HTTP_404_NOT_FOUND
-                    )
-            except Exception as err:
+        # perform check on payload["user_id"] if it exists in db or not
+        try:
+            user_id_auth = user_auth.objects.filter(
+                user_id=payload[values.USER_ID]
+            ).exists()
+            if not user_id_auth:
                 return response.create_response(
-                    response.SOMETHING_WENT_WRONG,
-                    status.HTTP_500_INTERNAL_SERVER_ERROR
+                    response.USER_INFORMATION_INVALID,
+                    status.HTTP_404_NOT_FOUND
                 )
-        else:
+        except Exception as err:
             return response.create_response(
-                "given user_id doesn't belong to the user",
-                status.HTTP_401_UNAUTHORIZED
+                response.SOMETHING_WENT_WRONG,
+                status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
         # Once everything's fine, update the db table
         # payload["user_id"] is used in the filter() not the pk present in url
 

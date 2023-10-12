@@ -258,7 +258,7 @@
 					"response": []
 				},
 				{
-					"name": "User API Create User",
+					"name": "User API Update User",
 					"request": {
 						"method": "PUT",
 						"header": [

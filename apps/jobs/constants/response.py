@@ -15,6 +15,6 @@ def create_response(response_message: str, status_code, content_type="applicatio
 
 SOMETHING_WENT_WRONG = "something went wrong"
 ACCESS_TOKEN_NOT_VALID = "Invalid access token provided"
-PERMISSION_DENIED = "Permission denied"
+PERMISSION_DENIED = "Permission denied!"
 USER_INFORMATION_INVALID = "User information is not valid"
 REQUEST_BODY_NOT_PRESENT = "Request body not present"
