@@ -18,6 +18,8 @@ from apps.accounts.renderers import UserRenderer
 from apps.accounts.serializers import *
 from apps.accounts.utils import *
 
+from apps.jobs.models import User as user_profile
+
 # from django.shortcuts import render
 
 
@@ -74,7 +76,7 @@ class GenerateToken:
 
    
 def OTP_DummyToken(user,purpose):
-    payload = {"email": user.email}
+    payload = {"email": user.email, "user_id": user.user_id.hex, "user_type": user.user_type}
     token = GenerateToken.generate_dummy_jwt_token(payload)
     
     # for old user
@@ -115,6 +117,19 @@ class UserRegistrationView(APIView):
         user = User.objects.get(email=email)
         user.provider = "local"
         token = OTP_DummyToken(user,"verify")
+
+        # Add an entry in the tbl_user_profile with dummy data
+        dummy_data = {
+            "user_id": user.user_id.hex,
+            "name" : user.name,
+            "email": user.email,
+            "user_type": user.user_type,
+            "about": None
+        }
+
+        user_instance = user_profile(**dummy_data)
+        user_instance.custom_save(override_uuid={"uuid" : dummy_data["user_id"]})
+
         return Response(
             {
                 "msg": "OTP Sent Successfully. Please Check your Email",

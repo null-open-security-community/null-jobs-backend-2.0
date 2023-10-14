@@ -1,0 +1,433 @@
+{
+	"info": {
+		"_postman_id": "10fd8a79-feaa-4314-b754-4f285821f397",
+		"name": "Jobs API Testing",
+		"description": "### What we do here?\n\n**SCENARIO**: Right now, we already have a null job portal, but this time we are moving forward with new changes, new ideas and new implementations and especially with null job portal. Our task is to implement a basic workflow for now, and also cover the same from security perspective.\n\n**INSPIRATION**: To learn, collaborate and enjoy most importantly\n\nObjects we have available right now\n\n1. Companies\n2. User\n3. Job\n    \n\n<img src=\"https://content.pstmn.io/5e509f53-6014-4ec9-9363-b2279fc70bb2/UGFzdGVkIGltYWdlIDIwMjMwODA2MDMxMzAxLnBuZw==\">\n\nGithub: [job-api](https://)\n\n### FROM HR Perspective\n\n**SCENARIO**: Let's suppose, I am an HR Intern, and I've been given a task to update company details which also include the job postings as well. So now, my task is to perform two things for which I'll be using _**NULL JOB PORTAL**_ to do so.\n\n1. Create Company\n2. Add Jobs\n    1. Adding jobs functionality is only for the Employers, not any job seeker.\n3. Check how many users have applied for a specific job\n    \n\n### FROM JOB SEEKER Perspective\n\n**SCENARIO**: Anyone looking for a job related posts on the null job web portal, this person is different from the job provider, because job provider is allowed to posts about job, while this person is only able to see the jobs posted by the job provider.\n\n_**Things job seeker can do**_\n\n1. Discover jobs\n2. Apply for jobs\n3. Enhance its profile",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "26451070"
+	},
+	"item": [
+		{
+			"name": "Jobs API",
+			"item": [
+				{
+					"name": "Jobs API Testing (GET Req.)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:1234/jobs/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "1234",
+							"path": [
+								"jobs",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Jobs API Specific ID Testing",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:1234/jobs/2f9050f12862404281a5717f2201c44e",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "1234",
+							"path": [
+								"jobs",
+								"2f9050f12862404281a5717f2201c44e"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Jobs API User action testing",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:1234/jobs/2f9050f12862404281a5717f2201c44e/users/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "1234",
+							"path": [
+								"jobs",
+								"2f9050f12862404281a5717f2201c44e",
+								"users",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Jobs API Create Job",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"job_role\" : \"Security Analyst\",\n    \"location\" : \"Amsterdam\",\n    \"post_date\" : \"2023-09-10\",\n    \"company\" : \"a10a0e14103243d397ae15fa5c7250d7\",\n    \"description\": \"A Security Analyst is a skilled professional responsible for safeguarding an organization's digital assets and sensitive information by proactively identifying and mitigating security vulnerabilities, threats, and risks. In a rapidly evolving digital landscape, Security Analysts play a crucial role in maintaining the confidentiality, integrity, and availability of data and systems, ensuring the organization's overall cybersecurity posture..\",\n    \"employer_id\": \"d719ec07c3014287915dd904f4e09540\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:1234/jobs/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "1234",
+							"path": [
+								"jobs",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Jobs API Apply job",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"user_id\": \"62403696854440d1bfc3f66ec75b225c\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:1234/jobs/7953e43608a343c883d23bfdcbeffd9b/apply/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "1234",
+							"path": [
+								"jobs",
+								"7953e43608a343c883d23bfdcbeffd9b",
+								"apply",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Jobs API update application status",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"rejected\",\n    \"employer_id\": \"d719ec07c3014287915dd904f4e09540\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:1234/jobs/7953e43608a343c883d23bfdcbeffd9b/update_application/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "1234",
+							"path": [
+								"jobs",
+								"7953e43608a343c883d23bfdcbeffd9b",
+								"update_application",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "- **LIST** all the available jobs  \n    API Endpoint: `/api/v1/jobs`  \n    METHOD: `GET`\n    \n\n- **GET** details for a specific job  \n    API Endpoint: `/api/v1/jobs/{job_id}`  \n    METHOD: `GET`\n    \n\n- **GET** number of users applied for a specific job  \n    API Endpoint: `/api/v1/jobs/{job_id}/user`  \n    METHOD: `GET`  \n    Usually we get a key called \"Number of applications\" which shows number of people  \n    applied for this job.\n    \n\n- **CREATE** a job  \n    API Endpoint: `/api/v1/jobs/`  \n    METHOD: `POST`"
+		},
+		{
+			"name": "User API",
+			"item": [
+				{
+					"name": "User API Testing (GET Req.)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:1234/user/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "1234",
+							"path": [
+								"user",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "User API Specific ID Testing",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:1234/user/62403696854440d1bfc3f66ec75b225c",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "1234",
+							"path": [
+								"user",
+								"62403696854440d1bfc3f66ec75b225c"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "User API Jobs action testing",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:1234/user/62403696854440d1bfc3f66ec75b225c/jobs",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "1234",
+							"path": [
+								"user",
+								"62403696854440d1bfc3f66ec75b225c",
+								"jobs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "User API Update User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "accesstoken",
+								"value": "<access-token-value-from-registration-API>",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"address\" : \"Washington, US\",\n    \"company\": \"3df0ce02cb5b4ede85dab1acfc3ce71f\",\n    \"about\": \"Working as Senior HR Manager for Accenture, India.\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:1234/user/0291881c96bd4bdcb2f4ca0ffd9f8c65/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "1234",
+							"path": [
+								"user",
+								"0291881c96bd4bdcb2f4ca0ffd9f8c65",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "List of available functionalities for the USER API    \n    \n* LIST all the users\n   API Endpoint: `/api/v1/user/` \n   METHOD: GET    \n    \n    \n* GET specific user details    \n   API Endpoint: `/api/v1/user/{user_id}`\n   METHOD: GET\n    \n    \n* GET Jobs applied by a specific user\n   API Endpoint: `/api/v1/user/{user_id}/jobs`\n   METHOD: GET\n    \n    \n* CREATE users\n   API Endpoint: `/api/v1/user/`\n   METHOD: POST\n\n\n* UPDATE users\n   API Endpoint: `/api/v1/user/`\n   METHOD: PUT\n"
+		},
+		{
+			"name": "Company API",
+			"item": [
+				{
+					"name": "Company API Testing (GET)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:1234/company/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "1234",
+							"path": [
+								"company",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Company API Specific ID Testing",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:1234/company/3df0ce02cb5b4ede85dab1acfc3ce71f",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "1234",
+							"path": [
+								"company",
+								"3df0ce02cb5b4ede85dab1acfc3ce71f"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Company API Jobs action testing",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:1234/company/jobs",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "1234",
+							"path": [
+								"company",
+								"jobs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Company API User action testing",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:1234/company/users",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "1234",
+							"path": [
+								"company",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Company API Create company",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Amazon\",\n    \"location\": \"Texas, Houston, USA\",\n    \"about\": \"Amazon.com, Inc. is an American multinational technology company focusing on e-commerce, cloud computing, online advertising, digital streaming.\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:1234/company/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "1234",
+							"path": [
+								"company",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "- **LIST** all the available companies  \n    API Endpoint: `/api/v1/company/`  \n    METHOD: GET\n    1. In the companies data, show number of applicants as well\n\n- **GET** details for a specific job  \n    API Endpoint: `/api/v1/company/{company_id}`  \n    METHOD: GET\n    \n\n- **GET** number of **jobs** available in the company  \n    API Endpoint: `/api/v1/company/jobs`  \n    METHOD: GET\n    \n\n- **GET** number of **user** available in the company  \n    API Endpoint: `/api/v1/company/user`  \n    METHOD: GET\n    \n\n- **CREATE** company  \n    API Endpoint: `/api/v1/company/`  \n    METHOD: POST"
+		}
+	]
+}

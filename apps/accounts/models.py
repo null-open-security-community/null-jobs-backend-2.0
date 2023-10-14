@@ -1,3 +1,4 @@
+import uuid
 from django.db import models
 
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
@@ -5,8 +6,14 @@ from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
 
 # from Jobapp.models import User as JobUser
 # Create your models here.
+
+USER_TYPE = (("Job Seeker", "User/Employee"), ("Employer", "HR/Employer"))
+
+def hex_uuid():
+    return uuid.uuid4().hex
+
 class UserManager(BaseUserManager):
-    def create_user(self, email, name, password=None, password2=None):
+    def create_user(self, email, name, user_type, password=None, password2=None):
         """
         Creates and saves a User with the given email, name, tc and password.
         """
@@ -16,6 +23,7 @@ class UserManager(BaseUserManager):
         user = self.model(
             email=self.normalize_email(email),
             name=name,
+            user_type=user_type
         )
 
         user.set_password(password)
@@ -37,6 +45,10 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser):
+    
+    user_id = models.UUIDField(
+        primary_key=True, default=hex_uuid, editable=False, null=False, unique=True
+    )
     email = models.EmailField(
         verbose_name="Email",
         max_length=255,
@@ -53,6 +65,7 @@ class User(AbstractBaseUser):
     otp = models.CharField(max_length=6, null=True)
     otp_secret = models.CharField(max_length=200, null=True)
     dummy_password = models.CharField(max_length=200, null=True)
+    user_type = models.CharField(max_length=12, choices=USER_TYPE, null=False)
 
     objects = UserManager()
 
