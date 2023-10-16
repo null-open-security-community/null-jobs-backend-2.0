@@ -9,6 +9,7 @@ This script perform checks on user_id, to find out
 from rest_framework import permissions
 
 from apps.jobs.models import User
+from apps.jobs.constants import values
 from apps.jobs.utils.validators import validationClass
 
 
@@ -23,10 +24,10 @@ class UserTypeCheck(permissions.BasePermission):
         """Return bool values based on user_type"""
 
         # Add the user_id to the JWT Later
-        employer_id = request.data.get("employer_id")
+        employer_id = request.data.get(values.EMPLOYER_ID)
 
         if not employer_id or not validationClass.is_valid_uuid(
-            request.data["employer_id"]
+            request.data[values.EMPLOYER_ID]
         ):
             return False
 

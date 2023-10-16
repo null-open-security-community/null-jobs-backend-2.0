@@ -15,7 +15,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["email", "name", "password", "password2"]
+        fields = ["email", "name", "password", "password2", "user_type"]
         extra_kwargs = {"password": {"write_only": True}}
 
     # Validating Password and Confirm Password

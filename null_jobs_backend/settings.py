@@ -30,7 +30,7 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "UPDATE-ME-DURING-RUNTIME")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DJANGO_DEBUG", "") == "True"
 
-ALLOWED_HOSTS = ["139.84.137.26", "localhost"]
+ALLOWED_HOSTS = ["139.84.137.26", "localhost", "127.0.0.1"]
 
 CORS_ORIGIN_ALLOW_ALL = True
 
