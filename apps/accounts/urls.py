@@ -27,6 +27,7 @@ urlpatterns = [
     path("otp/verify/", OTPVerificationCheckView.as_view(), name="verify_otp"),
     path("login/", UserLoginView.as_view(), name="login"),
     path("profile/", UserProfileView.as_view(), name="profile"),
+    path("logout/", UserLogOutView.as_view(), name="logout"),
     path("restricted/", RestrictedPage.as_view(), name="restricted"),
     path(
         "forget-password/",
