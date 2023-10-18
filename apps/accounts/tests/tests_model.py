@@ -27,4 +27,3 @@ class UserModelTestCase(TestCase):
         )
         self.assertTrue(superuser.is_superuser)
         self.assertTrue(superuser.is_staff)
-

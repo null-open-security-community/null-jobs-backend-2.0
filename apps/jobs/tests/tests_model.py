@@ -20,7 +20,7 @@ class CompanyModelTestCase(TestCase):
         self.assertEqual(company.location, "Test Location")
         self.assertEqual(company.about, "Test About")
 
-        # Check that company_id is not None
+        # Check that company_id is not None.
         self.assertIsNotNone(company.company_id)
 
 
@@ -95,7 +95,7 @@ class UserModelTestCase(TestCase):
             "address": "123 Main St",
             "phone": "123-456-7890",
             "about": "Test about",
-            "job": self.job,  # Provide a non-null value for 'about'
+            "job": self.job,
             "company": self.company,
             "user_type": "employee",
         }
@@ -165,7 +165,6 @@ class ApplicantsModelTestCase(TestCase):
             is_deleted=False,
             is_active=True,
             employer_id="0123456789abcdef0123456789abcdef",
-            # Add other Applicants fields here
         )
 
         # Retrieve the Applicants instance from the database

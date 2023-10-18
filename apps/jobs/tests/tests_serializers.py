@@ -1,4 +1,4 @@
-# # # tests.py
+# tests.py
 from apps.jobs import *
 from django.test import TestCase
 from apps.jobs.models import *
@@ -125,7 +125,6 @@ class UserSerializerTestCase(TestCase):
         # Check the foreign key relationships
         self.assertEqual(user.job, self.job)
         self.assertEqual(user.company, self.company)
-        # Add more assertions as needed to validate other fields of the user object
 
 
 class ApplicantsSerializerTestCase(TestCase):
