@@ -9,9 +9,6 @@ from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
 
 USER_TYPE = (("Job Seeker", "User/Employee"), ("Employer", "HR/Employer"))
 
-def hex_uuid():
-    return uuid.uuid4().hex
-
 class UserManager(BaseUserManager):
     def create_user(self, email, name, user_type, password=None, password2=None):
         """
@@ -30,24 +27,11 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, name, password=None):
-        """
-        Creates and saves a superuser with the given email, name, tc and password.
-        """
-        user = self.create_user(
-            email,
-            password=password,
-            name=name,
-        )
-        user.is_admin = True
-        user.save(using=self._db)
-        return user
-
 
 class User(AbstractBaseUser):
     
-    user_id = models.UUIDField(
-        primary_key=True, default=hex_uuid, editable=False, null=False, unique=True
+    id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False, null=False, unique=True
     )
     email = models.EmailField(
         verbose_name="Email",

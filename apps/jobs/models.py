@@ -13,11 +13,6 @@ STATUS_CHOICES = (
     ("on-hold", "On-Hold"),
 )
 
-
-def hex_uuid():
-    return uuid.uuid4().hex
-
-
 class Company(models.Model):
     """
     Represents a company with related details.
@@ -33,7 +28,7 @@ class Company(models.Model):
     location = models.CharField(max_length=255, null=False)
     about = models.TextField(max_length=500, default=None)
     company_id = models.UUIDField(
-        primary_key=True, default=hex_uuid, editable=False
+        primary_key=True, default=uuid.uuid4, editable=False
     )  # uuid1 uses network address for random number, so it's better to use uuid4
 
     def __str__(self):
@@ -52,7 +47,7 @@ class Job(models.Model):
         db_table = values.DB_TABLE_JOBS
 
     job_id = models.UUIDField(
-        primary_key=True, default=hex_uuid, editable=False, null=False
+        primary_key=True, default=uuid.uuid4, editable=False, null=False
     )
     job_role = models.CharField(max_length=100, null=False)
     company = models.ForeignKey(
@@ -97,7 +92,7 @@ class User(models.Model):
     )
     cover_letter = models.FileField(upload_to="cover_letter/", null=True)
     company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, default=None)
-    user_type = models.CharField(max_length=15, null=False, default=None)
+    user_type = models.CharField(max_length=15, default=None)
 
     def __str__(self):
         return self.name
