@@ -76,7 +76,7 @@ class GenerateToken:
 
    
 def OTP_DummyToken(user,purpose):
-    payload = {"email": user.email, "user_id": user.user_id.hex, "user_type": user.user_type}
+    payload = {"email": user.email, "user_id": str(user.id), "user_type": user.user_type}
     token = GenerateToken.generate_dummy_jwt_token(payload)
     
     # for old user
@@ -120,7 +120,7 @@ class UserRegistrationView(APIView):
 
         # Add an entry in the tbl_user_profile with dummy data
         dummy_data = {
-            "user_id": user.user_id.hex,
+            "user_id": user.id,
             "name" : user.name,
             "email": user.email,
             "user_type": user.user_type,

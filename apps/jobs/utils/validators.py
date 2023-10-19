@@ -12,13 +12,13 @@ class validationClass:
 
     @staticmethod
     def is_valid_uuid(value):
-        # Expects value in hex format of uuid, returns bool value
+        # Expects value in proper format(with hyphens) of uuid, returns bool value
         try:
             uuid_value = uuid.UUID(str(value))
         except ValueError:
             return False
         else:
-            return str(uuid_value.hex) == str(value)
+            return str(uuid_value) == str(value)
 
     @staticmethod
     def validate_id(uuid, idtype: str, model_class):
