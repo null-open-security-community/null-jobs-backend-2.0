@@ -48,3 +48,24 @@ https://support.google.com/cloud/answer/6158849?hl=en
   GOOGLE_OAUTH_CLIENT_ID='google client id'
   GOOGLE_OAUTH_SECRET='google secret'
   ```
+
+<hr>
+
+## test cases setup:
+
+lets migrate the db first for testing env
+<br>
+```
+python manage.py migrate --settings=null_jobs_backend.test_settings
+```
+
+
+whenever you make changes to your models, you need to create new migrations and apply them to both your development and testing databases to keep the schemas in sync
+```
+python manage.py makemigrations --settings=myproject.test_settings
+```
+
+In order to run the test cases over test_db
+```
+python manage.py test --settings=myproject.test_settings
+```
