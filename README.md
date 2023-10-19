@@ -62,7 +62,7 @@ python manage.py migrate --settings=null_jobs_backend.test_settings
 
 whenever you make changes to your models, you need to create new migrations and apply them to both your development and testing databases to keep the schemas in sync
 ```
-python manage.py makemigrations --settings=myproject.test_settings
+python manage.py makemigrations --settings=null_jobs_backend.test_settings
 ```
 
 In order to run the test cases over test_db
