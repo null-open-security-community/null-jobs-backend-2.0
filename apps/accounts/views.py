@@ -33,7 +33,7 @@ def otp_dummy_token(user, purpose):
 
     payload = {
         "email": user.email,
-        "user_id": user.user_id.hex,
+        "user_id": str(user.id),
         "user_type": user.user_type,
     }
 
