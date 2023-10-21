@@ -164,7 +164,35 @@ class GenerateToken:
         except Exception as err:
             # any other exception occurs
             raise Exception(f"Exception occurred in 'verify_and_get_payload': {err}")
+ 
+def OTP_DummyToken(user,purpose):
+    payload = {"email": user.email, "user_id": str(user.id), "user_type": user.user_type}
+    token = GenerateToken.generate_dummy_jwt_token(payload)
+    
+    # for old user
+    if user.otp_secret:
+        otp = OTP.generate_otp(user)
+        user.save()
+    # for new user
+    else:
+        otp,secret = OTP.generate_secret_with_otp()
+        user.otp_secret = secret
+        user.save()
 
+    # Send Email
+    if purpose=="verify":
+        subject="Verify your account"
+        body = f"""OTP to verify your account {otp}
+        This otp is valid only for 5 minutes
+        """
+    elif purpose=="reset-password":
+        subject="OTP to confirm your account"
+        body = f"""OTP is {otp}
+        This otp is valid only for 5 minutes.
+        """
+    data = {"subject": subject , "body": body, "to_email": user.email}
+    Util.send_email(data)
+    return token
 
 class UserRegistrationView(APIView):
     """
@@ -195,8 +223,8 @@ class UserRegistrationView(APIView):
 
         # Add an entry in the tbl_user_profile with dummy data
         dummy_data = {
-            "user_id": user.user_id.hex,
-            "name": user.name,
+            "user_id": user.id,
+            "name" : user.name,
             "email": user.email,
             "user_type": user.user_type,
             "about": None,

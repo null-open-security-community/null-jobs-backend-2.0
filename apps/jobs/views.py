@@ -107,7 +107,7 @@ class JobViewSets(viewsets.ModelViewSet):
             )
 
         # filter based on pk
-        job_data = self.queryset.raw("SELECT * FROM tbl_job WHERE job_id=%s", [pk])
+        job_data = Job.objects.filter(job_id=pk)
         serialized_job_data = self.serializer_class(job_data, many=True)
         serialized_job_data = self.get_number_of_applicants(serialized_job_data)
         return response.create_response(serialized_job_data.data, status.HTTP_200_OK)
@@ -146,7 +146,7 @@ class JobViewSets(viewsets.ModelViewSet):
 
         # get the specific job or return 404 if not found
         jobdata = Job.objects.get(pk=pk)
-        job_id = jobdata.job_id.hex
+        job_id = jobdata.job_id
 
         # get all the users object
         user_data = Applicants.objects.filter(job_id=job_id)
@@ -241,9 +241,8 @@ class JobViewSets(viewsets.ModelViewSet):
             Job.objects.filter(job_id=pk)
             .values(values.EMPLOYER_ID)
             .first()[values.EMPLOYER_ID]
-            .hex
         )
-        if job_employer_id != employer_id:
+        if str(job_employer_id) != employer_id:
             return response.create_response(
                 "This job isn't posted by the given employer id",
                 status.HTTP_406_NOT_ACCEPTABLE
@@ -284,6 +283,8 @@ class UserViewSets(viewsets.ModelViewSet):
         """
         Overriding the create method (used in POST request),
         This method creates a new user profile in the database.
+
+        NOTE: tbl_user_auth has "id", tbl_user_profile has "user_id" as primary key.
         """
 
         if request.headers and "AccessToken" in request.headers:
@@ -298,6 +299,7 @@ class UserViewSets(viewsets.ModelViewSet):
                     status.HTTP_400_BAD_REQUEST
                 )
             except Exception as err:
+                print("Exception occurred while decoding AccessToken")
                 return response.create_response(
                     response.SOMETHING_WENT_WRONG,
                     status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -360,7 +362,7 @@ class UserViewSets(viewsets.ModelViewSet):
         # perform check on payload["user_id"] if it exists in db or not
         try:
             user_id_auth = user_auth.objects.filter(
-                user_id=payload[values.USER_ID]
+                id=payload[values.USER_ID]
             ).exists()
             if not user_id_auth:
                 return response.create_response(
@@ -368,6 +370,7 @@ class UserViewSets(viewsets.ModelViewSet):
                     status.HTTP_404_NOT_FOUND
                 )
         except Exception as err:
+            print("Exception occurred while performing check on user_id in the database")
             return response.create_response(
                 response.SOMETHING_WENT_WRONG,
                 status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -387,10 +390,11 @@ class UserViewSets(viewsets.ModelViewSet):
                 for key in ("name", "email", "user_type")
                 if key in user_data
             }
-            user_auth.objects.filter(user_id=payload[values.USER_ID]).update(
+            user_auth.objects.filter(id=payload[values.USER_ID]).update(
                 **tbl_user_auth_data
             )
         except:
+            print("Exception occurred while updating the user data in the db table")
             return response.create_response(
                 response.SOMETHING_WENT_WRONG,
                 status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -488,20 +492,12 @@ class CompanyViewSets(viewsets.ModelViewSet):
 
         serialized_company_data = self.serializer_class(self.get_queryset(), many=True)
         for company_data in serialized_company_data.data:
-            companyId = company_data.get(values.COMPANY_ID)
+            company_id = company_data.get(values.COMPANY_ID)
 
             # get jobs data by company_id from database
             # .values() returns the QuerySet
             # jobData = Job.objects.filter(company=companyId).values()
-            job_data = Job.objects.filter(
-                job_id__in=RawSQL(
-                    """
-                SELECT job_id from tbl_job
-                WHERE company_id=%s
-                """,
-                    [companyId],
-                )
-            ).values()
+            job_data = Job.objects.filter(company_id=company_id).values()
             company_data.update({"Jobs": job_data})
 
         return response.create_response(
@@ -520,15 +516,7 @@ class CompanyViewSets(viewsets.ModelViewSet):
             company_id = company_data.get(values.COMPANY_ID)
 
             # Get user information by company_id from database
-            user_data = User.objects.filter(
-                user_id__in=RawSQL(
-                    """
-                SELECT user_id from tbl_user_profile
-                WHERE company_id=%s
-                """,
-                    [company_id],
-                )
-            ).values()
+            user_data = User.objects.filter(company_id=company_id).values()
             company_data.update({"User": user_data})
 
         return response.create_response(

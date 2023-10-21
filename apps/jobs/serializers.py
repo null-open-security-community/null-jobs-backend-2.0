@@ -16,18 +16,8 @@ from apps.jobs.models import Applicants, Company, Job, User
 # however at the time of crud opertions, it won't be present.
 
 
-class HexUUIDRepresentation(serializers.UUIDField):
-    def to_representation(self, value):
-        if isinstance(value, uuid.UUID):
-            return str(value.hex)
-        return super().to_representation(value)
-
-
 class JobSerializer(serializers.ModelSerializer):
     """Job object serializer class"""
-
-    job_id = HexUUIDRepresentation(read_only=True)
-    employer_id = HexUUIDRepresentation(read_only=False)
 
     class Meta:
         model = Job
@@ -37,8 +27,6 @@ class JobSerializer(serializers.ModelSerializer):
 class CompanySerializer(serializers.ModelSerializer):
     """Company object serializer class"""
 
-    company_id = HexUUIDRepresentation(read_only=True)
-
     class Meta:
         model = Company
         fields = "__all__"
@@ -47,8 +35,6 @@ class CompanySerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     """User object serializer class"""
 
-    user_id = HexUUIDRepresentation(read_only=True)
-
     class Meta:
         model = User
         fields = "__all__"
@@ -56,8 +42,6 @@ class UserSerializer(serializers.ModelSerializer):
 
 class ApplicantsSerializer(serializers.ModelSerializer):
     """Applicants object serializer class"""
-
-    employer_id = HexUUIDRepresentation(read_only=True)
 
     class Meta:
         model = Applicants
