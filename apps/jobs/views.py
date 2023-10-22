@@ -112,7 +112,8 @@ class JobViewSets(viewsets.ModelViewSet):
         # filter based on pk
         job_data = Job.objects.filter(job_id=pk)
         serialized_job_data = self.serializer_class(job_data, many=True)
-        serialized_job_data = self.get_number_of_applicants(serialized_job_data)
+        if serialized_job_data:
+            serialized_job_data = self.get_number_of_applicants(serialized_job_data)
         return response.create_response(serialized_job_data.data, status.HTTP_200_OK)
 
     def get_number_of_applicants(self, serialized_data):
@@ -123,6 +124,12 @@ class JobViewSets(viewsets.ModelViewSet):
 
         if not serialized_data:
             raise Exception("Serialized data not provided")
+
+        # check for "error" key in the serialized data
+        # this is necessary because we don't have to display
+        # number_of_applications in case of error message
+        if "error" in serialized_data.data[0]:
+            return serialized_data
 
         for jobdata in serialized_data.data:
             job_id = jobdata.get(values.JOB_ID)

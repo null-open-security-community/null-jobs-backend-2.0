@@ -42,22 +42,26 @@ class JobSerializer(serializers.ModelSerializer):
 
         data = super().to_representation(instance)
 
-        # Combine fields
-        data["description"] = {
-            "About": instance.description,
-            "Job Responsibilities": instance.job_responsibilities,
-            "Skills Required": instance.skills_required,
-            "Educations/Certifications": instance.education_or_certifications,
-        }
+        if data:
+            try:
+                # Combine fields
+                data.update(
+                    {
+                        "description": {
+                            "About": data.pop("description", None),
+                            "Job Responsibilities": data.pop(
+                                "job_responsibilities", None
+                            ),
+                            "Skills Required": data.pop("skills_required", None),
+                            "Educations/Certifications": data.pop(
+                                "education_or_certifications", None
+                            ),
+                        }
+                    }
+                )
 
-        # Exclude individual fields from the response
-        fields_to_exclude = [
-            "job_responsibilities",
-            "skills_required",
-            "education_or_certifications",
-        ]
-        for field_name in fields_to_exclude:
-            data.pop(field_name)
+            except Exception:
+                data = {"error": {"message": "Something Went Wrong"}}
 
         return data
 
@@ -86,22 +90,32 @@ class UserSerializer(serializers.ModelSerializer):
 
         data = super().to_representation(instance)
 
-        # Extract the URLs from social handles
-        found_url_patterns = findall("https?:\/\/?[\w\.\/?=]+", instance.social_handles)
-        if found_url_patterns:
-            instance.social_handles = found_url_patterns
+        if data:
+            # Extract the URLs from social handles
+            try:
+                if instance.social_handles:
+                    found_url_patterns = findall(
+                        "https?:\/\/?[\w\.\/?=]+", data.pop("social_handles", "")
+                    )
+                    if found_url_patterns:
+                        instance.social_handles = found_url_patterns
 
-        data["Contact"] = {
-            "Address": instance.address,
-            "Phone": instance.phone,
-            "Website": instance.website,
-            "Email": instance.email,
-            "Social Handles": instance.social_handles,
-        }
+                    data.update(
+                        {
+                            "Contact": {
+                                "Address": data.pop("address", None),
+                                "Phone": data.pop("phone", None),
+                                "Website": data.pop("website", None),
+                                "Email": data.pop("email", None),
+                                "Social Handles": instance.social_handles,
+                            }
+                        }
+                    )
 
-        fields_to_exclude = ["email", "phone", "website", "social_handles"]
-        for field_name in fields_to_exclude:
-            data.pop(field_name)
+            except Exception as err:
+                # We can also raise an exception here but this time, I am returning
+                # error message in the data
+                data = {"error": {"message": "Something Went Wrong"}}
 
         return data
 
