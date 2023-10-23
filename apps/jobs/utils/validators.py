@@ -1,6 +1,14 @@
 import re
 import uuid
 
+from django.core.exceptions import ValidationError
+from django.core.validators import (
+    EmailValidator,
+    MaxValueValidator,
+    MinValueValidator,
+    URLValidator,
+)
+
 
 class validationClass:
     """
@@ -117,3 +125,38 @@ class validationClass:
 
         if upload_file_to_storage:
             return (True, "File is valid")
+
+    @staticmethod
+    def validate_fields(data):
+        """
+        This method is used to validate some specific fields
+        present in the given data (format: dictionary)
+        """
+
+        for field_name, field_value in data.items():
+            try:
+                if field_name == "age":
+                    MinValueValidator(15)(field_value)
+                    MaxValueValidator(100)(field_value)
+                if field_name == "email":
+                    EmailValidator()(field_value)
+                if field_name == "website":
+                    if not re.search("^(https?|ftp)://[^\s/$.?#].[^\s]*$", field_value):
+                        raise Exception(f"Invalid {field_name} value provided")
+                if field_name == "experience":
+                    # Here, if the experience value exceeds 15, replace the value
+                    # with "15+", Also check if there are only two integers given
+                    # by the user, and these two integers should be positive & <= 15
+
+                    # check if experience value contains two integers
+                    if re.search("^\d\d$", field_value):
+                        # check if the matched integer value greater than 15
+                        if re.search("^(1[6-9]|[2-9][0-9])$", field_value):
+                            data[field_name] = "15+"
+                    else:
+                        raise Exception(f"Invalid {field_name} value provided")
+
+            except (Exception, ValidationError) as err:
+                raise Exception(
+                    f"Given {field_name} doesn't contain a valid value\n\nReason: {err.__str__()}"
+                )

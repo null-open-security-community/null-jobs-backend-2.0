@@ -8,6 +8,7 @@ from apps.accounts.utils import *
 
 # from apps.accounts.views import OTP_DummyToken
 
+
 # User registration
 class UserRegistrationSerializer(serializers.ModelSerializer):
     # We are writing this because  we need confirm password field in our Registration request
@@ -92,6 +93,7 @@ class SendPasswordResetOTPSerializer(serializers.Serializer):
         else:
             raise serializers.ValidationError("You are not a Registered User")
 
+
 # Serializer for verifying the otp to reset password
 class ResetPasswordOtpVerifySerializer(serializers.Serializer):
     otp = serializers.CharField(max_length=6, style={"input_type": "text"})
@@ -114,11 +116,12 @@ class ResetPasswordOtpVerifySerializer(serializers.Serializer):
                 raise serializers.ValidationError("Invalid OTP")
 
             attrs["uid"] = uid
-            attrs["token"]=token
+            attrs["token"] = token
             return attrs
 
         except User.DoesNotExist:
             raise serializers.ValidationError("User not found")
+
 
 # Serializer for updating the new password
 class UserPasswordResetSerializer(serializers.Serializer):
@@ -152,7 +155,7 @@ class UserPasswordResetSerializer(serializers.Serializer):
                 )
             user.set_password(password)
             user.save()
-            attrs["user"]=user
+            attrs["user"] = user
             return attrs
         except DjangoUnicodeDecodeError as identifier:
             PasswordResetTokenGenerator().check_token(user, token)

@@ -2,16 +2,10 @@ import uuid
 
 from django.db import models
 
-from apps.jobs.constants import values
 from apps.accounts.models import User as UserAuth
+from apps.jobs.constants import values
+from apps.jobs.constants.values import GENDER, STATUS_CHOICES
 
-STATUS_CHOICES = (
-    ("under-reviewed", "Under-Reviewed"),
-    ("shortlisted", "Shortlisted"),
-    ("accepted", "Accepted"),
-    ("rejected", "Rejected"),
-    ("on-hold", "On-Hold"),
-)
 
 class Company(models.Model):
     """
@@ -61,6 +55,22 @@ class Job(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)  # only add the timestamp once
     updated_at = models.DateTimeField(auto_now=True)  # update timestamp on every save()
     employer_id = models.UUIDField(null=False, editable=True, default=None)
+    job_type = models.CharField(max_length=80, null=False)
+    salary = models.DecimalField(max_digits=9, decimal_places=2)
+    qualifications = models.CharField(max_length=60, default=None, null=True)
+    vacency_position = models.IntegerField(default=0, null=False)
+    industry = models.CharField(max_length=50, default=None, null=True)
+
+    # These fields will be displayed as a part of "description" field
+    job_responsibilities = models.TextField(
+        default="No Job Responsibilities provided", max_length=1000
+    )
+    skills_required = models.TextField(
+        default="No skills details provided", max_length=1000
+    )
+    education_or_certifications = models.TextField(
+        default="No Education details provided", max_length=1000
+    )
 
     def __str__(self):
         return self.job_role
@@ -81,9 +91,7 @@ class User(models.Model):
         primary_key=True, default=None, editable=False, null=False
     )
     name = models.CharField(max_length=30, null=False)
-    email = models.CharField(max_length=30, null=False)
-    address = models.TextField(max_length=100, null=False)
-    phone = models.CharField(max_length=12, default=None, null=True)
+    address = models.TextField(max_length=100, null=True, default=None)
     about = models.TextField(max_length=100, default=None, null=True)
     job = models.ForeignKey(Job, on_delete=models.CASCADE, null=True, default=None)
     resume = models.FileField(upload_to="resume/", null=True, default=None)
@@ -91,8 +99,22 @@ class User(models.Model):
         upload_to="profile_picture/", null=True, default=None
     )
     cover_letter = models.FileField(upload_to="cover_letter/", null=True)
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, default=None)
-    user_type = models.CharField(max_length=15, default=None)
+    company = models.ForeignKey(
+        Company, on_delete=models.CASCADE, null=True, default=None
+    )
+    user_type = models.CharField(max_length=15, default=None, null=False)
+    experience = models.CharField(default=0, null=True, max_length=3)
+    qualification = models.TextField(max_length=500, default=None, null=True)
+    gender = models.CharField(choices=GENDER, max_length=6, default=None, null=True)
+    age = models.PositiveIntegerField(default=None, null=True)
+    education = models.TextField(max_length=500, default=None, null=True)
+    professional_skills = models.TextField(max_length=500, default=None, null=True)
+
+    # These fields will be displayed as a part of "Contact" field
+    email = models.CharField(max_length=30, null=False)
+    phone = models.CharField(max_length=12, default=None, null=True)
+    website = models.URLField(default=None, null=True)
+    social_handles = models.URLField(default=None, null=True)
 
     def __str__(self):
         return self.name
