@@ -95,22 +95,22 @@ class UserSerializer(serializers.ModelSerializer):
             try:
                 if instance.social_handles:
                     found_url_patterns = findall(
-                        "https?:\/\/?[\w\.\/?=]+", data.pop("social_handles", "")
+                        "((https?:\/\/)?[\w\.\/?=]+)", data.pop("social_handles", "")
                     )
                     if found_url_patterns:
-                        instance.social_handles = found_url_patterns
+                        instance.social_handles = [url[0] for url in found_url_patterns]
 
-                    data.update(
-                        {
-                            "Contact": {
-                                "Address": data.pop("address", None),
-                                "Phone": data.pop("phone", None),
-                                "Website": data.pop("website", None),
-                                "Email": data.pop("email", None),
-                                "Social Handles": instance.social_handles,
-                            }
+                data.update(
+                    {
+                        "Contact": {
+                            "Address": data.pop("address", None),
+                            "Phone": data.pop("phone", None),
+                            "Website": data.pop("website", None),
+                            "Email": data.pop("email", None),
+                            "Social Handles": instance.social_handles,
                         }
-                    )
+                    }
+                )
 
             except Exception as err:
                 # We can also raise an exception here but this time, I am returning
