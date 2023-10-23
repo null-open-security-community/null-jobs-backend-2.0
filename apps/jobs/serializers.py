@@ -115,7 +115,11 @@ class UserSerializer(serializers.ModelSerializer):
             except Exception as err:
                 # We can also raise an exception here but this time, I am returning
                 # error message in the data
-                data = {"error": {"message": "Something Went Wrong"}}
+                data = {
+                    "error": {
+                        "message": f"Something Went Wrong\n\nReason: {err.__str__()}"
+                    }
+                }
 
         return data
 

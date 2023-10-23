@@ -4,6 +4,7 @@ from re import search
 import django.core.exceptions
 import jwt
 from django.db.models.expressions import RawSQL
+from django.db.utils import IntegrityError
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -128,7 +129,7 @@ class JobViewSets(viewsets.ModelViewSet):
         # check for "error" key in the serialized data
         # this is necessary because we don't have to display
         # number_of_applications in case of error message
-        if "error" in serialized_data.data[0]:
+        if not serialized_data.data or "error" in serialized_data.data[0]:
             return serialized_data
 
         for jobdata in serialized_data.data:
@@ -154,15 +155,21 @@ class JobViewSets(viewsets.ModelViewSet):
             )
 
         # get the specific job or return 404 if not found
-        jobdata = Job.objects.get(pk=pk)
-        job_id = jobdata.job_id
+        try:
+            jobdata = Job.objects.get(pk=pk)
+        except Exception:
+            return response.create_response(
+                "Job doesn't exist", status.HTTP_404_NOT_FOUND
+            )
+        else:
+            job_id = jobdata.job_id
 
-        # get all the users object
-        user_data = Applicants.objects.filter(job_id=job_id)
-        serialized_data = ApplicantsSerializer(
-            user_data, many=True, context={"request": request}
-        )
-        return response.create_response(serialized_data.data, status.HTTP_200_OK)
+            # get all the users object
+            user_data = Applicants.objects.filter(job_id=job_id)
+            serialized_data = ApplicantsSerializer(
+                user_data, many=True, context={"request": request}
+            )
+            return response.create_response(serialized_data.data, status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"])
     def apply(self, request, pk=None):
@@ -288,8 +295,8 @@ class UserViewSets(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         """
-        Overriding the create method (used in POST request),
-        This method creates a new user profile in the database.
+        Overriding the update method (used in PUT request),
+        This method updates an existing user profile in the database.
 
         NOTE: tbl_user_auth has "id", tbl_user_profile has "user_id" as primary key.
         """
@@ -381,6 +388,14 @@ class UserViewSets(viewsets.ModelViewSet):
 
         # get data from the request
         user_data = request.data
+
+        # validate some data first
+        try:
+            validationClass.validate_fields(user_data)
+
+        except Exception as err:
+            return response.create_response(err.__str__(), status.HTTP_400_BAD_REQUEST)
+
         try:
             # update in the tbl_user_profile
             User.objects.filter(user_id=payload[values.USER_ID]).update(**user_data)
@@ -394,10 +409,16 @@ class UserViewSets(viewsets.ModelViewSet):
             user_auth.objects.filter(id=payload[values.USER_ID]).update(
                 **tbl_user_auth_data
             )
-        except:
+        except IntegrityError:
+            return response.create_response(
+                "This email is already associated with a account, Use a different email to update",
+                status.HTTP_401_UNAUTHORIZED,
+            )
+        except Exception as err:
             print("Exception occurred while updating the user data in the db table")
             return response.create_response(
-                response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
+                f"{response.SOMETHING_WENT_WRONG}",
+                status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         else:
             user_data = User.objects.get(user_id=payload[values.USER_ID])

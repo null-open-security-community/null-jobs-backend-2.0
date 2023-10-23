@@ -1,11 +1,5 @@
 import uuid
 
-from django.core.validators import (
-    EmailValidator,
-    MaxValueValidator,
-    MinValueValidator,
-    URLValidator,
-)
 from django.db import models
 
 from apps.accounts.models import User as UserAuth
@@ -65,6 +59,7 @@ class Job(models.Model):
     salary = models.DecimalField(max_digits=9, decimal_places=2)
     qualifications = models.CharField(max_length=60, default=None, null=True)
     vacency_position = models.IntegerField(default=0, null=False)
+    industry = models.CharField(max_length=50, default=None, null=True)
 
     # These fields will be displayed as a part of "description" field
     job_responsibilities = models.TextField(
@@ -96,7 +91,7 @@ class User(models.Model):
         primary_key=True, default=None, editable=False, null=False
     )
     name = models.CharField(max_length=30, null=False)
-    address = models.TextField(max_length=100, null=False)
+    address = models.TextField(max_length=100, null=True, default=None)
     about = models.TextField(max_length=100, default=None, null=True)
     job = models.ForeignKey(Job, on_delete=models.CASCADE, null=True, default=None)
     resume = models.FileField(upload_to="resume/", null=True, default=None)
@@ -108,24 +103,18 @@ class User(models.Model):
         Company, on_delete=models.CASCADE, null=True, default=None
     )
     user_type = models.CharField(max_length=15, default=None, null=False)
-    experience = models.IntegerField(
-        validators=[MinValueValidator(0)], default=0, null=True
-    )
+    experience = models.CharField(default=0, null=True, max_length=3)
     qualification = models.TextField(max_length=500, default=None, null=True)
-    gender = models.CharField(choices=GENDER, max_length=6, default=None, null=False)
-    age = models.PositiveIntegerField(
-        validators=[MinValueValidator(15), MaxValueValidator(100)],
-        default=None,
-        null=False,
-    )
+    gender = models.CharField(choices=GENDER, max_length=6, default=None, null=True)
+    age = models.PositiveIntegerField(default=None, null=True)
     education = models.TextField(max_length=500, default=None, null=True)
     professional_skills = models.TextField(max_length=500, default=None, null=True)
 
     # These fields will be displayed as a part of "Contact" field
-    email = models.CharField(max_length=30, null=False, validators=[EmailValidator])
+    email = models.CharField(max_length=30, null=False)
     phone = models.CharField(max_length=12, default=None, null=True)
-    website = models.URLField(validators=[URLValidator], default=None, null=True)
-    social_handles = models.URLField(validators=[URLValidator], default=None, null=True)
+    website = models.URLField(default=None, null=True)
+    social_handles = models.URLField(default=None, null=True)
 
     def __str__(self):
         return self.name

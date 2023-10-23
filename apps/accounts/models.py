@@ -1,10 +1,7 @@
 import uuid
 
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
-from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-
-from apps.jobs.constants.values import GENDER
 
 # from Jobapp.models import User as JobUser
 # Create your models here.
@@ -13,9 +10,7 @@ USER_TYPE = (("Job Seeker", "User/Employee"), ("Employer", "HR/Employer"))
 
 
 class UserManager(BaseUserManager):
-    def create_user(
-        self, email, name, user_type, age, gender, password=None, password2=None
-    ):
+    def create_user(self, email, name, user_type, password=None, password2=None):
         """
         Creates and saves a User with the given email, name, tc and password.
         """
@@ -23,11 +18,7 @@ class UserManager(BaseUserManager):
             raise ValueError("Users must have an email address")
 
         user = self.model(
-            email=self.normalize_email(email),
-            name=name,
-            user_type=user_type,
-            age=age,
-            gender=gender,
+            email=self.normalize_email(email), name=name, user_type=user_type
         )
 
         user.set_password(password)
@@ -68,15 +59,7 @@ class User(AbstractBaseUser):
     otp = models.CharField(max_length=6, null=True)
     otp_secret = models.CharField(max_length=200, null=True)
     dummy_password = models.CharField(max_length=200, null=True)
-    user_type = models.CharField(
-        max_length=12, choices=USER_TYPE, null=False, default=None
-    )
-    gender = models.CharField(choices=GENDER, max_length=6, default=None, null=False)
-    age = models.PositiveIntegerField(
-        validators=[MinValueValidator(15), MaxValueValidator(100)],
-        null=False,
-        default=None,
-    )
+    user_type = models.CharField(max_length=12, choices=USER_TYPE, null=False)
 
     objects = UserManager()
 

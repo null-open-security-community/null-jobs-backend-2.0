@@ -127,13 +127,15 @@ class UserRegistrationView(APIView):
             "name": user.name,
             "email": user.email,
             "user_type": user.user_type,
-            "age": user.age,
-            "gender": user.gender,
-            "about": None,
         }
 
-        user_instance = user_profile(**dummy_data)
-        user_instance.custom_save(override_uuid={"uuid": dummy_data["user_id"]})
+        try:
+            user_instance = user_profile(**dummy_data)
+            user_instance.custom_save(override_uuid={"uuid": dummy_data["user_id"]})
+        except Exception:
+            return Response(
+                {"msg": "Something went wrong"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         return Response(
             {
