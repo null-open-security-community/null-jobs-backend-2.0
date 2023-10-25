@@ -411,7 +411,7 @@ class UserViewSets(viewsets.ModelViewSet):
             )
         except IntegrityError:
             return response.create_response(
-                "This email is already associated with a account, Use a different email to update",
+                "You've supplied either improper values or same values to update, Use a different one",
                 status.HTTP_401_UNAUTHORIZED,
             )
         except Exception as err:
