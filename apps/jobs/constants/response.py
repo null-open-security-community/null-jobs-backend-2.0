@@ -1,17 +1,25 @@
 """This file contains the common response parameters that are sent with the response"""
 
 from rest_framework.response import Response
+import logging
 
-def create_response(response_message: str, status_code, content_type="application/json"):
+logger = logging.getLogger("jobs")
+
+
+def create_response(
+    response_message: str, status_code, content_type="application/json"
+):
     """
     This function returns HTTP Response with message, status_code and content_type
     """
-
     if 200 <= status_code <= 308:
+        logger.info(f"HTTP response data: {response_message}")
         response = {"data": response_message}
     elif status_code >= 400:
+        logger.error(f"Error loading response data: {response_message}")
         response = {"message": {"error": response_message}}
     return Response(response, status=status_code, content_type=content_type)
+
 
 SOMETHING_WENT_WRONG = "something went wrong"
 ACCESS_TOKEN_NOT_VALID = "Invalid access token provided"

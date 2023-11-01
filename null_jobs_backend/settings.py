@@ -49,7 +49,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     "rest_framework_simplejwt",
-    'rest_framework_simplejwt.token_blacklist',   # used to blacklist the refresh token
+    "rest_framework_simplejwt.token_blacklist",  # used to blacklist the refresh token
     "drf_yasg",
     "apps.accounts",
     "apps.jobs",
@@ -99,6 +99,7 @@ DATABASES = {
         "PASSWORD": os.getenv("DB_PWD"),
         "HOST": os.getenv("DB_HOST"),
         "PORT": os.getenv("DB_PORT"),
+        "LEVEL": os.getenv("DJANGO_LOG_LEVEL"),
     }
 }
 
@@ -241,3 +242,40 @@ AUTHENTICATION_BACKENDS = [
 
 # GOOGLE AUTH
 SITE_ID = 2
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "custom_format": {
+            "format": "%(process)d - %(asctime)s - %(levelname)s - %(message)s\n%(stack_info)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S %Z",  # Includes timezone and date format
+        },
+    },
+    "handlers": {
+        "accounts_file": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": "logs/accounts.log",  # Log file for the 'accounts' app
+            "formatter": "custom_format",
+        },
+        "jobs_file": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": "logs/jobs.log",  # Log file for the 'jobs' app
+            "formatter": "custom_format",
+        },
+    },
+    "loggers": {
+        "accounts": {
+            "handlers": ["accounts_file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "jobs": {
+            "handlers": ["jobs_file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}

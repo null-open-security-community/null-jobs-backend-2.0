@@ -8,13 +8,15 @@ in the output. However at the time of crud opertions, it won't be present.
 
 import uuid
 from re import findall
-
+import logging
 from rest_framework import serializers
 
 from apps.jobs.models import Applicants, Company, Job, User
 
 # read_only=True allows the field to only present in the output
 # however at the time of crud opertions, it won't be present.
+
+logger = logging.getLogger("jobs")
 
 
 class JobSerializer(serializers.ModelSerializer):
@@ -41,7 +43,9 @@ class JobSerializer(serializers.ModelSerializer):
         """
 
         data = super().to_representation(instance)
-
+        logger.info(
+            "Combining several fields into one and removing those fields from the serializer.data"
+        )
         if data:
             try:
                 # Combine fields
@@ -61,6 +65,7 @@ class JobSerializer(serializers.ModelSerializer):
                 )
 
             except Exception:
+                logger.error(f"{data} didnt update failed")
                 data = {"error": {"message": "Something Went Wrong"}}
 
         return data
@@ -89,10 +94,11 @@ class UserSerializer(serializers.ModelSerializer):
         """
 
         data = super().to_representation(instance)
-
+        logger.info("Combining several fields into one")
         if data:
             # Extract the URLs from social handles
             try:
+                logger.info("Extracting social handles from URL")
                 if instance.social_handles:
                     found_url_patterns = findall(
                         "https?:\/\/?[\w\.\/?=]+", data.pop("social_handles", "")
@@ -100,6 +106,7 @@ class UserSerializer(serializers.ModelSerializer):
                     if found_url_patterns:
                         instance.social_handles = found_url_patterns
 
+                    logger.info(f"Creating 'Contact' field")
                     data.update(
                         {
                             "Contact": {
@@ -111,10 +118,14 @@ class UserSerializer(serializers.ModelSerializer):
                             }
                         }
                     )
+                else:
+                    logger.error("No social handles found")
+                    raise Exception("No social handles found")
 
             except Exception as err:
                 # We can also raise an exception here but this time, I am returning
                 # error message in the data
+                logger.error(f"An exception occurred: {err}")
                 data = {
                     "error": {
                         "message": f"Something Went Wrong\n\nReason: {err.__str__()}"

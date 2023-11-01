@@ -13,7 +13,7 @@ from apps.jobs.constants import values
 from apps.jobs.utils.validators import validationClass
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("jobs")
 
 
 class UserTypeCheck(permissions.BasePermission):
@@ -40,7 +40,7 @@ class UserTypeCheck(permissions.BasePermission):
             not self.is_user_employer(employer_id)
             or view.action not in self.EMPLOYER_ALLOWED_ACTIONS[view.basename]
         ):
-            logger.info("Permission denied for the user")
+            logger.error("Permission denied! User is not an employer")
             return False
 
         logger.info("Permission granted for the user")

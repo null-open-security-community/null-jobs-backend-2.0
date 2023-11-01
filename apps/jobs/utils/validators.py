@@ -19,7 +19,7 @@ class validationClass:
     2. Image files
     """
 
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("jobs")
 
     @staticmethod
     def is_valid_uuid(value):
