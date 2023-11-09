@@ -101,10 +101,10 @@ class UserSerializer(serializers.ModelSerializer):
                 logger.info("Extracting social handles from URL")
                 if instance.social_handles:
                     found_url_patterns = findall(
-                        "https?:\/\/?[\w\.\/?=]+", data.pop("social_handles", "")
+                        "((https?:\/\/)?[\w\.\/?=]+)", data.pop("social_handles", "")
                     )
                     if found_url_patterns:
-                        instance.social_handles = found_url_patterns
+                        instance.social_handles = [url[0] for url in found_url_patterns]
 
                     logger.info(f"Creating 'Contact' field")
                     data.update(
@@ -121,6 +121,17 @@ class UserSerializer(serializers.ModelSerializer):
                 else:
                     logger.error("No social handles found")
                     raise Exception("No social handles found")
+                data.update(
+                    {
+                        "Contact": {
+                            "Address": data.pop("address", None),
+                            "Phone": data.pop("phone", None),
+                            "Website": data.pop("website", None),
+                            "Email": data.pop("email", None),
+                            "Social Handles": instance.social_handles,
+                        }
+                    }
+                )
 
             except Exception as err:
                 # We can also raise an exception here but this time, I am returning

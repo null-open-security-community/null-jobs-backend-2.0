@@ -243,27 +243,40 @@ AUTHENTICATION_BACKENDS = [
 # GOOGLE AUTH
 SITE_ID = 2
 
+LOG_DIR = os.path.join(BASE_DIR, "logs")
+
+if not os.path.exists(LOG_DIR):
+    os.makedirs(LOG_DIR)
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
         "custom_format": {
             "format": "%(process)d - %(asctime)s - %(levelname)s - %(message)s\n%(stack_info)s",
-            "datefmt": "%Y-%m-%d %H:%M:%S %Z",  # Includes timezone and date format
+            "datefmt": "%D-%m-%Y %H:%M:%S %P",  # Includes timezone and date format
         },
     },
     "handlers": {
         "accounts_file": {
             "level": "INFO",
             "class": "logging.FileHandler",
-            "filename": "logs/accounts.log",  # Log file for the 'accounts' app
+            "filename": os.path.join(
+                LOG_DIR, "accounts.log"  # Log file for the 'accounts' app
+            ),
             "formatter": "custom_format",
+            "mode": "a",  # (append) creates the file if not exists.
+            "encoding": "utf-8",
         },
         "jobs_file": {
             "level": "INFO",
             "class": "logging.FileHandler",
-            "filename": "logs/jobs.log",  # Log file for the 'jobs' app
+            "filename": os.path.join(
+                LOG_DIR, "jobs.log"  # Log file for the 'jobs' app
+            ),
             "formatter": "custom_format",
+            "mode": "a",
+            "encoding": "utf-8",
         },
     },
     "loggers": {
