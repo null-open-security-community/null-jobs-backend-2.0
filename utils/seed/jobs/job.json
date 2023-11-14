@@ -1,1 +1,146 @@
-[{"model": "jobs.job", "pk": "420bedf7-2ac8-4b17-9852-a535fe568026", "fields": {"job_role": "Sales Executive", "company": "9bd88cd6-fbe8-449a-a283-89d0a1108fd5", "description": "Results-driven Sales Executive with a proven track record of exceeding targets and cultivating long-lasting client relationships. Adept at identifying opportunities, negotiating deals, and delivering exceptional customer satisfaction", "location": "Amsterdam", "post_date": "2023-09-10", "posted": false, "experience": 0, "created_at": "2023-10-23T20:56:05.639Z", "updated_at": "2023-10-23T20:56:05.639Z", "employer_id": "88259c6a-e707-4f81-b316-97cc697270ee", "job_type": "Full Time", "salary": "10000.00", "qualifications": null, "vacency_position": 0, "industry": "Consultation", "job_responsibilities": "Handling Sales Department", "skills_required": "MBA, BBA", "education_or_certifications": "12th Standard, BBA"}}, {"model": "jobs.job", "pk": "75e326b4-e9b9-4282-8e99-2ce7a72303e9", "fields": {"job_role": "Associate Software Engineer", "company": "01cef5fa-d4dd-42e0-8feb-ba410fd18d33", "description": "An Associate Software Engineer is an entry-level professional who plays a crucial role in the development and maintenance of software applications. Working under the guidance of senior engineers and developers, an Associate Software Engineer participates in various aspects of the software development lifecycle, contributing to the creation of efficient and functional software solutions.", "location": "Delhi, India", "post_date": "2022-10-19", "posted": false, "experience": 0, "created_at": "2023-10-23T21:29:43.120Z", "updated_at": "2023-10-23T21:29:43.120Z", "employer_id": "6c06c2a3-1118-41fe-b14b-7983363d4276", "job_type": "Internship", "salary": "5500.00", "qualifications": null, "vacency_position": 0, "industry": "IT and Networks", "job_responsibilities": "Low level code development, automation", "skills_required": "C++ Development, win32 API, Python, Automation", "education_or_certifications": "BCA, B.Tech"}}, {"model": "jobs.job", "pk": "83419817-477a-4065-b559-145351126218", "fields": {"job_role": "HR Intern", "company": "9bd88cd6-fbe8-449a-a283-89d0a1108fd5", "description": "The HR Intern oversees human resources functions, including recruitment, employee relations, and policy implementation. They ensure a positive work environment and alignment of HR practices with organizational goals", "location": "Delhi, India", "post_date": "2023-09-19", "posted": false, "experience": 0, "created_at": "2023-10-23T21:26:36.904Z", "updated_at": "2023-10-23T21:26:36.904Z", "employer_id": "6c06c2a3-1118-41fe-b14b-7983363d4276", "job_type": "Internship", "salary": "50000.00", "qualifications": null, "vacency_position": 0, "industry": "Investment and venture capital", "job_responsibilities": "Management Handling, Excel, Outlook, Mail Communication with clients", "skills_required": "Excel, Mail, Fluent English, Tally, Accounts", "education_or_certifications": "BBA CS"}}, {"model": "jobs.job", "pk": "c7d98234-d092-4ce4-9e79-832fb580f312", "fields": {"job_role": "Backend Engineer", "company": "9bd88cd6-fbe8-449a-a283-89d0a1108fd5", "description": "The Back End Developer creates and maintains the server-side logic, databases, and APIs of web applications. They focus on data management, security, and application performance to deliver seamless user experiences", "location": "Noida", "post_date": "2023-01-10", "posted": false, "experience": 0, "created_at": "2023-10-23T20:58:44.571Z", "updated_at": "2023-10-23T20:58:44.571Z", "employer_id": "88259c6a-e707-4f81-b316-97cc697270ee", "job_type": "Full Time", "salary": "600000.00", "qualifications": null, "vacency_position": 0, "industry": "Computer Network And Security", "job_responsibilities": "Server Management, Optimization, Database Management, API Development", "skills_required": "Programming Languages, API Development, Web Frameworks, Version Control", "education_or_certifications": "B.TECH CS"}}, {"model": "jobs.job", "pk": "cb663730-f921-4510-ab03-01217a87a26e", "fields": {"job_role": "Security Analyst", "company": "db7df573-8196-459d-9ae2-b7cc65758c3e", "description": "A Security Analyst is a skilled professional responsible for safeguarding an organization's digital assets and sensitive information by proactively identifying and mitigating security vulnerabilities, threats, and risks. In a rapidly evolving digital landscape, Security Analysts play a crucial role in maintaining the confidentiality, integrity, and availability of data and systems, ensuring the organization's overall cybersecurity posture.", "location": "Dubai", "post_date": "2023-10-19", "posted": false, "experience": 0, "created_at": "2023-10-23T21:24:23.376Z", "updated_at": "2023-10-23T21:24:23.376Z", "employer_id": "6c06c2a3-1118-41fe-b14b-7983363d4276", "job_type": "Full Time", "salary": "90000.00", "qualifications": null, "vacency_position": 0, "industry": "Computer Network And Security", "job_responsibilities": "Web App Security, API Security, Red Teaming", "skills_required": "Programming Languages, API Development, Web Frameworks, Version Control, API Security, Web Security, VAPT, Network Security", "education_or_certifications": "B.TECH CS"}}, {"model": "jobs.job", "pk": "e331ad2f-01d2-4b00-8f29-1390cb12949e", "fields": {"job_role": "HR Manager", "company": "db7df573-8196-459d-9ae2-b7cc65758c3e", "description": "The HR Manager oversees human resources functions, including recruitment, employee relations, and policy implementation. They ensure a positive work environment and alignment of HR practices with organizational goals", "location": "Dubai", "post_date": "2023-10-19", "posted": false, "experience": 0, "created_at": "2023-10-23T21:22:12.394Z", "updated_at": "2023-10-23T21:22:12.394Z", "employer_id": "6c06c2a3-1118-41fe-b14b-7983363d4276", "job_type": "Full Time", "salary": "600000.00", "qualifications": null, "vacency_position": 0, "industry": "Computer Network And Security", "job_responsibilities": "Server Management, Optimization, Database Management, API Development", "skills_required": "Programming Languages, API Development, Web Frameworks, Version Control", "education_or_certifications": "B.TECH CS"}}]
+[
+  {
+    "model": "jobs.job",
+    "pk": "420bedf7-2ac8-4b17-9852-a535fe568026",
+    "fields": {
+      "job_role": "Sales Executive",
+      "company": "9bd88cd6-fbe8-449a-a283-89d0a1108fd5",
+      "description": "Results-driven Sales Executive with a proven track record of exceeding targets and cultivating long-lasting client relationships. Adept at identifying opportunities, negotiating deals, and delivering exceptional customer satisfaction",
+      "location": "Amsterdam",
+      "post_date": "2023-09-10",
+      "posted": false,
+      "experience": 0,
+      "created_at": "2023-10-23T20:56:05.639Z",
+      "updated_at": "2023-10-23T20:56:05.639Z",
+      "employer_id": "88259c6a-e707-4f81-b316-97cc697270ee",
+      "job_type": "Full Time",
+      "salary": "10000.00",
+      "qualifications": null,
+      "vacency_position": 0,
+      "industry": "Consultation",
+      "job_responsibilities": "Handling Sales Department",
+      "skills_required": "MBA, BBA",
+      "education_or_certifications": "12th Standard, BBA"
+    }
+  },
+  {
+    "model": "jobs.job",
+    "pk": "75e326b4-e9b9-4282-8e99-2ce7a72303e9",
+    "fields": {
+      "job_role": "Associate Software Engineer",
+      "company": "01cef5fa-d4dd-42e0-8feb-ba410fd18d33",
+      "description": "An Associate Software Engineer is an entry-level professional who plays a crucial role in the development and maintenance of software applications. Working under the guidance of senior engineers and developers, an Associate Software Engineer participates in various aspects of the software development lifecycle, contributing to the creation of efficient and functional software solutions.",
+      "location": "Delhi, India",
+      "post_date": "2022-10-19",
+      "posted": false,
+      "experience": 0,
+      "created_at": "2023-10-23T21:29:43.120Z",
+      "updated_at": "2023-10-23T21:29:43.120Z",
+      "employer_id": "6c06c2a3-1118-41fe-b14b-7983363d4276",
+      "job_type": "Internship",
+      "salary": "5500.00",
+      "qualifications": null,
+      "vacency_position": 0,
+      "industry": "IT and Networks",
+      "job_responsibilities": "Low level code development, automation",
+      "skills_required": "C++ Development, win32 API, Python, Automation",
+      "education_or_certifications": "BCA, B.Tech"
+    }
+  },
+  {
+    "model": "jobs.job",
+    "pk": "83419817-477a-4065-b559-145351126218",
+    "fields": {
+      "job_role": "HR Intern",
+      "company": "9bd88cd6-fbe8-449a-a283-89d0a1108fd5",
+      "description": "The HR Intern oversees human resources functions, including recruitment, employee relations, and policy implementation. They ensure a positive work environment and alignment of HR practices with organizational goals",
+      "location": "Delhi, India",
+      "post_date": "2023-09-19",
+      "posted": false,
+      "experience": 0,
+      "created_at": "2023-10-23T21:26:36.904Z",
+      "updated_at": "2023-10-23T21:26:36.904Z",
+      "employer_id": "6c06c2a3-1118-41fe-b14b-7983363d4276",
+      "job_type": "Internship",
+      "salary": "50000.00",
+      "qualifications": null,
+      "vacency_position": 0,
+      "industry": "Investment and venture capital",
+      "job_responsibilities": "Management Handling, Excel, Outlook, Mail Communication with clients",
+      "skills_required": "Excel, Mail, Fluent English, Tally, Accounts",
+      "education_or_certifications": "BBA CS"
+    }
+  },
+  {
+    "model": "jobs.job",
+    "pk": "c7d98234-d092-4ce4-9e79-832fb580f312",
+    "fields": {
+      "job_role": "Backend Engineer",
+      "company": "9bd88cd6-fbe8-449a-a283-89d0a1108fd5",
+      "description": "The Back End Developer creates and maintains the server-side logic, databases, and APIs of web applications. They focus on data management, security, and application performance to deliver seamless user experiences",
+      "location": "Noida",
+      "post_date": "2023-01-10",
+      "posted": false,
+      "experience": 0,
+      "created_at": "2023-10-23T20:58:44.571Z",
+      "updated_at": "2023-10-23T20:58:44.571Z",
+      "employer_id": "88259c6a-e707-4f81-b316-97cc697270ee",
+      "job_type": "Full Time",
+      "salary": "600000.00",
+      "qualifications": null,
+      "vacency_position": 0,
+      "industry": "Computer Network And Security",
+      "job_responsibilities": "Server Management, Optimization, Database Management, API Development",
+      "skills_required": "Programming Languages, API Development, Web Frameworks, Version Control",
+      "education_or_certifications": "B.TECH CS"
+    }
+  },
+  {
+    "model": "jobs.job",
+    "pk": "cb663730-f921-4510-ab03-01217a87a26e",
+    "fields": {
+      "job_role": "Security Analyst",
+      "company": "db7df573-8196-459d-9ae2-b7cc65758c3e",
+      "description": "A Security Analyst is a skilled professional responsible for safeguarding an organization's digital assets and sensitive information by proactively identifying and mitigating security vulnerabilities, threats, and risks. In a rapidly evolving digital landscape, Security Analysts play a crucial role in maintaining the confidentiality, integrity, and availability of data and systems, ensuring the organization's overall cybersecurity posture.",
+      "location": "Dubai",
+      "post_date": "2023-10-19",
+      "posted": false,
+      "experience": 0,
+      "created_at": "2023-10-23T21:24:23.376Z",
+      "updated_at": "2023-10-23T21:24:23.376Z",
+      "employer_id": "6c06c2a3-1118-41fe-b14b-7983363d4276",
+      "job_type": "Full Time",
+      "salary": "90000.00",
+      "qualifications": null,
+      "vacency_position": 0,
+      "industry": "Computer Network And Security",
+      "job_responsibilities": "Web App Security, API Security, Red Teaming",
+      "skills_required": "Programming Languages, API Development, Web Frameworks, Version Control, API Security, Web Security, VAPT, Network Security",
+      "education_or_certifications": "B.TECH CS"
+    }
+  },
+  {
+    "model": "jobs.job",
+    "pk": "e331ad2f-01d2-4b00-8f29-1390cb12949e",
+    "fields": {
+      "job_role": "HR Manager",
+      "company": "db7df573-8196-459d-9ae2-b7cc65758c3e",
+      "description": "The HR Manager oversees human resources functions, including recruitment, employee relations, and policy implementation. They ensure a positive work environment and alignment of HR practices with organizational goals",
+      "location": "Dubai",
+      "post_date": "2023-10-19",
+      "posted": false,
+      "experience": 0,
+      "created_at": "2023-10-23T21:22:12.394Z",
+      "updated_at": "2023-10-23T21:22:12.394Z",
+      "employer_id": "6c06c2a3-1118-41fe-b14b-7983363d4276",
+      "job_type": "Full Time",
+      "salary": "600000.00",
+      "qualifications": null,
+      "vacency_position": 0,
+      "industry": "Computer Network And Security",
+      "job_responsibilities": "Server Management, Optimization, Database Management, API Development",
+      "skills_required": "Programming Languages, API Development, Web Frameworks, Version Control",
+      "education_or_certifications": "B.TECH CS"
+    }
+  }
+]

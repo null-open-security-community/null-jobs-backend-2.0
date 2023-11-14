@@ -1,1 +1,102 @@
-[{"model": "accounts.user", "pk": "41fed35e-de9d-4fc4-a4a2-74fa41c680d9", "fields": {"password": "pbkdf2_sha256$600000$LDfeCik62ZvhmHsmzxi1vy$o2Ryx3mDRKiHzSlSwlJbHYiQGypG7LWPEs5MOl/O/e8=", "last_login": null, "email": "sharmasaks@gmail.com", "name": "Saksham Sharma", "provider": "local", "is_verified": false, "is_active": true, "is_admin": false, "created_at": "2023-10-23T21:15:12.246Z", "updated_at": "2023-10-23T21:15:12.276Z", "otp": null, "otp_secret": "4QK5LJZX3GLI45KJYNUTNP2NZ4DMWBR5", "dummy_password": null, "user_type": "Job Seeker"}}, {"model": "accounts.user", "pk": "6c06c2a3-1118-41fe-b14b-7983363d4276", "fields": {"password": "pbkdf2_sha256$600000$4jQpYgYCR3LqPl98KiG8tX$Bnr8VgQ6xHzyudG/SngBmYSCnNI9m1TgqCEnJnamz0Y=", "last_login": null, "email": "sanyam.sarthark@gmail.com", "name": "Sarthak Sanyam", "provider": "local", "is_verified": false, "is_active": true, "is_admin": false, "created_at": "2023-10-23T21:03:52.702Z", "updated_at": "2023-10-23T21:03:52.740Z", "otp": null, "otp_secret": "35SHGNQYJZBAEGE3CGHCIO5TZFSRLB5L", "dummy_password": null, "user_type": "Employer"}}, {"model": "accounts.user", "pk": "88259c6a-e707-4f81-b316-97cc697270ee", "fields": {"password": "pbkdf2_sha256$600000$6VOvkY6jDgecNUF72ddp5X$ubOrUleK6R54qDizIpaITAQgcwn6Nbz0idoV0ANnTnk=", "last_login": null, "email": "tanya@gmail.com", "name": "tanya", "provider": "local", "is_verified": false, "is_active": true, "is_admin": false, "created_at": "2023-10-23T20:34:02.259Z", "updated_at": "2023-10-23T20:34:02.319Z", "otp": null, "otp_secret": "H6Y477BR2K7YSDD4VHRQJCDOZIL2GVBE", "dummy_password": null, "user_type": "Employer"}}, {"model": "accounts.user", "pk": "8fca926b-204b-42d0-8200-a702f28013cb", "fields": {"password": "pbkdf2_sha256$600000$oLgWGR68rPu18Cmg9QaN1O$5CcLjgPchun2zi1tQGxVf8s36TuglI51IgEWcU+Zwrg=", "last_login": null, "email": "tomberkins@gmail.com", "name": "Tom berkins", "provider": "local", "is_verified": false, "is_active": true, "is_admin": false, "created_at": "2023-10-23T20:59:04.731Z", "updated_at": "2023-10-23T20:59:04.815Z", "otp": null, "otp_secret": "BBGXIENNXNBB755BFVE6WESDQQX6YXPL", "dummy_password": null, "user_type": "Employer"}}, {"model": "accounts.user", "pk": "f00af2d6-d5b7-4542-83d2-6e56ca6feccb", "fields": {"password": "pbkdf2_sha256$600000$3FJgnjf1IBYSKZfzrKtF9s$IjlucpWWMlngFHVvvwxDdG22yM0u01IMO3K2BiSnVtM=", "last_login": null, "email": "ra.chel@gmail.com", "name": "Rachel Scott", "provider": "local", "is_verified": false, "is_active": true, "is_admin": false, "created_at": "2023-10-23T21:08:56.792Z", "updated_at": "2023-10-23T21:08:56.867Z", "otp": null, "otp_secret": "LIPHWUCJQMKENW54JL56S4GP3ICAQZNM", "dummy_password": null, "user_type": "Job Seeker"}}]
+[
+  {
+    "model": "accounts.user",
+    "pk": "41fed35e-de9d-4fc4-a4a2-74fa41c680d9",
+    "fields": {
+      "password": "pbkdf2_sha256$600000$LDfeCik62ZvhmHsmzxi1vy$o2Ryx3mDRKiHzSlSwlJbHYiQGypG7LWPEs5MOl/O/e8=",
+      "last_login": null,
+      "email": "sharmasaks@gmail.com",
+      "name": "Saksham Sharma",
+      "provider": "local",
+      "is_verified": false,
+      "is_active": true,
+      "is_admin": false,
+      "created_at": "2023-10-23T21:15:12.246Z",
+      "updated_at": "2023-10-23T21:15:12.276Z",
+      "otp": null,
+      "otp_secret": "4QK5LJZX3GLI45KJYNUTNP2NZ4DMWBR5",
+      "dummy_password": null,
+      "user_type": "Job Seeker"
+    }
+  },
+  {
+    "model": "accounts.user",
+    "pk": "6c06c2a3-1118-41fe-b14b-7983363d4276",
+    "fields": {
+      "password": "pbkdf2_sha256$600000$4jQpYgYCR3LqPl98KiG8tX$Bnr8VgQ6xHzyudG/SngBmYSCnNI9m1TgqCEnJnamz0Y=",
+      "last_login": null,
+      "email": "sanyam.sarthark@gmail.com",
+      "name": "Sarthak Sanyam",
+      "provider": "local",
+      "is_verified": false,
+      "is_active": true,
+      "is_admin": false,
+      "created_at": "2023-10-23T21:03:52.702Z",
+      "updated_at": "2023-10-23T21:03:52.740Z",
+      "otp": null,
+      "otp_secret": "35SHGNQYJZBAEGE3CGHCIO5TZFSRLB5L",
+      "dummy_password": null,
+      "user_type": "Employer"
+    }
+  },
+  {
+    "model": "accounts.user",
+    "pk": "88259c6a-e707-4f81-b316-97cc697270ee",
+    "fields": {
+      "password": "pbkdf2_sha256$600000$6VOvkY6jDgecNUF72ddp5X$ubOrUleK6R54qDizIpaITAQgcwn6Nbz0idoV0ANnTnk=",
+      "last_login": null,
+      "email": "tanya@gmail.com",
+      "name": "tanya",
+      "provider": "local",
+      "is_verified": false,
+      "is_active": true,
+      "is_admin": false,
+      "created_at": "2023-10-23T20:34:02.259Z",
+      "updated_at": "2023-10-23T20:34:02.319Z",
+      "otp": null,
+      "otp_secret": "H6Y477BR2K7YSDD4VHRQJCDOZIL2GVBE",
+      "dummy_password": null,
+      "user_type": "Employer"
+    }
+  },
+  {
+    "model": "accounts.user",
+    "pk": "8fca926b-204b-42d0-8200-a702f28013cb",
+    "fields": {
+      "password": "pbkdf2_sha256$600000$oLgWGR68rPu18Cmg9QaN1O$5CcLjgPchun2zi1tQGxVf8s36TuglI51IgEWcU+Zwrg=",
+      "last_login": null,
+      "email": "tomberkins@gmail.com",
+      "name": "Tom berkins",
+      "provider": "local",
+      "is_verified": false,
+      "is_active": true,
+      "is_admin": false,
+      "created_at": "2023-10-23T20:59:04.731Z",
+      "updated_at": "2023-10-23T20:59:04.815Z",
+      "otp": null,
+      "otp_secret": "BBGXIENNXNBB755BFVE6WESDQQX6YXPL",
+      "dummy_password": null,
+      "user_type": "Employer"
+    }
+  },
+  {
+    "model": "accounts.user",
+    "pk": "f00af2d6-d5b7-4542-83d2-6e56ca6feccb",
+    "fields": {
+      "password": "pbkdf2_sha256$600000$3FJgnjf1IBYSKZfzrKtF9s$IjlucpWWMlngFHVvvwxDdG22yM0u01IMO3K2BiSnVtM=",
+      "last_login": null,
+      "email": "ra.chel@gmail.com",
+      "name": "Rachel Scott",
+      "provider": "local",
+      "is_verified": false,
+      "is_active": true,
+      "is_admin": false,
+      "created_at": "2023-10-23T21:08:56.792Z",
+      "updated_at": "2023-10-23T21:08:56.867Z",
+      "otp": null,
+      "otp_secret": "LIPHWUCJQMKENW54JL56S4GP3ICAQZNM",
+      "dummy_password": null,
+      "user_type": "Job Seeker"
+    }
+  }
+]
