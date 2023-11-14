@@ -118,20 +118,6 @@ class UserSerializer(serializers.ModelSerializer):
                             }
                         }
                     )
-                else:
-                    logger.error("No social handles found")
-                    raise Exception("No social handles found")
-                data.update(
-                    {
-                        "Contact": {
-                            "Address": data.pop("address", None),
-                            "Phone": data.pop("phone", None),
-                            "Website": data.pop("website", None),
-                            "Email": data.pop("email", None),
-                            "Social Handles": instance.social_handles,
-                        }
-                    }
-                )
 
             except Exception as err:
                 # We can also raise an exception here but this time, I am returning

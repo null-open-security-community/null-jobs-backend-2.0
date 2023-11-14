@@ -19,12 +19,11 @@ class validationClass:
     2. Image files
     """
 
-    logger = logging.getLogger("jobs")
+    logger = logging.getLogger("jobs.ValidationClass")
 
     @staticmethod
     def is_valid_uuid(value):
         # Expects value in proper format(with hyphens) of uuid, returns bool value
-        validationClass.logger.info("Getting valid uuid with proper format")
         try:
             uuid_value = uuid.UUID(str(value))
         except ValueError:
@@ -57,7 +56,7 @@ class validationClass:
         # check size
         filesize = image_file.size / (1024 * 1024)
         if filesize > 10:
-            validationClass.logger.warning(f"{image_file} exceeds {filesize}")
+            validationClass.logger.warning(f"Profile image exceeds 10mb")
             return (False, "Profile Image shouldn't exceed 10mb")
 
         allowed_image_extensions = ["png", "jpeg", "jpg"]
@@ -101,7 +100,7 @@ class validationClass:
         # check size (shouldn't exceed 10mb)
         filesize = resume_file.size / (1024 * 1024)
         if filesize > 10:
-            validationClass.logger.error(f"{resume_file} exceeds {filesize}")
+            validationClass.logger.error(f"Resume file exceed's 10mb")
             return (False, "Resume File size shouldn't exceed 10mb")
         else:
             ## check characters present in the file name
@@ -141,9 +140,7 @@ class validationClass:
                     ) == "D0CF11E0A1B11AE1".encode("ASCII"):
                         upload_file_to_storage = True
                 else:
-                    validationClass.logger.error(
-                        f"{resume_file} name isn't appropriate"
-                    )
+                    validationClass.logger.error(f"Resume file name is not supported")
                     return (False, "Resume File type is not supported")
             else:
                 validationClass.logger.error(f"Wrong {resume_file} submitted")

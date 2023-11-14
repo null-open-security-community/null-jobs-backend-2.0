@@ -253,8 +253,8 @@ LOGGING = {
     "disable_existing_loggers": False,
     "formatters": {
         "custom_format": {
-            "format": "%(process)d - %(asctime)s - %(levelname)s - %(message)s\n%(stack_info)s",
-            "datefmt": "%D-%m-%Y %H:%M:%S %P",  # Includes timezone and date format
+            "format": "%(asctime)s - %(levelname)s - %(message)s\n%(stack_info)s",
+            "datefmt": "%D-%m-%Y %H:%M %P",  # Includes timezone and date format
         },
     },
     "handlers": {

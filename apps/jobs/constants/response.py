@@ -16,7 +16,7 @@ def create_response(
         logger.info(f"HTTP response data: {response_message}")
         response = {"data": response_message}
     elif status_code >= 400:
-        logger.error(f"Error loading response data: {response_message}")
+        logger.error(f"{response_message} failed!!")
         response = {"message": {"error": response_message}}
     return Response(response, status=status_code, content_type=content_type)
 
