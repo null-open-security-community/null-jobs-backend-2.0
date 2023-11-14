@@ -80,6 +80,14 @@ def OTP_DummyToken(user, purpose):
         "user_id": str(user.id),
         "user_type": user.user_type,
     }
+
+
+def OTP_DummyToken(user, purpose):
+    payload = {
+        "email": user.email,
+        "user_id": str(user.id),
+        "user_type": user.user_type,
+    }
     token = GenerateToken.generate_dummy_jwt_token(payload)
 
     # for old user
@@ -95,14 +103,19 @@ def OTP_DummyToken(user, purpose):
     # Send Email
     if purpose == "verify":
         subject = "Verify your account"
+    if purpose == "verify":
+        subject = "Verify your account"
         body = f"""OTP to verify your account {otp}
         This otp is valid only for 5 minutes
         """
     elif purpose == "reset-password":
         subject = "OTP to confirm your account"
+    elif purpose == "reset-password":
+        subject = "OTP to confirm your account"
         body = f"""OTP is {otp}
         This otp is valid only for 5 minutes.
         """
+    data = {"subject": subject, "body": body, "to_email": user.email}
     data = {"subject": subject, "body": body, "to_email": user.email}
     Util.send_email(data)
     return token
@@ -120,10 +133,12 @@ class UserRegistrationView(APIView):
         user = User.objects.get(email=email)
         user.provider = "local"
         token = OTP_DummyToken(user, "verify")
+        token = OTP_DummyToken(user, "verify")
 
         # Add an entry in the tbl_user_profile with dummy data
         dummy_data = {
             "user_id": user.id,
+            "name": user.name,
             "name": user.name,
             "email": user.email,
             "user_type": user.user_type,
@@ -159,7 +174,13 @@ class OTPVerificationCheckView(APIView):
             return Response(
                 {"errors": {"token": str(e)}}, status=status.HTTP_401_UNAUTHORIZED
             )
+            return Response(
+                {"errors": {"token": str(e)}}, status=status.HTTP_401_UNAUTHORIZED
+            )
         except TokenError as e:
+            return Response(
+                {"errors": {"token": str(e)}}, status=status.HTTP_400_BAD_REQUEST
+            )
             return Response(
                 {"errors": {"token": str(e)}}, status=status.HTTP_400_BAD_REQUEST
             )
@@ -230,6 +251,7 @@ class UserLogOutView(APIView):
             # access_token.set_exp(lifetime=datetime.timedelta(minutes=1))
             # print(access_token)
             # breakpoint()
+            refresh_token = request.data["refresh_token"]
             refresh_token = request.data["refresh_token"]
             token_obj = RefreshToken(refresh_token)
             token_obj.blacklist()
