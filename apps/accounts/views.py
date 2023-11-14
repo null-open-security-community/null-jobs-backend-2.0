@@ -194,7 +194,7 @@ class UserLoginView(APIView):
                     status=status.HTTP_200_OK,
                 )
             else:
-                token = generate_guest_token(user)
+                token = generate_guest_token(user, "verify")
                 return Response(
                     {"msg": "User not verified", "token": token, "verify": False},
                     status=status.HTTP_200_OK,
