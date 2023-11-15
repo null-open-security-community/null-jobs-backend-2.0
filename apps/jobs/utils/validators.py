@@ -156,7 +156,7 @@ class validationClass:
         This method is used to validate some specific fields
         present in the given data (format: dictionary)
         """
-        validationClass.logger.info("Validationing fields")
+        validationClass.logger.info("Validating fields")
         for field_name, field_value in data.items():
             try:
                 if field_name == "age":

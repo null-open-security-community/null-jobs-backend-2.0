@@ -13,7 +13,7 @@ def create_response(
     This function returns HTTP Response with message, status_code and content_type
     """
     if 200 <= status_code <= 308:
-        logger.info(f"HTTP response data: {response_message}")
+        # logger.info(f"HTTP response data: {response_message}")
         response = {"data": response_message}
     elif status_code >= 400:
         logger.error(f"{response_message} failed!!")

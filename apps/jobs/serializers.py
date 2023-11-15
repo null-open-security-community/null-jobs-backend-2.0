@@ -16,11 +16,11 @@ from apps.jobs.models import Applicants, Company, Job, User
 # read_only=True allows the field to only present in the output
 # however at the time of crud opertions, it won't be present.
 
-logger = logging.getLogger("jobs")
-
 
 class JobSerializer(serializers.ModelSerializer):
     """Job object serializer class"""
+
+    logger = logging.getself.logger("jobs.JobSerializer")
 
     class Meta:
         """
@@ -43,9 +43,9 @@ class JobSerializer(serializers.ModelSerializer):
         """
 
         data = super().to_representation(instance)
-        logger.info(
-            "Combining several fields into one and removing those fields from the serializer.data"
-        )
+        # self.logger.info(
+        #    "Combining several fields into one and removing those fields from the serializer.data"
+        # )
         if data:
             try:
                 # Combine fields
@@ -65,7 +65,7 @@ class JobSerializer(serializers.ModelSerializer):
                 )
 
             except Exception:
-                logger.error(f"{data} didnt update failed")
+                self.logger.error(f"{data} didnt update failed")
                 data = {"error": {"message": "Something Went Wrong"}}
 
         return data
@@ -94,11 +94,11 @@ class UserSerializer(serializers.ModelSerializer):
         """
 
         data = super().to_representation(instance)
-        logger.info("Combining several fields into one")
+        self.logger.info("Combining several fields into one")
         if data:
             # Extract the URLs from social handles
             try:
-                logger.info("Extracting social handles from URL")
+                self.logger.info("Extracting social handles from URL")
                 if instance.social_handles:
                     found_url_patterns = findall(
                         "((https?:\/\/)?[\w\.\/?=]+)", data.pop("social_handles", "")
@@ -106,7 +106,7 @@ class UserSerializer(serializers.ModelSerializer):
                     if found_url_patterns:
                         instance.social_handles = [url[0] for url in found_url_patterns]
 
-                    logger.info(f"Creating 'Contact' field")
+                    self.logger.info(f"Creating 'Contact' field")
                     data.update(
                         {
                             "Contact": {
@@ -122,7 +122,7 @@ class UserSerializer(serializers.ModelSerializer):
             except Exception as err:
                 # We can also raise an exception here but this time, I am returning
                 # error message in the data
-                logger.error(f"An exception occurred: {err}")
+                self.logger.error(f"An exception occurred: {err}")
                 data = {
                     "error": {
                         "message": f"Something Went Wrong\n\nReason: {err.__str__()}"

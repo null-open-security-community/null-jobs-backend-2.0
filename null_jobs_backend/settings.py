@@ -253,8 +253,8 @@ LOGGING = {
     "disable_existing_loggers": False,
     "formatters": {
         "custom_format": {
-            "format": "%(asctime)s - %(levelname)s - %(message)s\n%(stack_info)s",
-            "datefmt": "%D-%m-%Y %H:%M %P",  # Includes timezone and date format
+            "format": "%(asctime)s  \n%(levelname)s: [%(funcName)s] %(message)s \n %(stack_info)s",
+            "datefmt": "[%d-%m-%Y] - %H:%M:%S",  # Includes timezone and date format
         },
     },
     "handlers": {
@@ -275,7 +275,7 @@ LOGGING = {
                 LOG_DIR, "jobs.log"  # Log file for the 'jobs' app
             ),
             "formatter": "custom_format",
-            "mode": "a",
+            "mode": "w",
             "encoding": "utf-8",
         },
     },

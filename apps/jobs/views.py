@@ -91,7 +91,6 @@ class JobViewSets(viewsets.ModelViewSet):
 
         try:
             self.logger.info("Creating or updating job")
-
             employer_id = request.data.get(values.EMPLOYER_ID)
 
             if not employer_id or not UserTypeCheck.is_user_employer(
