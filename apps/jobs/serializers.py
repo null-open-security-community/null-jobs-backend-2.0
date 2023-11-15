@@ -65,7 +65,7 @@ class JobSerializer(serializers.ModelSerializer):
                 )
 
             except Exception:
-                self.logger.error(f"{data} didnt update failed")
+                self.logger.error("Something went wrong")
                 data = {"error": {"message": "Something Went Wrong"}}
 
         return data
@@ -122,7 +122,7 @@ class UserSerializer(serializers.ModelSerializer):
             except Exception as err:
                 # We can also raise an exception here but this time, I am returning
                 # error message in the data
-                self.logger.error(f"An exception occurred: {err}")
+                self.logger.error(f"Something Went Wrong\n\nReason: {err.__str__()}")
                 data = {
                     "error": {
                         "message": f"Something Went Wrong\n\nReason: {err.__str__()}"
