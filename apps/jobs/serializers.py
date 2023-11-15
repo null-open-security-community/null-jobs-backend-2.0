@@ -20,7 +20,7 @@ from apps.jobs.models import Applicants, Company, Job, User
 class JobSerializer(serializers.ModelSerializer):
     """Job object serializer class"""
 
-    logger = logging.getself.logger("jobs.JobSerializer")
+    logger = logging.getLogger("jobs.JobSerializer")
 
     class Meta:
         """
