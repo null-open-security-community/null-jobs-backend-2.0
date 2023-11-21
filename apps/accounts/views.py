@@ -28,16 +28,18 @@ from apps.jobs.constants import response, values
 # from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 # from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 # from dj_rest_auth.registration.views import SocialLoginView
-
-
 # Generate token Manually
+
+logger = logging.getLogger("accounts")
+
+
 class GenerateToken:
     logger = logging.getLogger("accounts.GenerateToken")
 
     @staticmethod
-    def get_tokens_for_user(self, user):
+    def get_tokens_for_user(user):
         try:
-            self.logger.info("Generating tokens for user")
+            logger.info("Generating tokens for user")
             refresh = RefreshToken.for_user(user)
             # custom_payload={"name":user.name,"email":user.email}
             # refresh.payload.update(custom_payload)
@@ -46,14 +48,14 @@ class GenerateToken:
                 "access": str(refresh.access_token),
             }
         except Exception as e:
-            self.logger.critical(f"Error generating tokens: {e}")
-            self.logger.critical(traceback.format_exc())
+            logger.critical(f"Error generating tokens: {e}")
+            logger.critical(traceback.format_exc())
             return response.create_response(
                 response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
     @staticmethod
-    def generate_dummy_jwt_token(self, Cpayload):
+    def generate_dummy_jwt_token(Cpayload):
         # creating custom payload with 5 minutes expiration time
         try:
             custom_payload = {
@@ -65,21 +67,21 @@ class GenerateToken:
             access_token.payload.update(custom_payload)
             return str(access_token)
         except Exception as e:
-            self.logger.critical(f"Error generating dummy JWT token: {e}")
-            self.logger.critical(traceback.format_exc())
+            logger.critical(f"Error generating dummy JWT token: {e}")
+            logger.critical(traceback.format_exc())
             return response.create_response(
                 response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
     @staticmethod
-    def add_payload(self, token, payload):
+    def add_payload(token, payload):
         try:
             access_token = AccessToken(token)
             access_token.payload.update(payload)
             return str(access_token)
         except Exception as e:
-            self.logger.critical(f"Not able to add payload to Token: {e}")
-            self.logger.critical(traceback.format_exc())
+            logger.critical(f"Not able to add payload to Token: {e}")
+            logger.critical(traceback.format_exc())
             return response.create_response(
                 response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
             )
@@ -100,9 +102,9 @@ class GenerateToken:
             raise TokenError("Token expired")
 
 
-def generate_guest_token(self, user, purpose):
+def generate_guest_token(user, purpose):
     try:
-        # self.logger.info("Generating guest token")
+        logger.info("Generating guest token")
         payload = {
             "email": user.email,
             "user_id": str(user.id),
@@ -135,8 +137,8 @@ def generate_guest_token(self, user, purpose):
         Util.send_email(data)
         return token
     except Exception as e:
-        self.logger.critical(f"Error generating guest token: {e}")
-        self.logger.critical(traceback.format_exc())
+        logger.critical(f"Error generating guest token: {e}")
+        logger.critical(traceback.format_exc())
         return response.create_response(
             response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
         )
@@ -229,28 +231,44 @@ class UserLoginView(APIView):
     logger = logging.getLogger("accounts.UserLoginView")
 
     def post(self, request, format=None):
-        serializer = UserLoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        email = serializer.data.get("email")
-        password = serializer.data.get("password")
-        user = authenticate(email=email, password=password)
-        if user is not None:
-            if user.is_verified:
-                token = GenerateToken.get_tokens_for_user(user)
-                return Response(
-                    {"token": token, "msg": "Login Success", "verify": True},
-                    status=status.HTTP_200_OK,
-                )
+        try:
+            serializer = UserLoginSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            email = serializer.data.get("email")
+            password = serializer.data.get("password")
+            user = authenticate(email=email, password=password)
+            if user is not None:
+                self.logger.info(f"User {user} successfully logged in.")
+                if user.is_verified:
+                    token = GenerateToken.get_tokens_for_user(user)
+                    return Response(
+                        {"token": token, "msg": "Login Success", "verify": True},
+                        status=status.HTTP_200_OK,
+                    )
+                else:
+                    token = generate_guest_token(user, "verify")
+                    return Response(
+                        {"msg": "User not verified", "token": token, "verify": False},
+                        status=status.HTTP_200_OK,
+                    )
             else:
-                token = generate_guest_token(user, "verify")
-                return Response(
-                    {"msg": "User not verified", "token": token, "verify": False},
-                    status=status.HTTP_200_OK,
+                self.logger.warning(
+                    f"user {email} Login attempt failed. Invalid email or password."
                 )
-        else:
+                return Response(
+                    {
+                        "errors": {
+                            "non_field_errors": ["Email or Password is not valid"]
+                        }
+                    },
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+        except Exception as e:
+            self.logger.error(f"An error occurred during login: {e}")
+            self.logger.error(traceback.format_exc())
             return Response(
-                {"errors": {"non_field_errors": ["Email or Password is not valid"]}},
-                status=status.HTTP_404_NOT_FOUND,
+                {"errors": {"non_field_errors": ["An error occurred during login"]}},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
 
@@ -312,7 +330,7 @@ class SendPasswordResetOTPView(APIView):
             serializer.is_valid(raise_exception=True)
             user = serializer.validated_data["user"]
             token = generate_guest_token(user, "reset-password")
-            # self.logger.info("OTP Send Successfully")
+            self.logger.info("OTP Send Successfully")
             return Response(
                 {
                     "msg": "OTP Sent Successfully. Please Check your Email",
@@ -430,7 +448,7 @@ class UserChangePasswordOTPView(APIView):
                 data=request.data, context={"user": request.user}
             )
             serializer.is_valid(raise_exception=True)
-            # self.logger.info("Password changed successfully")
+            self.logger.info("Password changed successfully")
             return Response(
                 {"msg": "Password Changed Successfully"}, status=status.HTTP_200_OK
             )
@@ -555,7 +573,7 @@ class CallbackHandleView(APIView):
                 user.is_verified = True
                 user.save()
                 token = GenerateToken.get_tokens_for_user(user)
-                # self.logger.info("Registration Complete")
+                self.logger.info("Registration Complete")
                 return Response(
                     {"msg": "Registration Completed", "token": token},
                     status=status.HTTP_201_CREATED,

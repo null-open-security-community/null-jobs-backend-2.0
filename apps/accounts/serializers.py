@@ -2,15 +2,17 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import DjangoUnicodeDecodeError, force_bytes, smart_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from rest_framework import serializers
-
+import logging
 from apps.accounts.models import User
 from apps.accounts.utils import *
 
-# from apps.accounts.views import OTP_DummyToken
+# from apps.accounts.views import generate_guest_token
 
 
 # User registration
 class UserRegistrationSerializer(serializers.ModelSerializer):
+    logger = logging.getLogger("accounts.UserRegistrationSerializer")
+
     # We are writing this because  we need confirm password field in our Registration request
     password2 = serializers.CharField(style={"input_type": "password"}, write_only=True)
 

@@ -3,12 +3,12 @@ import pyotp
 from django.core.mail import EmailMessage
 import logging
 
+logger = logging.getLogger("accounts.Util")
+
 
 class Util:
-    logger = logging.getLogger("accounts.Util")
-
     @staticmethod
-    def send_email(data, self):
+    def send_email(data):
         try:
             email = EmailMessage(
                 subject=data["subject"],
@@ -18,7 +18,7 @@ class Util:
             )
             email.send()
         except Exception as e:
-            self.logger.error(f"Error sending email: {e}")
+            logger.error(f"Error sending email: {e}")
 
 
 class OTP:
@@ -26,7 +26,7 @@ class OTP:
     logger = logging.getLogger("accounts.OTP")
 
     @staticmethod
-    def generate_secret_with_otp(self):
+    def generate_secret_with_otp():
         try:
             base32secret3232 = pyotp.random_base32()
             otp = pyotp.TOTP(
@@ -35,11 +35,11 @@ class OTP:
             time_otp = otp.now()
             return time_otp, base32secret3232
         except Exception as e:
-            self.logger.error(f"Error generating secret with OTP: {e}")
+            logger.error(f"Error generating secret with OTP: {e}")
 
     # generate otp for a user
     @staticmethod
-    def generate_otp(user, self):
+    def generate_otp(user):
         try:
             otp = pyotp.TOTP(
                 user.otp_secret, interval=300, digits=6
@@ -47,7 +47,7 @@ class OTP:
             time_otp = otp.now()
             return time_otp
         except Exception as e:
-            self.logger.error(f"Error generating OTP for user: {e}")
+            logger.error(f"Error generating OTP for user: {e}")
 
     # verify otp
     @staticmethod
