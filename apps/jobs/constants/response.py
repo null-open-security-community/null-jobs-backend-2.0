@@ -3,7 +3,7 @@
 from rest_framework.response import Response
 import logging
 
-logger = logging.getLogger("jobs")
+logger = logging.getLogger("jobs.response")
 
 
 def create_response(
@@ -16,7 +16,7 @@ def create_response(
         # logger.info(f"HTTP response data: {response_message}")
         response = {"data": response_message}
     elif status_code >= 400:
-        logger.error(f"{response_message} failed!!")
+        logger.error(f"{response_message}")
         response = {"message": {"error": response_message}}
     return Response(response, status=status_code, content_type=content_type)
 

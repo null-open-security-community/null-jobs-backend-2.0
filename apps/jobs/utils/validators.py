@@ -22,36 +22,55 @@ class validationClass:
     logger = logging.getLogger("jobs.ValidationClass")
 
     @staticmethod
-    def is_valid_uuid(self, value):
+    def is_valid_uuid(value, request):
+        logger = logging.getLogger(
+            "jobs.ValidationClass.is_valid_uuid", extra={"request_id": request_id}
+        )
         # Expects value in proper format(with hyphens) of uuid, returns bool value
+        request_id = getattr(request, "request_id", "N/A")
         try:
             uuid_value = uuid.UUID(str(value))
         except ValueError:
-            self.logger.error("The specified value is not a valid uuid")
+            logger.error(
+                "The specified value is not a valid uuid",
+                extra={"request_id": request_id},
+            )
             return False
         else:
             if str(uuid_value) == str(value):
                 return True
             else:
                 # Log an error when the UUID value is not the same as the input
-                self.logger.error(f"Mismatch between input and UUID value: {value}")
+                logger.error(
+                    f"Mismatch between input and UUID value: {value}",
+                    extra={"request_id": request_id},
+                )
                 return False
 
     @staticmethod
-    def validate_id(self, uuid, idtype: str, model_class):
+    def validate_id(uuid, idtype: str, model_class, request):
         """perform checks on uuid, and if it
         exists in the database."""
-        self.logger.info("validating the id type")
+        logger = logging.getLogger(
+            "jobs.ValidationClass.validate_id",
+        )
+        request_id = getattr(request, "request_id", "N/A")
+        logger.info("validating the id type", extra={"request_id": request_id})
         if not validationClass.is_valid_uuid(uuid):
-            self.logger.error(f"{idtype} isn't a valid UUID")
+            logger.error(
+                f"{idtype} isn't a valid UUID", extra={"request_id": request_id}
+            )
             return {"error": f"{idtype} isn't a valid UUID"}
 
         if model_class.objects.filter(pk=uuid).count() < 1:
-            self.logger.error(f"This {idtype} doesn't exist")
+            logger.error(
+                f"This {idtype} doesn't exist", extra={"request_id": request_id}
+            )
             return {"error": f"This {idtype} doesn't exist"}
 
-    def image_validation(self, image_file):
+    def image_validation(self, image_file, request):
         # check size
+        request_id = getattr(request, "request_id", "N/A")
         filesize = image_file.size / (1024 * 1024)
         if filesize > 10:
             self.logger.warning(f"Profile image exceeds 10mb")
@@ -64,11 +83,13 @@ class validationClass:
 
         # filename check
         if not re.match("[\w\-]+\.\w{3,4}$", image_file.name):
-            self.logger.error("Image File name isn't appropriate")
+            self.logger.error(
+                "Image File name isn't appropriate", extra={"request_id": request_id}
+            )
             return (False, "Image File name isn't appropriate")
 
         # Allowed content-type/extensions check
-        self.logger.info(f"Checking image extension: {image_file_extension}")
+        self.logger.info(f"Checking image extension", extra={"request_id": request_id})
         if (
             image_file_extension in allowed_image_extensions
             and image_file.content_type in allowed_content_types
@@ -94,11 +115,14 @@ class validationClass:
             self.logger.info("File is valid")
             return (True, "File is valid")
 
-    def resume_validation(self, resume_file):
+    def resume_validation(self, resume_file, request):
         # check size (shouldn't exceed 10mb)
         filesize = resume_file.size / (1024 * 1024)
+        request_id = getattr(request, "request_id", "N/A")
         if filesize > 10:
-            self.logger.error(f"Resume file exceed's 10mb")
+            self.logger.error(
+                f"Resume file exceed's 10mb", extra={"request_id": request_id}
+            )
             return (False, "Resume File size shouldn't exceed 10mb")
         else:
             ## check characters present in the file name
@@ -145,16 +169,18 @@ class validationClass:
                 return (False, "Oops, wrong resume file submitted")
 
         if upload_file_to_storage:
-            self.logger.info("File is valid")
+            self.logger.info("File is valid", extra={"request_id": request_id})
             return (True, "File is valid")
 
     @staticmethod
-    def validate_fields(self, data):
+    def validate_fields(data, request):
         """
         This method is used to validate some specific fields
         present in the given data (format: dictionary)
         """
-        self.logger.info("Validating fields")
+        logger = logging.getLogger("jobs.ValidationClass.validate_fields")
+        request_id = getattr(request, "request_id", "N/A")
+        logger.info("Validating fields", extra={"request_id": request_id})
         for field_name, field_value in data.items():
             try:
                 if field_name == "age":
@@ -164,8 +190,9 @@ class validationClass:
                     EmailValidator()(field_value)
                 if field_name == "website":
                     if not re.search("^(https?|ftp)://[^\s/$.?#].[^\s]*$", field_value):
-                        self.logger.error(
-                            f"Invalid {field_name} provided: {field_value}"
+                        logger.error(
+                            f"Invalid {field_name} provided: {field_value}",
+                            extra={"request_id": request_id},
                         )
                         raise Exception(f"Invalid {field_name} value provided")
                 if field_name == "experience":
@@ -179,12 +206,16 @@ class validationClass:
                         if re.search("^(1[6-9]|[2-9][0-9])$", field_value):
                             data[field_name] = "15+"
                     else:
-                        self.logger.error(f"Invalid {field_name} value provided")
+                        logger.error(
+                            f"Invalid {field_name} value provided",
+                            extra={"request_id": request_id},
+                        )
                         raise Exception(f"Invalid {field_name} value provided")
 
             except (Exception, ValidationError) as err:
-                self.logger.error(
-                    f"Given {field_name} doesn't contain a valid value\n\nReason: {err.__str__()}"
+                logger.error(
+                    f"Given {field_name} doesn't contain a valid value\n\nReason: {err.__str__()}",
+                    extra={"request_id": request_id},
                 )
                 raise Exception(
                     f"Given {field_name} doesn't contain a valid value\n\nReason: {err.__str__()}"

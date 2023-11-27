@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 import os
 from pathlib import Path
-
+from django.conf import global_settings
 from dotenv import load_dotenv
 
 # Load variables from .env
@@ -54,9 +54,12 @@ INSTALLED_APPS = [
     "apps.accounts",
     "apps.jobs",
     "django_filters",
-]
+    "request_id",
+] + list(getattr(global_settings, "MIDDLEWARE", []))
 
 MIDDLEWARE = [
+    # "request_id.middleware.RequestIdMiddleware",
+    "null_jobs_backend.middleware.RequestIDMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
@@ -248,13 +251,17 @@ LOG_DIR = os.path.join(BASE_DIR, "logs")
 if not os.path.exists(LOG_DIR):
     os.makedirs(LOG_DIR)
 
+LOG_REQUEST_ID_HEADER = "HTTP_X_REQUEST_ID"
+LOG_REQUESTS = True
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
         "custom_format": {
-            "format": "%(asctime)s  \n%(levelname)s: [%(funcName)s] %(message)s \n %(stack_info)s",
-            "datefmt": "[%d-%m-%Y] - %H:%M:%S",  # Includes timezone and date format
+            "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
+            "format": "%(levelname)s [%(asctime)s] [%(request_id)s] %(name)s.%(funcName)s: %(message)s [%(stack_info)s]",
+            "datefmt": "%d-%m-%Y - %H:%M:%S",  # Includes timezone and date format
         },
     },
     "handlers": {
@@ -275,7 +282,7 @@ LOGGING = {
                 LOG_DIR, "jobs.log"  # Log file for the 'jobs' app
             ),
             "formatter": "custom_format",
-            "mode": "w",
+            "mode": "a",
             "encoding": "utf-8",
         },
     },

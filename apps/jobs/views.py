@@ -10,7 +10,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-
+from pythonjsonlogger import jsonlogger
 from apps.accounts.models import User as user_auth
 from apps.jobs.constants import response, values
 from apps.jobs.models import Applicants, Company, Job, User
@@ -26,6 +26,8 @@ from .utils.user_permissions import UserTypeCheck
 
 # Create your views here.
 # the ModelViewSet provides basic crud methods like create, update etc.
+
+logger = logging.getLogger("jobs")
 
 
 class JobViewSets(viewsets.ModelViewSet):
@@ -58,7 +60,8 @@ class JobViewSets(viewsets.ModelViewSet):
         called 'No of applicants' to the serializer data
         """
         try:
-            self.logger.info("Listing jobs")
+            request_id = getattr(request, "request_id", "N/A")
+            self.logger.info("Listing jobs", extra={"request_id": request_id})
 
             filters_dict = {}
             if request.query_params:
@@ -80,7 +83,9 @@ class JobViewSets(viewsets.ModelViewSet):
             )
 
         except Exception as e:
-            self.logger.error(f"Error listing jobs: {e}")
+            self.logger.error(
+                f"Error listing jobs: {e}", extra={"request_id": request_id}
+            )
             self.logger.error(traceback.format_exc())
             return response.create_response(
                 response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -88,15 +93,19 @@ class JobViewSets(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         """Overriding the create method to include permissions"""
-
         try:
-            self.logger.info("Creating or updating job")
+            request_id = getattr(request, "request_id", "N/A")
             employer_id = request.data.get(values.EMPLOYER_ID)
+            self.logger.info(
+                "Creating or updating job", extra={"request_id": request_id}
+            )
 
             if not employer_id or not UserTypeCheck.is_user_employer(
                 request.data[values.EMPLOYER_ID]
             ):
-                self.logger.warning("Job Creation permission denied")
+                self.logger.warning(
+                    "Job Creation permission denied", extra={"request_id": request_id}
+                )
                 return response.create_response(
                     response.PERMISSION_DENIED
                     + " You don't have permissions to create jobs",
@@ -106,7 +115,9 @@ class JobViewSets(viewsets.ModelViewSet):
             return super().create(request, *args, **kwargs)
 
         except Exception as e:
-            self.logger.error(f"Error creating or updating job: {e}")
+            self.logger.error(
+                f"Error creating or updating job: {e}", extra={"request_id": request_id}
+            )
             self.logger.error(traceback.format_exc())
             return response.create_response(
                 response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -117,9 +128,14 @@ class JobViewSets(viewsets.ModelViewSet):
         retrieve the data of given job id
         """
         try:
-            self.logger.info(f"Retrieving job with ID: {pk}")
+            request_id = getattr(request, "request_id", "N/A")
+            self.logger.info(
+                f"Retrieving job with ID: {pk}", extra={"request_id": request_id}
+            )
             if not validationClass.is_valid_uuid(pk):
-                self.logger.warning(f"The id is not correct: {pk}")
+                self.logger.warning(
+                    f"The id is not correct: {pk}", extra={"request_id": request_id}
+                )
                 return response.create_response(
                     f"value {pk} isn't a correct id",
                     status.HTTP_404_NOT_FOUND,
@@ -135,7 +151,9 @@ class JobViewSets(viewsets.ModelViewSet):
             )
 
         except Exception as e:
-            self.logger.error(f"Error retrieving job: {e}")
+            self.logger.error(
+                f"Error retrieving job: {e}", extra={"request_id": request_id}
+            )
             self.logger.error(traceback.format_exc())
             return response.create_response(
                 response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -148,10 +166,15 @@ class JobViewSets(viewsets.ModelViewSet):
         """
 
         try:
-            self.logger.info("Getting number of applicants")
+            request_id = getattr(self.request, "request_id", "N/A")
+            self.logger.info(
+                "Getting number of applicants", extra={"request_id": request_id}
+            )
 
             if not serialized_data:
-                self.logger.warning("Serialized data not provided")
+                self.logger.warning(
+                    "Serialized data not provided", extra={"request_id": request_id}
+                )
                 raise Exception("Serialized data not provided")
 
             if not serialized_data.data or "error" in serialized_data.data[0]:
@@ -165,12 +188,15 @@ class JobViewSets(viewsets.ModelViewSet):
             return serialized_data
 
         except Exception as e:
-            self.logger.error(f"Error getting number of applicants: {e}")
+            self.logger.error(
+                f"Error getting number of applicants: {e}",
+                extra={"request_id": request_id},
+            )
             self.logger.error(traceback.format_exc())
             raise  # Re-raise the exception
 
     @action(detail=True, methods=["get"])
-    def users(self, request, pk=None):
+    def users(request, pk=None):
         """
         API Path: /api/v1/jobs/{pk}/users
         to find out how many users have applied for
@@ -178,11 +204,16 @@ class JobViewSets(viewsets.ModelViewSet):
         """
 
         try:
-            self.logger.info(f"Getting users for job with ID: {pk}")
+            request_id = getattr(request, "request_id", "N/A")
+            logger.info(
+                f"Getting users for job with ID: {pk}", extra={"request_id": request_id}
+            )
 
             checkUUID = validationClass.is_valid_uuid(pk)
             if not checkUUID:
-                self.logger.warning(f"value {pk} isn't a correct id")
+                logger.warning(
+                    f"value {pk} isn't a correct id", extra={"request_id": request_id}
+                )
                 return response.create_response(
                     f"value {pk} isn't a correct id", status.HTTP_404_NOT_FOUND
                 )
@@ -197,18 +228,23 @@ class JobViewSets(viewsets.ModelViewSet):
             return response.create_response(serialized_data.data, status.HTTP_200_OK)
 
         except Exception as e:
-            self.logger.error(f"Error getting users for job: {e}")
-            self.logger.error(traceback.format_exc())
+            logger.error(
+                f"Error getting users for job: {e}", extra={"request_id": request_id}
+            )
+            logger.error(traceback.format_exc())
             return response.create_response(
                 response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
     @action(detail=True, methods=["post"])
-    def apply(self, request, pk=None):
+    def apply(request, pk=None):
         """Apply job functionality implementation"""
 
         try:
-            self.logger.info(f"Applying for job with ID: {pk}")
+            request_id = getattr(request, "request_id", "N/A")
+            logger.info(
+                f"Applying for job with ID: {pk}", extra={"request_id": request_id}
+            )
 
             job_id = pk
             user_id = request.data[values.USER_ID]
@@ -253,29 +289,37 @@ class JobViewSets(viewsets.ModelViewSet):
 
             applyjob = Applicants(**applyjob_data)
             applyjob.save()
-            self.logger.info("Job applied successfull")
+            logger.info("Job applied successfull", extra={"request_id": request_id})
             return response.create_response(
                 "You have successfully applied for this job",
                 status.HTTP_201_CREATED,
             )
 
         except Exception as e:
-            self.logger.error(f"Error applying for job: {e}")
-            self.logger.error(traceback.format_exc())
+            logger.error(
+                f"Error applying for job: {e}", extra={"request_id": request_id}
+            )
+            logger.error(traceback.format_exc())
             return response.create_response(
                 response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
     @action(detail=True, methods=["post"], permission_classes=[UserTypeCheck])
-    def update_application(self, request, pk=None):
+    def update_application(request, pk=None):
         """This method updates the status of user application"""
 
         # check for status_id
         try:
-            self.logger.info(f"Updating application status for job with ID: {pk}")
+            request_id = getattr(request, "request_id", "N/A")
+            logger.info(
+                f"Updating application status for job with ID: {pk}",
+                extra={"request_id": request_id},
+            )
 
             if "status" not in request.data or not request.data["status"]:
-                self.logger.warning("Recheck the status id")
+                logger.warning(
+                    "Recheck the status id", extra={"request_id": request_id}
+                )
                 return response.create_response(
                     "status-id not present or invalid",
                     status.HTTP_400_BAD_REQUEST,
@@ -310,8 +354,11 @@ class JobViewSets(viewsets.ModelViewSet):
             )
 
         except Exception as e:
-            self.logger.error(f"Error updating application status: {e}")
-            self.logger.error(traceback.format_exc())
+            logger.error(
+                f"Error updating application status: {e}",
+                extra={"request_id": request_id},
+            )
+            logger.error(traceback.format_exc())
             return response.create_response(
                 response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
             )
@@ -341,6 +388,7 @@ class UserViewSets(viewsets.ModelViewSet):
         NOTE: tbl_user_auth has "id", tbl_user_profile has "user_id" as primary key.
         """
         try:
+            request_id = getattr(self.request, "request_id", "N/A")
             if request.headers and "AccessToken" in request.headers:
                 # decode the "user_id" from AccessToken
                 try:
@@ -354,7 +402,8 @@ class UserViewSets(viewsets.ModelViewSet):
                     )
                 except Exception as err:
                     self.logger.exception(
-                        "Exception occurred while decoding AccessToken"
+                        "Exception occurred while decoding AccessToken",
+                        extra={"request_id": request_id},
                     )
                     return response.create_response(
                         response.SOMETHING_WENT_WRONG,
@@ -367,20 +416,27 @@ class UserViewSets(viewsets.ModelViewSet):
                             uuid.UUID(payload[values.USER_ID])
                         except Exception as err:
                             self.logger.exception(
-                                "Invalid user_id format in AccessToken"
+                                "Invalid user_id format in AccessToken",
+                                extra={"request_id": request_id},
                             )
                             return response.create_response(
                                 response.USER_INFORMATION_INVALID,
                                 status.HTTP_406_NOT_ACCEPTABLE,
                             )
                     else:
-                        self.logger.exception("User ID not present in AccessToken")
+                        self.logger.exception(
+                            "User ID not present in AccessToken",
+                            extra={"request_id": request_id},
+                        )
                         return response.create_response(
                             response.ACCESS_TOKEN_NOT_VALID,
                             status.HTTP_406_NOT_ACCEPTABLE,
                         )
             else:
-                self.logger.exception("AccessToken not present in headers")
+                self.logger.exception(
+                    "AccessToken not present in headers",
+                    extra={"request_id": request_id},
+                )
                 return response.create_response(
                     response.PERMISSION_DENIED + " You can't perform this operation",
                     status.HTTP_401_UNAUTHORIZED,
@@ -430,7 +486,8 @@ class UserViewSets(viewsets.ModelViewSet):
                     )
             except Exception as err:
                 self.logger.exception(
-                    "Exception occurred while checking user_id in the database"
+                    "Exception occurred while checking user_id in the database",
+                    extra={"request_id": request_id},
                 )
                 return response.create_response(
                     response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -446,7 +503,10 @@ class UserViewSets(viewsets.ModelViewSet):
                 validationClass.validate_fields(user_data)
 
             except Exception as err:
-                self.logger.exception("Validation error while updating user data")
+                self.logger.exception(
+                    "Validation error while updating user data",
+                    extra={"request_id": request_id},
+                )
                 return response.create_response(
                     err.__str__(), status.HTTP_400_BAD_REQUEST
                 )
@@ -465,14 +525,17 @@ class UserViewSets(viewsets.ModelViewSet):
                     **tbl_user_auth_data
                 )
             except IntegrityError:
-                self.logger.warning("Supplied improper/same values")
+                self.logger.warning(
+                    "Supplied improper/same values", extra={"request_id": request_id}
+                )
                 return response.create_response(
                     "You've supplied either improper values or same values to update, Use a different one",
                     status.HTTP_401_UNAUTHORIZED,
                 )
             except Exception as err:
                 self.logger.exception(
-                    "Exception occurred while updating the user data in db table"
+                    "Exception occurred while updating the user data in db table",
+                    extra={"request_id": request_id},
                 )
                 return response.create_response(
                     f"{response.SOMETHING_WENT_WRONG}",
@@ -485,7 +548,9 @@ class UserViewSets(viewsets.ModelViewSet):
                 )
 
         except Exception as e:
-            self.logger.exception("Exception occurred in update method.")
+            self.logger.exception(
+                "Exception occurred in update method.", extra={"request_id": request_id}
+            )
             return response.create_response(
                 f"{response.SOMETHING_WENT_WRONG}",
                 status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -500,6 +565,7 @@ class UserViewSets(viewsets.ModelViewSet):
         """
 
         try:
+            request_id = getattr(request, "request_id", "N/A")
             if not validationClass.is_valid_uuid(pk):
                 return response.create_response(
                     f"value {pk} isn't a correct id",
@@ -536,15 +602,17 @@ class UserViewSets(viewsets.ModelViewSet):
             )
 
         except Exception as e:
-            self.logger.exception("Exception occurred in jobs method.")
+            logger.exception(
+                "Exception occurred in jobs method.", extra={"request_id": request_id}
+            )
             return response.create_response(
                 f"{response.SOMETHING_WENT_WRONG}",
                 status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-    def get_application_status(self, serialized_data):
+    def get_application_status(serialized_data):
         if not serialized_data:
-            self.logger.warning("Serialized data not provided")
+            logger.warning("Serialized data not provided")
             raise Exception("Serialized Data not provided")
 
         for job_data in serialized_data.data:
@@ -585,6 +653,7 @@ class CompanyViewSets(viewsets.ModelViewSet):
         """
 
         try:
+            request_id = getattr(request, "request_id", "N/A")
             serialized_company_data = self.serializer_class(
                 self.get_queryset(), many=True
             )
@@ -601,7 +670,7 @@ class CompanyViewSets(viewsets.ModelViewSet):
             )
 
         except Exception as e:
-            self.logger.exception("Can't fetch jobs")
+            self.logger.exception("Can't fetch jobs", extra={"request_id": request_id})
             return response.create_response(
                 response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
             )
