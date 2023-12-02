@@ -11,7 +11,7 @@ from re import findall
 
 from rest_framework import serializers
 
-from apps.jobs.models import Applicants, Company, Job, User
+from apps.jobs.models import Applicants, Company, Job, User, ContactMessage
 
 # read_only=True allows the field to only present in the output
 # however at the time of crud opertions, it won't be present.
@@ -130,3 +130,9 @@ class ApplicantsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Applicants
         fields = "__all__"
+
+
+class ContactUsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContactMessage
+        fields = ("full_name", "email", "message")

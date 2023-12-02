@@ -12,12 +12,13 @@ from rest_framework.response import Response
 
 from apps.accounts.models import User as user_auth
 from apps.jobs.constants import response, values
-from apps.jobs.models import Applicants, Company, Job, User
+from apps.jobs.models import Applicants, Company, Job, User, ContactMessage
 from apps.jobs.serializers import (
     ApplicantsSerializer,
     CompanySerializer,
     JobSerializer,
     UserSerializer,
+    ContactUsSerializer,
 )
 from apps.jobs.utils.validators import validationClass
 
@@ -539,3 +540,27 @@ class CompanyViewSets(viewsets.ModelViewSet):
         return response.create_response(
             serialized_company_data.data, status.HTTP_200_OK
         )
+
+
+class ContactUsViewSet(viewsets.ModelViewSet):
+    # queryset = ContactMessage.objects.all()
+    serializer_class = ContactUsSerializer
+
+    def get_queryset(self):
+        return ContactMessage.objects.all()
+
+    @action(detail=False, methods=["post"])
+    def create_contact_message(self, request):
+        full_name = request.data.get("full_name")
+        email = request.data.get("email")
+        message = request.data.get("message")
+
+        if not all([full_name, email, message]):
+            return Response(serializer.data, status.HTTP_400_BAD_REQUEST)
+        contact_message_instance = ContactMessage(
+            full_name=full_name, email=email, message=message
+        )
+        # Serialize the ContactMessage instance
+        serializer = ContactUsSerializer(contact_message_instance)
+
+        return Response(serializer.data, status.HTTP_200_OK)
