@@ -19,6 +19,7 @@ from apps.jobs.serializers import (
     CompanySerializer,
     JobSerializer,
     UserSerializer,
+    ContactUsSerializer,
 )
 from apps.jobs.utils.validators import validationClass
 
@@ -363,6 +364,17 @@ class JobViewSets(viewsets.ModelViewSet):
                 response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+    # @action(detail=True, methods=["post"])
+    # def contact_us(request):
+    #     if request.method == "POST":
+    #         serializer = ContactUsSerializer(data=request.data)
+    #         if serializer.is_valid():
+    #             serializer.save()
+    #             return Response({"message": "Message sent successfully!"})
+    #         return Response(serializer.errors, status=400)
+
+    #     return Response({"message": "Invalid request method"}, status=400)
+
 
 class UserViewSets(viewsets.ModelViewSet):
     """
@@ -692,3 +704,12 @@ class CompanyViewSets(viewsets.ModelViewSet):
         return response.create_response(
             serialized_company_data.data, status.HTTP_200_OK
         )
+
+
+class ContactUsViewSet(viewsets.ViewSet):
+    def create(self, request):
+        serializer = ContactUsSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Message sent successfully!"}, status=201)
+        return Response(serializer.errors, status=400)
