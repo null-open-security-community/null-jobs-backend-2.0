@@ -151,6 +151,13 @@ class Applicants(models.Model):
 
 
 class ContactMessage(models.Model):
+    """Represents contact_us model.
+    defines the attributes of the contact_us page feilds.
+    """
+
+    class meta:
+        db_table = "tbl_contact_us"
+
     full_name = models.CharField(max_length=100)
     email = models.EmailField()
     message = models.TextField()

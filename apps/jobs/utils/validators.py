@@ -160,3 +160,19 @@ class validationClass:
                 raise Exception(
                     f"Given {field_name} doesn't contain a valid value\n\nReason: {err.__str__()}"
                 )
+
+    @staticmethod
+    def validate_contact_data(full_name, email, message):
+        """
+        Validate that the input data is in the form of strings.
+        """
+        if not isinstance(full_name, str):
+            return {"error": "Full name must be a string."}
+
+        if not isinstance(email, str):
+            return {"error": "Email must be a string."}
+
+        if not isinstance(message, str):
+            return {"error": "Message must be a string."}
+
+        return None

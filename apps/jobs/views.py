@@ -545,7 +545,7 @@ class CompanyViewSets(viewsets.ModelViewSet):
 class ContactUsViewSet(viewsets.ModelViewSet):
     """Company object viewsets
     API: /api/v/contact-us
-    Database: jobs_contactmessage
+    Database: tb1_contact_us
     Functions:
         1. take input from user end
         2. create contact message
@@ -564,7 +564,9 @@ class ContactUsViewSet(viewsets.ModelViewSet):
         email = request.data.get("email")
         message = request.data.get("message")
 
-        validation_error = validationClass.validate_fields(full_name, email, message)
+        validation_error = validationClass.validate_contact_data(
+            full_name, email, message
+        )
 
         if validation_error:
             return Response(validation_error, status=status.HTTP_400_BAD_REQUEST)
@@ -575,3 +577,16 @@ class ContactUsViewSet(viewsets.ModelViewSet):
             return Response(serializer_class.data, status=status.HTTP_200_OK)
         else:
             return Response(serializer_class.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def list(self, request, *args, **kwargs):
+        if request.method == "GET":
+            user = request.user
+            if user.is_authenticated and user.is_moderator:
+                return super().list(request, *args, **kwargs)
+            else:
+                return Response(
+                    {"Access forbidden for non-moderator user"},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+        else:
+            return super().list(request, *args, **kwargs)
