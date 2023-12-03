@@ -543,6 +543,15 @@ class CompanyViewSets(viewsets.ModelViewSet):
 
 
 class ContactUsViewSet(viewsets.ModelViewSet):
+    """Company object viewsets
+    API: /api/v/contact-us
+    Database: jobs_contactmessage
+    Functions:
+        1. take input from user end
+        2. create contact message
+        3. contact message stored in database
+    """
+
     # queryset = ContactMessage.objects.all()
     serializer_class = ContactUsSerializer
 
@@ -555,12 +564,14 @@ class ContactUsViewSet(viewsets.ModelViewSet):
         email = request.data.get("email")
         message = request.data.get("message")
 
-        if not all([full_name, email, message]):
-            return Response(serializer.data, status.HTTP_400_BAD_REQUEST)
-        contact_message_instance = ContactMessage(
-            full_name=full_name, email=email, message=message
-        )
-        # Serialize the ContactMessage instance
-        serializer = ContactUsSerializer(contact_message_instance)
+        validation_error = validationClass.validate_fields(full_name, email, message)
 
-        return Response(serializer.data, status.HTTP_200_OK)
+        if validation_error:
+            return Response(validation_error, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer_class = ContactUsSerializer(data=request.data)
+        if serializer_class.is_valid():
+            serializer_class.save()
+            return Response(serializer_class.data, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer_class.errors, status=status.HTTP_400_BAD_REQUEST)

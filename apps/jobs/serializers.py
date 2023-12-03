@@ -133,6 +133,16 @@ class ApplicantsSerializer(serializers.ModelSerializer):
 
 
 class ContactUsSerializer(serializers.ModelSerializer):
+    """Contact us object serializer class"""
+
     class Meta:
         model = ContactMessage
         fields = ("full_name", "email", "message")
+
+        def validate_message(self, value):
+            """Checks if the message is in Text Format"""
+            try:
+                value.encode("utf-8").decode("utf-8")
+            except UnicodeEncodeError:
+                raise serializers.ValidationError("Message must be valid UTF-8 text.")
+            return value
