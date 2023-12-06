@@ -554,6 +554,7 @@ class ContactUsViewSet(viewsets.ModelViewSet):
 
     # queryset = ContactMessage.objects.all()
     serializer_class = ContactUsSerializer
+    http_method_names = ["get", "post"]
 
     def get_queryset(self):
         return ContactMessage.objects.all()
@@ -581,12 +582,12 @@ class ContactUsViewSet(viewsets.ModelViewSet):
     def list(self, request, *args, **kwargs):
         if request.method == "GET":
             user = request.user
-            if user.is_authenticated and user.is_moderator:
-                return super().list(request, *args, **kwargs)
-            else:
+            if UserTypeCheck.is_user_employer:
                 return Response(
                     {"Access forbidden for non-moderator user"},
                     status=status.HTTP_403_FORBIDDEN,
                 )
+            else:
+                return super().list(request, *args, **kwargs)
         else:
             return super().list(request, *args, **kwargs)

@@ -133,17 +133,29 @@ class validationClass:
         present in the given data (format: dictionary)
         """
 
+        def validate_email(email):
+            """
+            Validate email format.
+            """
+            email_validator = EmailValidator()
+            try:
+                email_validator(email)
+            except ValidationError as err:
+                raise ValidationError(
+                    f"Invalid email value provided\n\nReason: {err.__str__()}"
+                )
+
         for field_name, field_value in data.items():
             try:
                 if field_name == "age":
                     MinValueValidator(15)(field_value)
                     MaxValueValidator(100)(field_value)
-                if field_name == "email":
-                    EmailValidator()(field_value)
-                if field_name == "website":
+                elif field_name == "email":
+                    validate_email(field_value)
+                elif field_name == "website":
                     if not re.search("^(https?|ftp)://[^\s/$.?#].[^\s]*$", field_value):
-                        raise Exception(f"Invalid {field_name} value provided")
-                if field_name == "experience":
+                        raise ValidationError(f"Invalid {field_name} value provided")
+                elif field_name == "experience":
                     # Here, if the experience value exceeds 15, replace the value
                     # with "15+", Also check if there are only two integers given
                     # by the user, and these two integers should be positive & <= 15
@@ -154,25 +166,22 @@ class validationClass:
                         if re.search("^(1[6-9]|[2-9][0-9])$", field_value):
                             data[field_name] = "15+"
                     else:
-                        raise Exception(f"Invalid {field_name} value provided")
+                        raise ValidationError(f"Invalid {field_name} value provided")
 
-            except (Exception, ValidationError) as err:
-                raise Exception(
+            except ValidationError as err:
+                raise ValidationError(
                     f"Given {field_name} doesn't contain a valid value\n\nReason: {err.__str__()}"
                 )
 
-    @staticmethod
-    def validate_contact_data(full_name, email, message):
-        """
-        Validate that the input data is in the form of strings.
-        """
-        if not isinstance(full_name, str):
-            return {"error": "Full name must be a string."}
+        # Additional validations for full_name and message
+        if not isinstance(data.get("full_name"), str) or not re.match(
+            r'^[a-zA-Z0-9 .\'"-]*$', data.get("full_name")
+        ):
+            raise ValidationError({"error": "Invalid full name format."})
 
-        if not isinstance(email, str):
-            return {"error": "Email must be a string."}
-
-        if not isinstance(message, str):
-            return {"error": "Message must be a string."}
+        if not isinstance(data.get("message"), str) or not re.match(
+            r'^[a-zA-Z0-9 .,\'"-]*$', data.get("message")
+        ):
+            raise ValidationError({"error": "Invalid message format."})
 
         return None
