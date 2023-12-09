@@ -155,7 +155,7 @@ class ContactMessage(models.Model):
     defines the attributes of the contact_us page feilds.
     """
 
-    class meta:
+    class Meta:
         db_table = "tbl_contact_us"
 
     full_name = models.CharField(max_length=100)

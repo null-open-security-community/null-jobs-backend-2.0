@@ -554,7 +554,7 @@ class ContactUsViewSet(viewsets.ModelViewSet):
 
     # queryset = ContactMessage.objects.all()
     serializer_class = ContactUsSerializer
-    http_method_names = ["get", "post"]
+    http_method_names = ["post"]
 
     def get_queryset(self):
         return ContactMessage.objects.all()
@@ -565,8 +565,8 @@ class ContactUsViewSet(viewsets.ModelViewSet):
         email = request.data.get("email")
         message = request.data.get("message")
 
-        validation_error = validationClass.validate_contact_data(
-            full_name, email, message
+        validation_error = validationClass.validate_fields(
+            {"full_name": full_name, "email": email, "message": message}
         )
 
         if validation_error:
@@ -581,7 +581,6 @@ class ContactUsViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         if request.method == "GET":
-            user = request.user
             if UserTypeCheck.is_user_employer:
                 return Response(
                     {"Access forbidden for non-moderator user"},
