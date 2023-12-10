@@ -148,3 +148,19 @@ class Applicants(models.Model):
     is_deleted = models.BooleanField(default=False, null=True)
     is_active = models.BooleanField(default=True, null=True)
     employer_id = models.UUIDField(null=False, editable=False, default=None)
+
+
+class ContactMessage(models.Model):
+    """Represents contact_us model.
+    defines the attributes of the contact_us page feilds.
+    """
+
+    class Meta:
+        db_table = "tbl_contact_us"
+
+    full_name = models.CharField(max_length=100)
+    email = models.EmailField()
+    message = models.TextField()
+
+    def __str__(self):
+        return self.full_name

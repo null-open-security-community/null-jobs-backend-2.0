@@ -12,12 +12,13 @@ from rest_framework.response import Response
 
 from apps.accounts.models import User as user_auth
 from apps.jobs.constants import response, values
-from apps.jobs.models import Applicants, Company, Job, User
+from apps.jobs.models import Applicants, Company, Job, User, ContactMessage
 from apps.jobs.serializers import (
     ApplicantsSerializer,
     CompanySerializer,
     JobSerializer,
     UserSerializer,
+    ContactUsSerializer,
 )
 from apps.jobs.utils.validators import validationClass
 
@@ -539,3 +540,53 @@ class CompanyViewSets(viewsets.ModelViewSet):
         return response.create_response(
             serialized_company_data.data, status.HTTP_200_OK
         )
+
+
+class ContactUsViewSet(viewsets.ModelViewSet):
+    """Company object viewsets
+    API: /api/v/contact-us
+    Database: tb1_contact_us
+    Functions:
+        1. take input from user end
+        2. create contact message
+        3. contact message stored in database
+    """
+
+    # queryset = ContactMessage.objects.all()
+    serializer_class = ContactUsSerializer
+    http_method_names = ["post"]
+
+    def get_queryset(self):
+        return ContactMessage.objects.all()
+
+    @action(detail=False, methods=["post"])
+    def create_contact_message(self, request):
+        full_name = request.data.get("full_name")
+        email = request.data.get("email")
+        message = request.data.get("message")
+
+        validation_error = validationClass.validate_fields(
+            {"full_name": full_name, "email": email, "message": message}
+        )
+
+        if validation_error:
+            return Response(validation_error, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer_class = ContactUsSerializer(data=request.data)
+        if serializer_class.is_valid():
+            serializer_class.save()
+            return Response(serializer_class.data, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer_class.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def list(self, request, *args, **kwargs):
+        if request.method == "GET":
+            if UserTypeCheck.is_user_employer:
+                return Response(
+                    {"Access forbidden for non-moderator user"},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+            else:
+                return super().list(request, *args, **kwargs)
+        else:
+            return super().list(request, *args, **kwargs)

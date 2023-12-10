@@ -11,7 +11,7 @@ from re import findall
 
 from rest_framework import serializers
 
-from apps.jobs.models import Applicants, Company, Job, User
+from apps.jobs.models import Applicants, Company, Job, User, ContactMessage
 
 # read_only=True allows the field to only present in the output
 # however at the time of crud opertions, it won't be present.
@@ -130,3 +130,19 @@ class ApplicantsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Applicants
         fields = "__all__"
+
+
+class ContactUsSerializer(serializers.ModelSerializer):
+    """Contact us object serializer class"""
+
+    class Meta:
+        model = ContactMessage
+        fields = ("full_name", "email", "message")
+
+        def validate_message(self, value):
+            """Checks if the message is in Text Format"""
+            try:
+                value.encode("utf-8").decode("utf-8")
+            except UnicodeEncodeError:
+                raise serializers.ValidationError("Message must be valid UTF-8 text.")
+            return value

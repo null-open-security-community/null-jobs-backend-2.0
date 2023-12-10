@@ -2,7 +2,10 @@
 
 from rest_framework.response import Response
 
-def create_response(response_message: str, status_code, content_type="application/json"):
+
+def create_response(
+    response_message: str, status_code, content_type="application/json"
+):
     """
     This function returns HTTP Response with message, status_code and content_type
     """
@@ -12,6 +15,7 @@ def create_response(response_message: str, status_code, content_type="applicatio
     elif status_code >= 400:
         response = {"message": {"error": response_message}}
     return Response(response, status=status_code, content_type=content_type)
+
 
 SOMETHING_WENT_WRONG = "something went wrong"
 ACCESS_TOKEN_NOT_VALID = "Invalid access token provided"
