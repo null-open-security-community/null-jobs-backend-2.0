@@ -470,6 +470,70 @@ class UserViewSets(viewsets.ModelViewSet):
                 f"person id '{pk}' doesn't exist", status.HTTP_404_NOT_FOUND
             )
 
+    @action(detail=True, methods=["get"])
+    def remove_resume(self, request, pk=None):
+        """Remove the resume file (if it exists)"""
+        user = User.objects.get(user_id=pk)
+        if not user:
+            return response.create_response(
+                "User does not exist", status.HTTP_404_NOT_FOUND
+            )
+        if user.resume:
+            user.resume.delete()
+            user.resume = None
+            user.save()
+
+            return response.create_response(
+                "Resume removed successfully", status.HTTP_200_OK
+            )
+        else:
+            return response.create_response(
+                "No resume file to remove", status.HTTP_200_OK
+            )
+
+    @action(detail=True, methods=["get"])
+    def remove_cover_letter(self, request, pk=None):
+        """Remove the cover letter file (if it exists)"""
+        user = User.objects.get(user_id=pk)
+        if not user:
+            return response.create_response(
+                "User does not exist", status.HTTP_404_NOT_FOUND
+            )
+        if user.cover_letter:
+            user.cover_letter.delete()
+            user.cover_letter = None
+            user.save()
+
+            return response.create_response(
+                "Cover letter removed successfully", status.HTTP_200_OK
+            )
+        else:
+            return response.create_response(
+                "No cover letter file to remove", status.HTTP_200_OK
+            )
+
+    @action(detail=True, methods=["get"])
+    def remove_profile_picture(self, request, pk=None):
+        """Remove the profile picture file (if it exists)"""
+        user = User.objects.get(user_id=pk)
+        if not user:
+            return response.create_response(
+                "User does not exist", status.HTTP_404_NOT_FOUND
+            )
+
+        if user.profile_picture:
+            user.profile_picture.delete()
+            user.profile_picture = None
+            user.save()
+
+            return response.create_response(
+                "Profile picture removed successfully", status.HTTP_200_OK
+            )
+        else:
+            return response.create_response(
+                "No profile picture file to remove", status.HTTP_200_OK
+            )
+
     def get_application_status(self, serialized_data):
         if not serialized_data:
             raise Exception("Serialized Data not provided")
