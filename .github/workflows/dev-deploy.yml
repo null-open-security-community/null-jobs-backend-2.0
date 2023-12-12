@@ -1,0 +1,44 @@
+name: Deploy to On-Premise Django Server
+
+on:
+  push:
+    branches:
+      - main  # Adjust the branch as needed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.x  # Specify your desired Python version
+
+    - name: Install dependencies
+      run: |
+        # Upgrade pip and install project dependencies
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt  # Adjust the path as needed
+
+    - name: SSH into on-premise server and deploy
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.ON_PREMISE_HOST }}
+        username: ${{ secrets.ON_PREMISE_USERNAME }}
+        key: ${{ secrets.ON_PREMISE_SSH_KEY }}
+        port: ${{ secrets.ON_PREMISE_SSH_PORT }}
+        script: |
+          # Navigate to the directory of your Django app
+          cd /path/to/your/django/app
+          
+          # Additional commands for deploying Django app on-premise can be added here
+          # For example:
+          # TODO: we have to add better way that will help migration or rebuild the container
+#          python manage.py migrate
+#          python manage.py collectstatic --noinput
+#          systemctl restart your_django_app_service
+#          # Add any other commands or steps needed for your deployment process
