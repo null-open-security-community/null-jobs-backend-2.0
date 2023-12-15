@@ -129,6 +129,22 @@ class User(models.Model):
             self.user_id = override_uuid[values.USER_ID]
         super(User, self).save(*args, **kwargs)
 
+    def save(self, *args, **kwargs):
+        # Check if a new file is being uploaded and delete the old file
+        if self.pk:
+            old_user = User.objects.get(pk=self.pk)
+
+            if (
+                old_user.profile_picture
+                and self.profile_picture != old_user.profile_picture
+            ):
+                old_user.profile_picture.delete(save=False)
+
+            if old_user.cover_letter and self.cover_letter != old_user.cover_letter:
+                old_user.cover_letter.delete(save=False)
+
+        super(User, self).save(*args, **kwargs)
+
 
 class Applicants(models.Model):
     """Represents apply job model.

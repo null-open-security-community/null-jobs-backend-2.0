@@ -9,6 +9,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 
 from apps.accounts.models import User as user_auth
 from apps.jobs.constants import response, values
@@ -396,6 +398,18 @@ class UserViewSets(viewsets.ModelViewSet):
 
         except Exception as err:
             return response.create_response(err.__str__(), status.HTTP_400_BAD_REQUEST)
+
+        def save_file_to_directory(file_data, file_field):
+            file_name = default_storage.get_available_name(file_data.name)
+            file_path = f"{file_field}/{file_name}"
+            default_storage.save(file_path, ContentFile(file_data.read()))
+            return file_path
+
+        for file_field in ["resume", "cover_letter", "profile_picture"]:
+            file_data = request.FILES.get(file_field)
+            if file_data:
+                file_path = save_file_to_directory(file_data, file_field)
+                user_data[file_field] = file_path
 
         try:
             # update in the tbl_user_profile
