@@ -29,7 +29,7 @@ from apps.jobs.models import User as user_profile
 
 
 # Generate token Manually
-class GenerateToken:
+class TokenUtility:
     @staticmethod
     def get_tokens_for_user(user):
         refresh = RefreshToken.for_user(user)
@@ -80,7 +80,7 @@ def generate_guest_token(user, purpose):
         "user_id": str(user.id),
         "user_type": user.user_type,
     }
-    token = GenerateToken.generate_dummy_jwt_token(payload)
+    token = TokenUtility.generate_dummy_jwt_token(payload)
 
     # for old user
     if user.otp_secret:
@@ -153,7 +153,7 @@ class OTPVerificationCheckView(APIView):
     def post(self, request, format=None):
         dummy_token = request.query_params.get("token")
         try:
-            payload = GenerateToken.verify_and_get_payload(dummy_token)
+            payload = TokenUtility.verify_and_get_payload(dummy_token)
             # print(payload)
         except InvalidToken as e:
             return Response(
@@ -169,7 +169,7 @@ class OTPVerificationCheckView(APIView):
         )
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
-        token = GenerateToken.get_tokens_for_user(user)
+        token = TokenUtility.get_tokens_for_user(user)
         return Response(
             {"msg": "OTP Verified Successfully!", "token": token},
             status=status.HTTP_201_CREATED,
@@ -188,7 +188,7 @@ class UserLoginView(APIView):
         user = authenticate(email=email, password=password)
         if user is not None:
             if user.is_verified:
-                token = GenerateToken.get_tokens_for_user(user)
+                token = TokenUtility.get_tokens_for_user(user)
                 return Response(
                     {"token": token, "msg": "Login Success", "verify": True},
                     status=status.HTTP_200_OK,
@@ -271,7 +271,7 @@ class ResetPasswordOtpVerifyView(APIView):
     def post(self, request, format=None):
         dummy_token = request.query_params.get("token")
         try:
-            payload = GenerateToken.verify_and_get_payload(dummy_token)
+            payload = TokenUtility.verify_and_get_payload(dummy_token)
         except InvalidToken as e:
             return Response(
                 {"errors": {"token": str(e)}}, status=status.HTTP_401_UNAUTHORIZED
@@ -423,7 +423,7 @@ class CallbackHandleView(APIView):
         try:
             # Login the user
             user = User.objects.get(email=email)
-            jwt_token = GenerateToken.get_tokens_for_user(user)
+            jwt_token = TokenUtility.get_tokens_for_user(user)
             return Response(
                 {"token": jwt_token, "msg": "Login Success"}, status=status.HTTP_200_OK
             )
@@ -438,7 +438,7 @@ class CallbackHandleView(APIView):
             user.provider = "google"
             user.is_verified = True
             user.save()
-            token = GenerateToken.get_tokens_for_user(user)
+            token = TokenUtility.get_tokens_for_user(user)
             return Response(
                 {"msg": "Registration Completed", "token": token},
                 status=status.HTTP_201_CREATED,
