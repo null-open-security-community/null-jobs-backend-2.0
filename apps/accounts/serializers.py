@@ -6,7 +6,7 @@ from rest_framework import serializers
 from apps.accounts.models import User
 from apps.accounts.utils import *
 
-# from apps.accounts.views import OTP_DummyToken
+# from apps.accounts.views import otp_dummy_token
 
 # User registration
 class UserRegistrationSerializer(serializers.ModelSerializer):

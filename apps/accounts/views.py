@@ -75,7 +75,7 @@ class GenerateToken:
             raise TokenError("Token expired")
 
    
-def OTP_DummyToken(user,purpose):
+def otp_dummy_token(user, purpose):
     payload = {"email": user.email, "user_id": user.user_id.hex, "user_type": user.user_type}
     token = GenerateToken.generate_dummy_jwt_token(payload)
     
@@ -116,7 +116,7 @@ class UserRegistrationView(APIView):
 
         user = User.objects.get(email=email)
         user.provider = "local"
-        token = OTP_DummyToken(user,"verify")
+        token = otp_dummy_token(user, "verify")
 
         # Add an entry in the tbl_user_profile with dummy data
         dummy_data = {
@@ -182,7 +182,7 @@ class UserLoginView(APIView):
                     {"token": token, "msg": "Login Success",'verify':True}, status=status.HTTP_200_OK
                 )
             else:
-                token = OTP_DummyToken(user)
+                token = otp_dummy_token(user)
                 return Response(
                     {'msg':'User not verified','token':token,'verify':False},
                     status=status.HTTP_200_OK
@@ -237,7 +237,7 @@ class SendPasswordResetOTPView(APIView):
         serializer = SendPasswordResetOTPSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
-        token = OTP_DummyToken(user,"reset-password")
+        token = otp_dummy_token(user, "reset-password")
         return Response(
             {
                 "msg": "OTP Sent Successfully. Please Check your Email",
