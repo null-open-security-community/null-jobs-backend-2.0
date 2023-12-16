@@ -167,12 +167,11 @@ class validationClass:
                             data[field_name] = "15+"
                     else:
                         raise ValidationError(f"Invalid {field_name} value provided")
-                elif field_name == "name" or field_name == "full_name":
-                    if not re.match(r'^[a-zA-Z0-9 .\'"-]*$', field_value):
-                        raise ValidationError({"error": "Invalid full name format."})
-                elif field_name == "message":
+                elif field_name in ["name", "full_name", "message"]:
                     if not re.match(r'^[a-zA-Z0-9 .,\'"-]*$', field_value):
-                        raise ValidationError({"error": "Invalid message format."})
+                        raise ValidationError(
+                            {"error": f"Invalid {field_name} format."}
+                        )
 
             except ValidationError as err:
                 raise ValidationError(
