@@ -20,7 +20,6 @@ load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
@@ -49,7 +48,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     "rest_framework_simplejwt",
-    'rest_framework_simplejwt.token_blacklist',   # used to blacklist the refresh token
+    'rest_framework_simplejwt.token_blacklist',  # used to blacklist the refresh token
     "drf_yasg",
     "apps.accounts",
     "apps.jobs",
@@ -86,7 +85,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "null_jobs_backend.wsgi.application"
-
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
@@ -154,14 +152,17 @@ REST_USE_JWT = True
 JWT_AUTH_COOKIE = "access_token"
 JWT_AUTH_REFRESH_COOKIE = "refresh-token"
 
+# ADMIN SECRET
+ADMIN_SECRET = "c44d31da2a0f54a919c21852743d6eee1c6dc58ea73f56815792506b4c8dabb2"
+
 USE_JWT = True
 
-EMAIL_USE_TLS = True
 EMAIL_HOST = os.getenv("EMAIL_HOST")
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 EMAIL_PORT = os.getenv("EMAIL_PORT")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
+
 
 # JWT Configuration
 REST_FRAMEWORK = {
@@ -181,7 +182,6 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
@@ -218,6 +218,10 @@ SIMPLE_JWT = {
     "TOKEN_TYPE_CLAIM": "token_type",
     "TOKEN_USER_CLASS": "rest_framework_simplejwt.models.TokenUser",
     "JTI_CLAIM": "jti",
+    # TODO: we have to add the signing key via github secrets
+    # 'ALGORITHM': 'HS256',  # Use the HMAC SHA-256 algorithm
+    # 'SIGNING_KEY':  os.environ.get('JWT_SECRET_KEY'),  # Replace with your actual signing key
+    # 'VERIFYING_KEY': None,  # Set to None if using a symmetric key (HS256)
 }
 
 # needed for reset password
@@ -232,7 +236,6 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
-
 
 AUTHENTICATION_BACKENDS = [
     # Needed to login by username in Django admin, regardless of `allauth`
