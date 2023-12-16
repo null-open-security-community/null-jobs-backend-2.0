@@ -47,7 +47,7 @@ class JobViewSets(viewsets.ModelViewSet):
     # SearchFilter means the same except it'll operate on N number of fields but in the url
     # it'll be like (/api/company/?search="xyz")
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["job_role", "location"]
+    filterset_fields = ["job_role", "location", "is_active"]
 
     def list(self, request):
         """
@@ -139,6 +139,20 @@ class JobViewSets(viewsets.ModelViewSet):
             jobdata.update({"Number of Applicants": number_of_applicants})
 
         return serialized_data
+    
+    @staticmethod
+    def get_active_jobs_count(serialized_company_data):
+        """
+        Add a new field called "Active Jobs" to the serialized data,
+        that contains the count of active jobs present in the company.
+        """
+
+        for company in serialized_company_data.data:
+                jobs_belong_to_company = Job.objects.filter(company_id=company.get("company_id"))
+                active_jobs = sum(1 for job in jobs_belong_to_company if job.is_active)
+                company.update({"Active Jobs": active_jobs})
+        
+        return serialized_company_data
 
     @action(detail=True, methods=["get"])
     def users(self, request, pk=None):
@@ -427,6 +441,49 @@ class UserViewSets(viewsets.ModelViewSet):
                 UserSerializer(user_data).data, status.HTTP_200_OK
             )
 
+    @action(detail=False, methods=['get'])
+    def myProfile(self, request):
+        """
+        API: /api/v1/user/myProfile
+        Returns user profile data in the response. 
+        This method gets the user_id from "access-token".
+        """
+        
+        # Get the value from Access-Token header
+        if access_token:=request.headers.get("AccessToken", None):
+            try:
+                # decode JWT Token; for any issues with it, raise an exception
+                decoded_user_access_token = jwt.decode(
+                    access_token, options={"verify_signature": False}
+                )
+                user_id = decoded_user_access_token.get("user_id", None)
+                if not user_id:
+                    raise Exception
+                
+                # get user data
+                user_data = self.queryset.filter(user_id=user_id)
+                if user_data:
+                    serialized_user_data = self.serializer_class(user_data, many=True)
+                    return response.create_response(
+                        serialized_user_data.data,
+                        status.HTTP_200_OK
+                    )
+                else:
+                    return response.create_response(
+                        "No User Data Present",
+                        status.HTTP_404_NOT_FOUND
+                    )
+            except Exception:
+                return response.create_response(
+                    "Invalid AccessToken provided",
+                    status.HTTP_400_BAD_REQUEST
+                )
+        else:
+            return response.create_response(
+                "AccessToken not present",
+                status.HTTP_401_UNAUTHORIZED
+            )
+
     @action(detail=True, methods=["get"])
     def jobs(self, request, pk=None):
         """
@@ -502,6 +559,42 @@ class CompanyViewSets(viewsets.ModelViewSet):
     # Basic filters
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["name", "location"]
+
+    def list(self, request):
+        """
+        Method to return a list of companies available, 
+        Along with the count of active jobs present in the company
+        """
+
+        serialized_company_data = self.serializer_class(
+            self.queryset, many=True, context={"request": request}
+        )
+
+        # get number of applicants
+        if serialized_company_data:
+            serialized_company_data = JobViewSets.get_active_jobs_count(serialized_company_data)
+
+        return response.create_response(
+            serialized_company_data.data, status.HTTP_200_OK
+        )
+    
+    def retrieve(self, request, pk=None):
+        """
+        retrieve the data of given company id
+        """
+
+        if not validationClass.is_valid_uuid(pk):
+            return response.create_response(
+                f"value {pk} isn't a correct id",
+                status.HTTP_404_NOT_FOUND,
+            )
+
+        # filter based on pk
+        company_data = Company.objects.filter(company_id=pk)
+        serialized_company_data = self.serializer_class(company_data, many=True)
+        if serialized_company_data:
+            serialized_company_data = JobViewSets.get_active_jobs_count(serialized_company_data)
+        return response.create_response(serialized_company_data.data, status.HTTP_200_OK)
 
     @action(detail=False, methods=["get"])
     def jobs(self, request):

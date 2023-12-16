@@ -11,6 +11,18 @@ STATUS_CHOICES = (
 
 GENDER = (("male", "Male"), ("female", "Female"), ("other", "Other"))
 
+HIRING_STATUS = (
+    ("hiring", "HIRING"),
+    ("open to work", "OPEN TO WORK")
+)
+
+JOB_TYPE = (
+    ("full time", "FULL TIME"),
+    ("part time", "PART TIME"),
+    ("contract", "CONTRACT"),
+    ("internship", "INTERNSHIP")
+)
+
 EMPLOYER_ID = "employer_id"
 USER_ID = "user_id"
 JOB_ID = "job_id"
