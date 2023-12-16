@@ -49,7 +49,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     "rest_framework_simplejwt",
-    'rest_framework_simplejwt.token_blacklist',   # used to blacklist the refresh token
+    "rest_framework_simplejwt.token_blacklist",  # used to blacklist the refresh token
     "drf_yasg",
     "apps.accounts",
     "apps.jobs",
@@ -241,3 +241,6 @@ AUTHENTICATION_BACKENDS = [
 
 # GOOGLE AUTH
 SITE_ID = 2
+
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+MEDIA_URL = "/media/"
