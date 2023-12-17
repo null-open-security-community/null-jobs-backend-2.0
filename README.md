@@ -67,5 +67,5 @@ python manage.py makemigrations --settings=null_jobs_backend.test_settings
 
 In order to run the test cases over test_db
 ```
-python manage.py test --settings=myproject.test_settings
+python manage.py test --settings=null_jobs_backend.test_settings
 ```
