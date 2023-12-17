@@ -1,8 +1,8 @@
+import jwt
 import uuid
 from re import search
-
 import django.core.exceptions
-import jwt
+from datetime import datetime, timedelta
 from django.db.models.expressions import RawSQL
 from django.db.utils import IntegrityError
 from django_filters.rest_framework import DjangoFilterBackend
@@ -78,7 +78,7 @@ class JobViewSets(viewsets.ModelViewSet):
 
             # get number of applicants
             if serialized_job_data:
-                serialized_job_data = self.get_number_of_applicants(serialized_job_data)
+                serialized_job_data = JobViewSets.get_number_of_applicants(serialized_job_data)
 
             return response.create_response(
                 serialized_job_data.data, status.HTTP_200_OK
@@ -115,10 +115,11 @@ class JobViewSets(viewsets.ModelViewSet):
         job_data = Job.objects.filter(job_id=pk)
         serialized_job_data = self.serializer_class(job_data, many=True)
         if serialized_job_data:
-            serialized_job_data = self.get_number_of_applicants(serialized_job_data)
+            serialized_job_data = JobViewSets.get_number_of_applicants(serialized_job_data)
         return response.create_response(serialized_job_data.data, status.HTTP_200_OK)
 
-    def get_number_of_applicants(self, serialized_data):
+    @staticmethod
+    def get_number_of_applicants(serialized_data):
         """
         return serialized_data with a new field added to it,
         that contains count of number of applicants.
@@ -130,8 +131,9 @@ class JobViewSets(viewsets.ModelViewSet):
         # check for "error" key in the serialized data
         # this is necessary because we don't have to display
         # number_of_applications in case of error message
-        if not serialized_data.data or "error" in serialized_data.data[0]:
-            return serialized_data
+        if not serialized_data.data:
+            if "error" in serialized_data.data[0]:
+                return serialized_data
 
         for jobdata in serialized_data.data:
             job_id = jobdata.get(values.JOB_ID)
@@ -293,6 +295,43 @@ class JobViewSets(viewsets.ModelViewSet):
                 "Status has been updated!!", status.HTTP_200_OK
             )
 
+    @action(detail=False, methods=["get"])
+    def featured_jobs(self, request):
+        """
+        API: /user/featured_jobs/
+        This method returns list of featured jobs based on
+        Following conditions:
+        1. Job posted within past 3 weeks till now
+        2. Job.is_active is True
+        3. Find out 6 jobs with maximum number of applicants
+        """
+        # Get datetime values of present and past
+        current_datetime = datetime.now()
+        past_3_weeks_datetime = current_datetime - timedelta(days=18)
+
+        # get the jobs_data and sort it in DESC order
+        # `-` with column name indicates to return the result in DESC order
+        jobs_data = Job.objects.filter(
+            created_at__gt=past_3_weeks_datetime,
+            is_active=True
+        ).order_by("-created_at")
+
+        jobs_posted_within_3_weeks = JobSerializer(jobs_data, many=True)
+
+        # find out how many jobs were posted within past_3_weeks
+        jobs_posted_within_3_weeks = JobViewSets.get_number_of_applicants(jobs_posted_within_3_weeks)
+
+        # find 5 jobs with maximum number of applicants
+        featured_jobs = sorted(
+            jobs_posted_within_3_weeks.data,
+            key=lambda k: (k.get('Number of Applicants')),
+            reverse=True
+        )
+
+        return response.create_response(
+            featured_jobs[0:5],
+            status.HTTP_200_OK
+        )
 
 class UserViewSets(viewsets.ModelViewSet):
     """
