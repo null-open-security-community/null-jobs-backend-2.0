@@ -1,1 +1,83 @@
-[{"model": "jobs.company", "pk": "1228dcd4-686b-49a1-9e80-2a37d932e9d5", "fields": {"name": "Amazon", "location": "Texas, Houston, USA", "about": "Amazon.com, Inc. is an American multinational technology company focusing on e-commerce, cloud computing, online advertising, digital streaming."}}, {"model": "jobs.company", "pk": "3df0ce02-cb5b-4ede-85da-b1acfc3ce71f", "fields": {"name": "Accenture", "location": "Gurgaon, India", "about": "Accenture plc is an Irish-American professional services company based in Dublin, specializing in information technology services and consulting. A Fortune Global 500 company, it reported revenues of $61.6 billion in 2022"}}, {"model": "jobs.company", "pk": "5350c6e5-11ec-4577-bb51-bcfb88bb5b74", "fields": {"name": "Infosys", "location": "Pune, India", "about": "Infosys Limited is an Indian multinational information technology company that provides business consulting, information technology and outsourcing services. The company was founded in Pune and is headquartered in Bangalore"}}, {"model": "jobs.company", "pk": "71c7c97f-523e-449a-8c88-11af8899e4f4", "fields": {"name": "Deloitte", "location": "London, UK", "about": "Deloitte Touche Tohmatsu Limited, commonly referred to as Deloitte, is a British multinational professional services network headquartered in London, England"}}, {"model": "jobs.company", "pk": "a0028bcd-9470-43e8-85d5-238c0ef09060", "fields": {"name": "BlackRock", "location": "Gurgaon, India", "about": "We're an asset manager and one of the world's leading providers of investment, advisory, and risk management solutions. We're a fiduciary to our clients, and by investing on their behalf, we help millions of hardworking Americans experience financial well-being."}}, {"model": "jobs.company", "pk": "a10a0e14-1032-43d3-97ae-15fa5c7250d7", "fields": {"name": "HackTheBox", "location": "Washington, USA", "about": "Hack The Box is a leading gamified cybersecurity upskilling, certification, and talent assessment software platform enabling individuals, businesses, government institutions, and universities to sharpen their offensive and defensive security expertise."}}, {"model": "jobs.company", "pk": "b98492e1-430e-43f8-a811-78c162d0ebe8", "fields": {"name": "Amazon", "location": "Texas, Houston, USA", "about": "Amazon.com, Inc. is an American multinational technology company focusing on e-commerce, cloud computing, online advertising, digital streaming."}}, {"model": "jobs.company", "pk": "e750084c-0046-401c-ab4a-58ba4f3c744d", "fields": {"name": "PWC India", "location": "Gurugram, India", "about": "PricewaterhouseCoopers International Limited is a British multinational professional services brand of firms, operating as partnerships under the PwC brand. It is the second-largest professional services network in the world and is considered one of the Big Four accounting firms, along with Deloitte, EY and KPMG."}}, {"model": "jobs.company", "pk": "e8c60dcf-2f87-4f4b-934a-7c2742d23766", "fields": {"name": "company object For testing", "location": "Location string for testing", "about": "about string for testing"}}, {"model": "jobs.company", "pk": "eb0f8c07-078f-47ec-8da1-9ed3a8d43caf", "fields": {"name": "KPMG International", "location": "Netherlands", "about": "KPMG International Limited is a multinational professional services network, and one of the Big Four accounting organizations, along with Ernst & Young, Deloitte, and PwC. The name \\\"KPMG\\\" stands for \\\"Klynveld Peat Marwick Goerdeler\\\""}}, {"model": "jobs.company", "pk": "f914cf4e-a183-4285-9dc7-93e4a7168941", "fields": {"name": "Miracle software systems", "location": "California, America", "about": "Miracle Software Systems, Inc. is a 25 year firm headquartered in Novi ,MI ,USA. Miracle has been a leader in the IT space"}}, {"model": "jobs.company", "pk": "fa81c1fc-37ad-4241-a7da-aff2404fb0d5", "fields": {"name": "company object For testing", "location": "Location string for testing", "about": "about string for testing"}}, {"model": "jobs.company", "pk": "ff093bab-1764-4ca4-bcc0-b280f6e5bd6b", "fields": {"name": "Natwest", "location": "London, UK", "about": "National Westminster Bank, commonly known as NatWest, is a major retail and commercial bank in the United Kingdom based in London, England. It was established in 1968 by the merger of the National Provincial Bank and Westminster Bank."}}]
+[
+  {
+    "model": "jobs.company",
+    "pk": "01cef5fa-d4dd-42e0-8feb-ba410fd18d33",
+    "fields": {
+      "name": "PWC India",
+      "location": "Gurgaon, India",
+      "about": "PricewaterhouseCoopers International Limited is a British multinational professional services brand of firms, operating as partnerships under the PwC brand. It is the second-largest professional services network in the world and is considered one of the Big Four accounting firms, along with Deloitte, EY and KPMG."
+    }
+  },
+  {
+    "model": "jobs.company",
+    "pk": "3358c7a0-d0ea-4119-a601-b7758ef8469e",
+    "fields": {
+      "name": "HackTheBox",
+      "location": "Washington, USA",
+      "about": "Hack The Box is a leading gamified cybersecurity upskilling, certification, and talent assessment software platform enabling individuals, businesses, government institutions, and universities to sharpen their offensive and defensive security expertise."
+    }
+  },
+  {
+    "model": "jobs.company",
+    "pk": "36c4dc42-6ed1-48da-91a2-8c70b5560fdb",
+    "fields": {
+      "name": "Miracle software systems",
+      "location": "California, USA",
+      "about": "Miracle Software Systems, Inc. is a 25 year firm headquartered in Novi ,MI ,USA. Miracle has been a leader in the IT space"
+    }
+  },
+  {
+    "model": "jobs.company",
+    "pk": "410fb5b3-f431-43db-a3fd-9055c2f8c54b",
+    "fields": {
+      "name": "Deloitte",
+      "location": "London, UK",
+      "about": "Deloitte Touche Tohmatsu Limited, commonly referred to as Deloitte, is a British multinational professional services network headquartered in London, England"
+    }
+  },
+  {
+    "model": "jobs.company",
+    "pk": "4dca7af5-2c88-4b98-978a-d569f9f08d71",
+    "fields": {
+      "name": "KPMG International",
+      "location": "Netherlands",
+      "about": "KPMG International Limited is a multinational professional services network, and one of the Big Four accounting organizations, along with Ernst & Young, Deloitte, and PwC. The name \"KPMG\" stands for \"Klynveld Peat Marwick Goerdeler\""
+    }
+  },
+  {
+    "model": "jobs.company",
+    "pk": "9bd88cd6-fbe8-449a-a283-89d0a1108fd5",
+    "fields": {
+      "name": "Infosys",
+      "location": "India",
+      "about": "Amazon.com, Inc. is an American multinational technology company focusing on e-commerce, cloud computing, online advertising, digital streaming."
+    }
+  },
+  {
+    "model": "jobs.company",
+    "pk": "db7df573-8196-459d-9ae2-b7cc65758c3e",
+    "fields": {
+      "name": "Accenture",
+      "location": "Gurgaon, India",
+      "about": "Accenture plc is an Irish-American professional services company based in Dublin, specializing in information technology services and consulting. A Fortune Global 500 company, it reported revenues of $61.6 billion in 2022"
+    }
+  },
+  {
+    "model": "jobs.company",
+    "pk": "e4753932-1a5f-496a-afc2-c462e8685d22",
+    "fields": {
+      "name": "Amazon",
+      "location": "Texas, Houston, USA",
+      "about": "Amazon.com, Inc. is an American multinational technology company focusing on e-commerce, cloud computing, online advertising, digital streaming."
+    }
+  },
+  {
+    "model": "jobs.company",
+    "pk": "e9673981-1452-454b-8c81-0b350ec4a75f",
+    "fields": {
+      "name": "Natwest",
+      "location": "London, UK",
+      "about": "National Westminster Bank, commonly known as NatWest, is a major retail and commercial bank in the United Kingdom based in London, England. It was established in 1968 by the merger of National Provincial Bank and Westminster Bank"
+    }
+  }
+]

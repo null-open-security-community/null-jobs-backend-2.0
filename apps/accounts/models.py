@@ -1,16 +1,13 @@
 import uuid
+
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.db import models
-
-from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
-
 
 # from Jobapp.models import User as JobUser
 # Create your models here.
 
 USER_TYPE = (("Job Seeker", "User/Employee"), ("Employer", "HR/Employer"))
 
-def hex_uuid():
-    return uuid.uuid4().hex
 
 class UserManager(BaseUserManager):
     def create_user(self, email, name, user_type, password=None, password2=None):
@@ -21,9 +18,7 @@ class UserManager(BaseUserManager):
             raise ValueError("Users must have an email address")
 
         user = self.model(
-            email=self.normalize_email(email),
-            name=name,
-            user_type=user_type
+            email=self.normalize_email(email), name=name, user_type=user_type
         )
 
         user.set_password(password)
@@ -45,9 +40,8 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser):
-    
-    user_id = models.UUIDField(
-        primary_key=True, default=hex_uuid, editable=False, null=False, unique=True
+    id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False, null=False, unique=True
     )
     email = models.EmailField(
         verbose_name="Email",

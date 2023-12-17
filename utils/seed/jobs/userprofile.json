@@ -1,1 +1,127 @@
-[{"model": "jobs.user", "pk": "0291881c-96bd-4bdc-b2f4-ca0ffd9f8c65", "fields": {"name": "Tim burtons", "email": "tim.burtons@yahoo.com", "address": "Washington, US", "phone": null, "about": "Working as Senior HR Manager for Accenture, India.", "job": null, "resume": "", "profile_picture": "", "cover_letter": "", "company": "3df0ce02-cb5b-4ede-85da-b1acfc3ce71f", "user_type": "Employer"}}, {"model": "jobs.user", "pk": "62403696-8544-40d1-bfc3-f66ec75b225c", "fields": {"name": "Harsh verma", "email": "verma.harsh@gmail.com", "address": "Whitefield, Bangalore NEW", "phone": "Testing", "about": "Associate auditor @ KPMG", "job": null, "resume": "resume/temporary.txt", "profile_picture": "", "cover_letter": "cover_letter/temporary.txt", "company": "eb0f8c07-078f-47ec-8da1-9ed3a8d43caf", "user_type": "Job Seeker"}}, {"model": "jobs.user", "pk": "7e13e870-6566-45fd-8a95-e4961c33210c", "fields": {"name": "Vidhi Verma", "email": "verma.vidhi@gmail.com", "address": "Whitefield, Bangalore", "phone": "549393933", "about": "Associate Software Developer, Currently code in bash and python", "job": null, "resume": "", "profile_picture": "", "cover_letter": "", "company": "3df0ce02-cb5b-4ede-85da-b1acfc3ce71f", "user_type": "Job Seeker"}}, {"model": "jobs.user", "pk": "a702000e-a6a4-4464-8e04-cb38d4915b16", "fields": {"name": "Saksham Sharma", "email": "sharmasaks@gmail.com", "address": "Bareilly, UP, India", "phone": null, "about": "HR manager @ Infosys", "job": null, "resume": "", "profile_picture": "", "cover_letter": "", "company": "5350c6e5-11ec-4577-bb51-bcfb88bb5b74", "user_type": "Employer"}}, {"model": "jobs.user", "pk": "a960effd-5896-4a1f-89bc-2d792e076f88", "fields": {"name": "Shubh Saini", "email": "sainishubh@outlook.com", "address": "Navi Mumbai", "phone": null, "about": "Security analyst for Natwast, love doing hacking and research and development.", "job": null, "resume": "resume/temporary.txt", "profile_picture": "", "cover_letter": "cover_letter/temporary.txt", "company": "ff093bab-1764-4ca4-bcc0-b280f6e5bd6b", "user_type": "Job Seeker"}}, {"model": "jobs.user", "pk": "b5f5f4e6-b645-41bd-92a4-13b2aae2f94b", "fields": {"name": "N/A", "email": "first@gmail.com", "address": "", "phone": null, "about": "N/A", "job": null, "resume": "", "profile_picture": "", "cover_letter": "", "company": null, "user_type": "Employer"}}, {"model": "jobs.user", "pk": "d3b59bad-e47f-4fba-8e87-88db097e4f69", "fields": {"name": "Vishal Mehra", "email": "mehra.vishal@gmail.com", "address": "Thane, Mumbai", "phone": null, "about": "Working @ PWC India", "job": null, "resume": "resume/temporary.txt", "profile_picture": "", "cover_letter": "cover_letter/temporary.txt", "company": "e750084c-0046-401c-ab4a-58ba4f3c744d", "user_type": "Job Seeker"}}, {"model": "jobs.user", "pk": "d719ec07-c301-4287-915d-d904f4e09540", "fields": {"name": "Rachel Scott", "email": "ra.chel@gmail.com", "address": "Dallas, Texas, US", "phone": null, "about": "I am currently working for the HackTheBox.", "job": null, "resume": "", "profile_picture": "", "cover_letter": "", "company": "a10a0e14-1032-43d3-97ae-15fa5c7250d7", "user_type": "Employer"}}, {"model": "jobs.user", "pk": "f4ce6e8b-4a88-4b3b-b218-68f587771d72", "fields": {"name": "N/A", "email": "second@gmail.com", "address": "", "phone": null, "about": "N/A", "job": null, "resume": "", "profile_picture": "", "cover_letter": "", "company": null, "user_type": "Employer"}}]
+[
+  {
+    "model": "jobs.user",
+    "pk": "41fed35e-de9d-4fc4-a4a2-74fa41c680d9",
+    "fields": {
+      "name": "Saksham Sharma",
+      "address": "India",
+      "about": "HR manager @ Infosys",
+      "job": null,
+      "resume": "test/resume.txt",
+      "profile_picture": "",
+      "cover_letter": "test/cv.txt",
+      "company": null,
+      "user_type": "Job Seeker",
+      "experience": "0",
+      "qualification": "Bachelors in Business Management Studies",
+      "gender": "Male",
+      "age": 29,
+      "education": "St. Maryland",
+      "professional_skills": "Management Skills, Tally, Excel",
+      "email": "sharmasaks@gmail.com",
+      "phone": "+91 12345678",
+      "website": "https://xyz.com/saksham",
+      "social_handles": "['https://twitter.com/saksham']"
+    }
+  },
+  {
+    "model": "jobs.user",
+    "pk": "6c06c2a3-1118-41fe-b14b-7983363d4276",
+    "fields": {
+      "name": "Sarthak Sanyam",
+      "address": "Phase 2, MG Road, Gurgaon",
+      "about": "HR professional at NatWest, committed to a diverse workplace, and driving talent development.",
+      "job": null,
+      "resume": "",
+      "profile_picture": "",
+      "cover_letter": "",
+      "company": "e9673981-1452-454b-8c81-0b350ec4a75f",
+      "user_type": "Employer",
+      "experience": "0",
+      "qualification": null,
+      "gender": null,
+      "age": null,
+      "education": null,
+      "professional_skills": null,
+      "email": "sanyam.sarthark@gmail.com",
+      "phone": "9876212112",
+      "website": null,
+      "social_handles": null
+    }
+  },
+  {
+    "model": "jobs.user",
+    "pk": "88259c6a-e707-4f81-b316-97cc697270ee",
+    "fields": {
+      "name": "tanya",
+      "address": "Whitefield, Bangalore",
+      "about": "Associate Software Developer, Currently code in bash and python",
+      "job": null,
+      "resume": "test/resume.txt",
+      "profile_picture": "",
+      "cover_letter": "test/cv.txt",
+      "company": null,
+      "user_type": "Employer",
+      "experience": "0",
+      "qualification": null,
+      "gender": "Female",
+      "age": 23,
+      "education": null,
+      "professional_skills": null,
+      "email": "tanya@gmail.com",
+      "phone": "23293933",
+      "website": "https://xyz.com/tanya",
+      "social_handles": "['twitter.com/tan', 'github.com/tan', 'https://xyz.com/tanya']"
+    }
+  },
+  {
+    "model": "jobs.user",
+    "pk": "8fca926b-204b-42d0-8200-a702f28013cb",
+    "fields": {
+      "name": "Tom berkins",
+      "address": "Texas, USA",
+      "about": "Associate Software Developer, Currently code in bash and python",
+      "job": null,
+      "resume": "test/resume.txt",
+      "profile_picture": "",
+      "cover_letter": "test/cv.txt",
+      "company": "e9673981-1452-454b-8c81-0b350ec4a75f",
+      "user_type": "Employer",
+      "experience": "0",
+      "qualification": null,
+      "gender": "Male",
+      "age": 32,
+      "education": null,
+      "professional_skills": null,
+      "email": "tomberkins@gmail.com",
+      "phone": "912828223",
+      "website": "https://xyz.com/tomberkins",
+      "social_handles": "['twitter.com/tomberkins']"
+    }
+  },
+  {
+    "model": "jobs.user",
+    "pk": "f00af2d6-d5b7-4542-83d2-6e56ca6feccb",
+    "fields": {
+      "name": "Rachel Scott",
+      "address": "Israel",
+      "about": "I am currently working for the HackTheBox.",
+      "job": null,
+      "resume": "test/resume.txt",
+      "profile_picture": "",
+      "cover_letter": "test/cv.txt",
+      "company": null,
+      "user_type": "Job Seeker",
+      "experience": "0",
+      "qualification": null,
+      "gender": "Female",
+      "age": 24,
+      "education": "B.Tech in CSE",
+      "professional_skills": "C++, Python, Web Application Security",
+      "email": "ra.chel@gmail.com",
+      "phone": "+34 49449499",
+      "website": "https://xyz.com/rachel",
+      "social_handles": "['https://facebook.com/rachel1212']"
+    }
+  }
+]

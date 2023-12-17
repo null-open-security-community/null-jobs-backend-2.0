@@ -1,6 +1,14 @@
 import re
 import uuid
 
+from django.core.exceptions import ValidationError
+from django.core.validators import (
+    EmailValidator,
+    MaxValueValidator,
+    MinValueValidator,
+    URLValidator,
+)
+
 
 class validationClass:
     """
@@ -12,13 +20,13 @@ class validationClass:
 
     @staticmethod
     def is_valid_uuid(value):
-        # Expects value in hex format of uuid, returns bool value
+        # Expects value in proper format(with hyphens) of uuid, returns bool value
         try:
             uuid_value = uuid.UUID(str(value))
         except ValueError:
             return False
         else:
-            return str(uuid_value.hex) == str(value)
+            return str(uuid_value) == str(value)
 
     @staticmethod
     def validate_id(uuid, idtype: str, model_class):
@@ -117,3 +125,55 @@ class validationClass:
 
         if upload_file_to_storage:
             return (True, "File is valid")
+
+    @staticmethod
+    def validate_fields(data):
+        """
+        This method is used to validate some specific fields
+        present in the given data (format: dictionary)
+        """
+
+        def validate_email(email):
+            """
+            Validate email format.
+            """
+            email_validator = EmailValidator()
+            try:
+                email_validator(email)
+            except ValidationError as err:
+                raise ValidationError(
+                    f"Invalid email value provided\n\nReason: {err.__str__()}"
+                )
+
+        for field_name, field_value in data.items():
+            try:
+                if field_name == "age":
+                    MinValueValidator(15)(field_value)
+                    MaxValueValidator(100)(field_value)
+                elif field_name == "email":
+                    validate_email(field_value)
+                elif field_name == "website":
+                    if not re.search("^(https?|ftp)://[^\s/$.?#].[^\s]*$", field_value):
+                        raise ValidationError(f"Invalid {field_name} value provided")
+                elif field_name == "experience":
+                    # Here, if the experience value exceeds 15, replace the value
+                    # with "15+", Also check if there are only two integers given
+                    # by the user, and these two integers should be positive & <= 15
+
+                    # check if experience value contains two integers
+                    if re.search("^\d\d$", field_value):
+                        # check if the matched integer value greater than 15
+                        if re.search("^(1[6-9]|[2-9][0-9])$", field_value):
+                            data[field_name] = "15+"
+                    else:
+                        raise ValidationError(f"Invalid {field_name} value provided")
+                elif field_name in ["name", "full_name", "message"]:
+                    if not re.match(r'^[a-zA-Z0-9 .,\'"-]*$', field_value):
+                        raise ValidationError(
+                            {"error": f"Invalid {field_name} format."}
+                        )
+
+            except ValidationError as err:
+                raise ValidationError(
+                    f"Given {field_name} doesn't contain a valid value\n\nReason: {err.__str__()}"
+                )

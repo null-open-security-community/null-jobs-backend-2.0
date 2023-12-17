@@ -17,7 +17,6 @@ from apps.accounts.models import *
 from apps.accounts.renderers import UserRenderer
 from apps.accounts.serializers import *
 from apps.accounts.utils import *
-
 from apps.jobs.models import User as user_profile
 
 # from django.shortcuts import render
@@ -30,7 +29,7 @@ from apps.jobs.models import User as user_profile
 
 
 # Generate token Manually
-class GenerateToken:
+class TokenUtility:
     @staticmethod
     def get_tokens_for_user(user):
         refresh = RefreshToken.for_user(user)
@@ -74,10 +73,14 @@ class GenerateToken:
             # Some other token-related error
             raise TokenError("Token expired")
 
-   
-def otp_dummy_token(user, purpose):
-    payload = {"email": user.email, "user_id": user.user_id.hex, "user_type": user.user_type}
-    token = GenerateToken.generate_dummy_jwt_token(payload)
+
+def generate_guest_token(user, purpose):
+    payload = {
+        "email": user.email,
+        "user_id": str(user.id),
+        "user_type": user.user_type,
+    }
+    token = TokenUtility.generate_dummy_jwt_token(payload)
     
     # for old user
     if user.otp_secret:
@@ -85,22 +88,22 @@ def otp_dummy_token(user, purpose):
         user.save()
     # for new user
     else:
-        otp,secret = OTP.generate_secret_with_otp()
+        otp, secret = OTP.generate_secret_with_otp()
         user.otp_secret = secret
         user.save()
 
     # Send Email
-    if purpose=="verify":
-        subject="Verify your account"
+    if purpose == "verify":
+        subject = "Verify your account"
         body = f"""OTP to verify your account {otp}
         This otp is valid only for 5 minutes
         """
-    elif purpose=="reset-password":
-        subject="OTP to confirm your account"
+    elif purpose == "reset-password":
+        subject = "OTP to confirm your account"
         body = f"""OTP is {otp}
         This otp is valid only for 5 minutes.
         """
-    data = {"subject": subject , "body": body, "to_email": user.email}
+    data = {"subject": subject, "body": body, "to_email": user.email}
     Util.send_email(data)
     return token
 
@@ -116,19 +119,24 @@ class UserRegistrationView(APIView):
 
         user = User.objects.get(email=email)
         user.provider = "local"
-        token = otp_dummy_token(user, "verify")
+        
+        token = generate_guest_token(user, "verify")
 
         # Add an entry in the tbl_user_profile with dummy data
         dummy_data = {
-            "user_id": user.user_id.hex,
-            "name" : user.name,
+            "user_id": user.id,
+            "name": user.name,
             "email": user.email,
             "user_type": user.user_type,
-            "about": None
         }
 
-        user_instance = user_profile(**dummy_data)
-        user_instance.custom_save(override_uuid={"uuid" : dummy_data["user_id"]})
+        try:
+            user_instance = user_profile(**dummy_data)
+            user_instance.custom_save(override_uuid={"uuid": dummy_data["user_id"]})
+        except Exception:
+            return Response(
+                {"msg": "Something went wrong"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         return Response(
             {
@@ -146,19 +154,23 @@ class OTPVerificationCheckView(APIView):
     def post(self, request, format=None):
         dummy_token = request.query_params.get("token")
         try:
-            payload = GenerateToken.verify_and_get_payload(dummy_token)
+            payload = TokenUtility.verify_and_get_payload(dummy_token)
             # print(payload)
         except InvalidToken as e:
-            return Response({"errors": {"token":str(e)}}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"errors": {"token": str(e)}}, status=status.HTTP_401_UNAUTHORIZED
+            )
         except TokenError as e:
-            return Response({"errors": {"token":str(e)}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"errors": {"token": str(e)}}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         serializer = OTPVerificationCheckSerializer(
             data=request.data, context={"email": payload.get("email")}
         )
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
-        token = GenerateToken.get_tokens_for_user(user)
+        token = TokenUtility.get_tokens_for_user(user)
         return Response(
             {"msg": "OTP Verified Successfully!", "token": token},
             status=status.HTTP_201_CREATED,
@@ -177,15 +189,16 @@ class UserLoginView(APIView):
         user = authenticate(email=email, password=password)
         if user is not None:
             if user.is_verified:
-                token = GenerateToken.get_tokens_for_user(user)
+                token = TokenUtility.get_tokens_for_user(user)
                 return Response(
-                    {"token": token, "msg": "Login Success",'verify':True}, status=status.HTTP_200_OK
+                    {"token": token, "msg": "Login Success", "verify": True},
+                    status=status.HTTP_200_OK,
                 )
             else:
-                token = otp_dummy_token(user)
+                token = generate_guest_token(user, "verify")
                 return Response(
-                    {'msg':'User not verified','token':token,'verify':False},
-                    status=status.HTTP_200_OK
+                    {"msg": "User not verified", "token": token, "verify": False},
+                    status=status.HTTP_200_OK,
                 )
         else:
             return Response(
@@ -203,10 +216,12 @@ class UserProfileView(APIView):
         serializer = UserProfileSerializer(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
 # LogOut User
 class UserLogOutView(APIView):
     renderer_classes = [UserRenderer]
     permission_classes = [IsAuthenticated]
+
     def post(self, request, format=None):
         # breakpoint()
         try:
@@ -216,19 +231,22 @@ class UserLogOutView(APIView):
             # access_token.set_exp(lifetime=datetime.timedelta(minutes=1))
             # print(access_token)
             # breakpoint()
-            refresh_token = request.data['refresh_token']
+            refresh_token = request.data["refresh_token"]
             token_obj = RefreshToken(refresh_token)
             token_obj.blacklist()
             return Response(
                 {
                     "msg": "LogOut Successfully",
                     # "token":access_token,
-                },status=status.HTTP_200_OK)
+                },
+                status=status.HTTP_200_OK,
+            )
         except Exception as e:
             return Response(
-                {"errors": {"msg":str(e)}},
-                status=status.HTTP_400_BAD_REQUEST)
-        
+                {"errors": {"msg": str(e)}}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+
 # Password Reset functionality (forget password)
 class SendPasswordResetOTPView(APIView):
     renderer_classes = [UserRenderer]
@@ -237,24 +255,32 @@ class SendPasswordResetOTPView(APIView):
         serializer = SendPasswordResetOTPSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
-        token = otp_dummy_token(user, "reset-password")
+        token = generate_guest_token(user, "reset-password")
         return Response(
             {
                 "msg": "OTP Sent Successfully. Please Check your Email",
                 "token": token,
-            },status=status.HTTP_200_OK)
+            },
+            status=status.HTTP_200_OK,
+        )
+
 
 # View for verifying the otp to reset password
 class ResetPasswordOtpVerifyView(APIView):
     renderer_classes = [UserRenderer]
+
     def post(self, request, format=None):
         dummy_token = request.query_params.get("token")
         try:
-            payload = GenerateToken.verify_and_get_payload(dummy_token)
+            payload = TokenUtility.verify_and_get_payload(dummy_token)
         except InvalidToken as e:
-            return Response({"errors": {"token":str(e)}}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"errors": {"token": str(e)}}, status=status.HTTP_401_UNAUTHORIZED
+            )
         except TokenError as e:
-            return Response({"errors": {"token":str(e)}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"errors": {"token": str(e)}}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         serializer = ResetPasswordOtpVerifySerializer(
             data=request.data, context={"email": payload.get("email")}
@@ -263,9 +289,10 @@ class ResetPasswordOtpVerifyView(APIView):
         uid = serializer.validated_data["uid"]
         token = serializer.validated_data["token"]
         return Response(
-            {"msg": "Verified Successfully!", "token": token, "uid":uid},
+            {"msg": "Verified Successfully!", "token": token, "uid": uid},
             status=status.HTTP_200_OK,
         )
+
 
 class UserPasswordResetView(APIView):
     renderer_classes = [UserRenderer]
@@ -277,7 +304,7 @@ class UserPasswordResetView(APIView):
             data=request.data, context={"uid": uid, "token": token}
         )
         serializer.is_valid(raise_exception=True)
-        user=serializer.validated_data["user"]
+        user = serializer.validated_data["user"]
         body = "Your password is successfully changed.\nLogin to your account to access your account."
         data = {"subject": "Reset Your Password", "body": body, "to_email": user.email}
         Util.send_email(data)
@@ -397,7 +424,7 @@ class CallbackHandleView(APIView):
         try:
             # Login the user
             user = User.objects.get(email=email)
-            jwt_token = GenerateToken.get_tokens_for_user(user)
+            jwt_token = TokenUtility.get_tokens_for_user(user)
             return Response(
                 {"token": jwt_token, "msg": "Login Success"}, status=status.HTTP_200_OK
             )
@@ -412,7 +439,7 @@ class CallbackHandleView(APIView):
             user.provider = "google"
             user.is_verified = True
             user.save()
-            token = GenerateToken.get_tokens_for_user(user)
+            token = TokenUtility.get_tokens_for_user(user)
             return Response(
                 {"msg": "Registration Completed", "token": token},
                 status=status.HTTP_201_CREATED,

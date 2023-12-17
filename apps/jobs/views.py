@@ -4,19 +4,21 @@ from re import search
 import django.core.exceptions
 import jwt
 from django.db.models.expressions import RawSQL
+from django.db.utils import IntegrityError
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from apps.accounts.models import User as user_auth
-from apps.jobs.models import Applicants, Company, Job, User
-from apps.jobs.constants import values, response
+from apps.jobs.constants import response, values
+from apps.jobs.models import Applicants, Company, Job, User, ContactMessage
 from apps.jobs.serializers import (
     ApplicantsSerializer,
     CompanySerializer,
     JobSerializer,
     UserSerializer,
+    ContactUsSerializer,
 )
 from apps.jobs.utils.validators import validationClass
 
@@ -45,7 +47,7 @@ class JobViewSets(viewsets.ModelViewSet):
     # SearchFilter means the same except it'll operate on N number of fields but in the url
     # it'll be like (/api/company/?search="xyz")
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["company", "location"]
+    filterset_fields = ["job_role", "location"]
 
     def list(self, request):
         """
@@ -68,8 +70,7 @@ class JobViewSets(viewsets.ModelViewSet):
         try:
             jobs_data = self.queryset.filter(**filters_dict)
         except django.core.exceptions.ValidationError as err:
-            return response.create_response(
-                err.messages, status.HTTP_404_NOT_FOUND)
+            return response.create_response(err.messages, status.HTTP_404_NOT_FOUND)
         else:
             serialized_job_data = self.serializer_class(
                 jobs_data, many=True, context={"request": request}
@@ -79,7 +80,9 @@ class JobViewSets(viewsets.ModelViewSet):
             if serialized_job_data:
                 serialized_job_data = self.get_number_of_applicants(serialized_job_data)
 
-            return response.create_response(serialized_job_data.data, status.HTTP_200_OK)
+            return response.create_response(
+                serialized_job_data.data, status.HTTP_200_OK
+            )
 
     def create(self, request, *args, **kwargs):
         """Overriding the create method to include permissions"""
@@ -90,8 +93,9 @@ class JobViewSets(viewsets.ModelViewSet):
             request.data[values.EMPLOYER_ID]
         ):
             return response.create_response(
-                response.PERMISSION_DENIED + " You don't have permissions to create jobs",
-                status.HTTP_401_UNAUTHORIZED
+                response.PERMISSION_DENIED
+                + " You don't have permissions to create jobs",
+                status.HTTP_401_UNAUTHORIZED,
             )
 
         return super().create(request, *args, **kwargs)
@@ -103,13 +107,15 @@ class JobViewSets(viewsets.ModelViewSet):
 
         if not validationClass.is_valid_uuid(pk):
             return response.create_response(
-                f"value {pk} isn't a correct id", status.HTTP_404_NOT_FOUND,
+                f"value {pk} isn't a correct id",
+                status.HTTP_404_NOT_FOUND,
             )
 
         # filter based on pk
-        job_data = self.queryset.raw("SELECT * FROM tbl_job WHERE job_id=%s", [pk])
+        job_data = Job.objects.filter(job_id=pk)
         serialized_job_data = self.serializer_class(job_data, many=True)
-        serialized_job_data = self.get_number_of_applicants(serialized_job_data)
+        if serialized_job_data:
+            serialized_job_data = self.get_number_of_applicants(serialized_job_data)
         return response.create_response(serialized_job_data.data, status.HTTP_200_OK)
 
     def get_number_of_applicants(self, serialized_data):
@@ -120,6 +126,12 @@ class JobViewSets(viewsets.ModelViewSet):
 
         if not serialized_data:
             raise Exception("Serialized data not provided")
+
+        # check for "error" key in the serialized data
+        # this is necessary because we don't have to display
+        # number_of_applications in case of error message
+        if not serialized_data.data or "error" in serialized_data.data[0]:
+            return serialized_data
 
         for jobdata in serialized_data.data:
             job_id = jobdata.get(values.JOB_ID)
@@ -140,20 +152,25 @@ class JobViewSets(viewsets.ModelViewSet):
         checkUUID = validationClass.is_valid_uuid(pk)
         if not checkUUID:
             return response.create_response(
-                f"value {pk} isn't a correct id",
-                status.HTTP_404_NOT_FOUND
+                f"value {pk} isn't a correct id", status.HTTP_404_NOT_FOUND
             )
 
         # get the specific job or return 404 if not found
-        jobdata = Job.objects.get(pk=pk)
-        job_id = jobdata.job_id.hex
+        try:
+            jobdata = Job.objects.get(pk=pk)
+        except Exception:
+            return response.create_response(
+                "Job doesn't exist", status.HTTP_404_NOT_FOUND
+            )
+        else:
+            job_id = jobdata.job_id
 
-        # get all the users object
-        user_data = Applicants.objects.filter(job_id=job_id)
-        serialized_data = ApplicantsSerializer(
-            user_data, many=True, context={"request": request}
-        )
-        return response.create_response(serialized_data.data, status.HTTP_200_OK)
+            # get all the users object
+            user_data = Applicants.objects.filter(job_id=job_id)
+            serialized_data = ApplicantsSerializer(
+                user_data, many=True, context={"request": request}
+            )
+            return response.create_response(serialized_data.data, status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"])
     def apply(self, request, pk=None):
@@ -177,8 +194,7 @@ class JobViewSets(viewsets.ModelViewSet):
         ).exists()
         if apply_job_status:
             return response.create_response(
-                "You have already applied for this Job",
-                status.HTTP_200_OK
+                "You have already applied for this Job", status.HTTP_200_OK
             )
 
         # Get the data from the user's database (only resume N cover_letter)
@@ -192,8 +208,7 @@ class JobViewSets(viewsets.ModelViewSet):
         for key, value in applyjob_data.items():
             if not value:
                 return response.create_response(
-                    f"You don't have {key} updated",
-                    status.HTTP_400_BAD_REQUEST
+                    f"You don't have {key} updated", status.HTTP_400_BAD_REQUEST
                 )
 
         # Get the employer-id from the database
@@ -233,7 +248,9 @@ class JobViewSets(viewsets.ModelViewSet):
         # check if job_id is valid & present in db or not
         response_message = validationClass.validate_id(pk, "job-id", Job)
         if response_message:
-            return response.create_response(response_message, status.HTTP_400_BAD_REQUEST)
+            return response.create_response(
+                response_message, status.HTTP_400_BAD_REQUEST
+            )
 
         # check if the given employer_id has posted the job (given by job-id)
         employer_id = request.data[values.EMPLOYER_ID]
@@ -241,12 +258,11 @@ class JobViewSets(viewsets.ModelViewSet):
             Job.objects.filter(job_id=pk)
             .values(values.EMPLOYER_ID)
             .first()[values.EMPLOYER_ID]
-            .hex
         )
-        if job_employer_id != employer_id:
+        if str(job_employer_id) != employer_id:
             return response.create_response(
                 "This job isn't posted by the given employer id",
-                status.HTTP_406_NOT_ACCEPTABLE
+                status.HTTP_406_NOT_ACCEPTABLE,
             )
 
         # Update the status of current application
@@ -256,13 +272,11 @@ class JobViewSets(viewsets.ModelViewSet):
             )
         except Exception as err:
             return response.create_response(
-                response.SOMETHING_WENT_WRONG,
-                status.HTTP_500_INTERNAL_SERVER_ERROR
+                response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
             )
         else:
             return response.create_response(
-                "Status has been updated!!",
-                status.HTTP_200_OK
+                "Status has been updated!!", status.HTTP_200_OK
             )
 
 
@@ -282,8 +296,10 @@ class UserViewSets(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         """
-        Overriding the create method (used in POST request),
-        This method creates a new user profile in the database.
+        Overriding the update method (used in PUT request),
+        This method updates an existing user profile in the database.
+
+        NOTE: tbl_user_auth has "id", tbl_user_profile has "user_id" as primary key.
         """
 
         if request.headers and "AccessToken" in request.headers:
@@ -294,13 +310,12 @@ class UserViewSets(viewsets.ModelViewSet):
                 )
             except jwt.exceptions.DecodeError:
                 return response.create_response(
-                    response.ACCESS_TOKEN_NOT_VALID,
-                    status.HTTP_400_BAD_REQUEST
+                    response.ACCESS_TOKEN_NOT_VALID, status.HTTP_400_BAD_REQUEST
                 )
             except Exception as err:
+                print("Exception occurred while decoding AccessToken")
                 return response.create_response(
-                    response.SOMETHING_WENT_WRONG,
-                    status.HTTP_500_INTERNAL_SERVER_ERROR
+                    response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
             else:
                 # check if the user_id is of type UUID or not
@@ -310,24 +325,22 @@ class UserViewSets(viewsets.ModelViewSet):
                     except Exception as err:
                         return response.create_response(
                             response.USER_INFORMATION_INVALID,
-                            status.HTTP_406_NOT_ACCEPTABLE
+                            status.HTTP_406_NOT_ACCEPTABLE,
                         )
                 else:
                     return response.create_response(
-                        response.ACCESS_TOKEN_NOT_VALID,
-                        status.HTTP_406_NOT_ACCEPTABLE
+                        response.ACCESS_TOKEN_NOT_VALID, status.HTTP_406_NOT_ACCEPTABLE
                     )
         else:
             return response.create_response(
                 response.PERMISSION_DENIED + " You can't perform this operation",
-                status.HTTP_401_UNAUTHORIZED
+                status.HTTP_401_UNAUTHORIZED,
             )
 
         # Perform check on data with PUT Request
         if not request.data:
             return response.create_response(
-                response.REQUEST_BODY_NOT_PRESENT,
-                status.HTTP_400_BAD_REQUEST
+                response.REQUEST_BODY_NOT_PRESENT, status.HTTP_400_BAD_REQUEST
             )
 
         validator = validationClass()
@@ -355,28 +368,35 @@ class UserViewSets(viewsets.ModelViewSet):
 
         # Get the user-id from access-token, and update will be performed
         # only on the user-id present in access-token, not the one we get from
-        # the API endpoint. 
+        # the API endpoint.
 
         # perform check on payload["user_id"] if it exists in db or not
         try:
-            user_id_auth = user_auth.objects.filter(
-                user_id=payload[values.USER_ID]
-            ).exists()
+            user_id_auth = user_auth.objects.filter(id=payload[values.USER_ID]).exists()
             if not user_id_auth:
                 return response.create_response(
-                    response.USER_INFORMATION_INVALID,
-                    status.HTTP_404_NOT_FOUND
+                    response.USER_INFORMATION_INVALID, status.HTTP_404_NOT_FOUND
                 )
         except Exception as err:
+            print(
+                "Exception occurred while performing check on user_id in the database"
+            )
             return response.create_response(
-                response.SOMETHING_WENT_WRONG,
-                status.HTTP_500_INTERNAL_SERVER_ERROR
+                response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
             )
         # Once everything's fine, update the db table
         # payload["user_id"] is used in the filter() not the pk present in url
 
         # get data from the request
         user_data = request.data
+
+        # validate some data first
+        try:
+            validationClass.validate_fields(user_data)
+
+        except Exception as err:
+            return response.create_response(err.__str__(), status.HTTP_400_BAD_REQUEST)
+
         try:
             # update in the tbl_user_profile
             User.objects.filter(user_id=payload[values.USER_ID]).update(**user_data)
@@ -387,19 +407,24 @@ class UserViewSets(viewsets.ModelViewSet):
                 for key in ("name", "email", "user_type")
                 if key in user_data
             }
-            user_auth.objects.filter(user_id=payload[values.USER_ID]).update(
+            user_auth.objects.filter(id=payload[values.USER_ID]).update(
                 **tbl_user_auth_data
             )
-        except:
+        except IntegrityError:
             return response.create_response(
-                response.SOMETHING_WENT_WRONG,
-                status.HTTP_500_INTERNAL_SERVER_ERROR
+                "You've supplied either improper values or same values to update, Use a different one",
+                status.HTTP_401_UNAUTHORIZED,
+            )
+        except Exception as err:
+            print("Exception occurred while updating the user data in the db table")
+            return response.create_response(
+                f"{response.SOMETHING_WENT_WRONG}",
+                status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         else:
             user_data = User.objects.get(user_id=payload[values.USER_ID])
             return response.create_response(
-                UserSerializer(user_data).data,
-                status.HTTP_200_OK
+                UserSerializer(user_data).data, status.HTTP_200_OK
             )
 
     @action(detail=True, methods=["get"])
@@ -413,7 +438,8 @@ class UserViewSets(viewsets.ModelViewSet):
         try:
             if not validationClass.is_valid_uuid(pk):
                 return response.create_response(
-                    f"value {pk} isn't a correct id", status.HTTP_404_NOT_FOUND,
+                    f"value {pk} isn't a correct id",
+                    status.HTTP_404_NOT_FOUND,
                 )
             jobs_data = None
             # get the applications submmited by this user
@@ -433,18 +459,15 @@ class UserViewSets(viewsets.ModelViewSet):
                 )
                 serialized_jobs_data = self.get_application_status(serialized_jobs_data)
                 return response.create_response(
-                    serialized_jobs_data.data,
-                    status.HTTP_200_OK
+                    serialized_jobs_data.data, status.HTTP_200_OK
                 )
             else:
                 return response.create_response(
-                    "You haven't applied to any job",
-                    status.HTTP_200_OK
+                    "You haven't applied to any job", status.HTTP_200_OK
                 )
         except django.core.exceptions.ObjectDoesNotExist:
             return response.create_response(
-                f"person id '{pk}' doesn't exist",
-                status.HTTP_404_NOT_FOUND
+                f"person id '{pk}' doesn't exist", status.HTTP_404_NOT_FOUND
             )
 
     def get_application_status(self, serialized_data):
@@ -488,25 +511,16 @@ class CompanyViewSets(viewsets.ModelViewSet):
 
         serialized_company_data = self.serializer_class(self.get_queryset(), many=True)
         for company_data in serialized_company_data.data:
-            companyId = company_data.get(values.COMPANY_ID)
+            company_id = company_data.get(values.COMPANY_ID)
 
             # get jobs data by company_id from database
             # .values() returns the QuerySet
             # jobData = Job.objects.filter(company=companyId).values()
-            job_data = Job.objects.filter(
-                job_id__in=RawSQL(
-                    """
-                SELECT job_id from tbl_job
-                WHERE company_id=%s
-                """,
-                    [companyId],
-                )
-            ).values()
+            job_data = Job.objects.filter(company_id=company_id).values()
             company_data.update({"Jobs": job_data})
 
         return response.create_response(
-            serialized_company_data.data,
-            status.HTTP_200_OK
+            serialized_company_data.data, status.HTTP_200_OK
         )
 
     @action(detail=False, methods=["get"])
@@ -520,18 +534,59 @@ class CompanyViewSets(viewsets.ModelViewSet):
             company_id = company_data.get(values.COMPANY_ID)
 
             # Get user information by company_id from database
-            user_data = User.objects.filter(
-                user_id__in=RawSQL(
-                    """
-                SELECT user_id from tbl_user_profile
-                WHERE company_id=%s
-                """,
-                    [company_id],
-                )
-            ).values()
+            user_data = User.objects.filter(company_id=company_id).values()
             company_data.update({"User": user_data})
 
         return response.create_response(
-            serialized_company_data.data, 
-            status.HTTP_200_OK
+            serialized_company_data.data, status.HTTP_200_OK
         )
+
+
+class ContactUsViewSet(viewsets.ModelViewSet):
+    """Company object viewsets
+    API: /api/v/contact-us
+    Database: tb1_contact_us
+    Functions:
+        1. take input from user end
+        2. create contact message
+        3. contact message stored in database
+    """
+
+    # queryset = ContactMessage.objects.all()
+    serializer_class = ContactUsSerializer
+    http_method_names = ["post"]
+
+    def get_queryset(self):
+        return ContactMessage.objects.all()
+
+    @action(detail=False, methods=["post"])
+    def create_contact_message(self, request):
+        full_name = request.data.get("full_name")
+        email = request.data.get("email")
+        message = request.data.get("message")
+
+        validation_error = validationClass.validate_fields(
+            {"full_name": full_name, "email": email, "message": message}
+        )
+
+        if validation_error:
+            return Response(validation_error, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer_class = ContactUsSerializer(data=request.data)
+        if serializer_class.is_valid():
+            serializer_class.save()
+            return Response(serializer_class.data, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer_class.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def list(self, request, *args, **kwargs):
+        if request.method == "GET":
+            if UserTypeCheck.is_user_employer:
+                return Response(
+                    {"Access forbidden for non-moderator user"},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+            else:
+                return super().list(request, *args, **kwargs)
+        else:
+            return super().list(request, *args, **kwargs)
