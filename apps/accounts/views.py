@@ -81,7 +81,7 @@ def generate_guest_token(user, purpose):
         "user_type": user.user_type,
     }
     token = TokenUtility.generate_dummy_jwt_token(payload)
-
+    
     # for old user
     if user.otp_secret:
         otp = OTP.generate_otp(user)
@@ -119,6 +119,7 @@ class UserRegistrationView(APIView):
 
         user = User.objects.get(email=email)
         user.provider = "local"
+        
         token = generate_guest_token(user, "verify")
 
         # Add an entry in the tbl_user_profile with dummy data
