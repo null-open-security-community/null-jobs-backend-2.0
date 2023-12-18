@@ -611,17 +611,23 @@ class CompanyViewSets(viewsets.ModelViewSet):
         Along with the count of active jobs present in the company
         """
 
-        serialized_company_data = self.serializer_class(
-            self.queryset, many=True, context={"request": request}
-        )
+        try:
+            serialized_company_data = self.serializer_class(
+                self.queryset, many=True, context={"request": request}
+            )
 
-        # get number of applicants
-        if serialized_company_data:
-            serialized_company_data = JobViewSets.get_active_jobs_count(serialized_company_data)
+            # get number of applicants
+            if serialized_company_data:
+                serialized_company_data = JobViewSets.get_active_jobs_count(serialized_company_data)
 
-        return response.create_response(
-            serialized_company_data.data, status.HTTP_200_OK
-        )
+            return response.create_response(
+                serialized_company_data.data, status.HTTP_200_OK
+            )
+        except Exception:
+            return response.create_response(
+                response.SOMETHING_WENT_WRONG,
+                status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
     
     def retrieve(self, request, pk=None):
         """
@@ -634,12 +640,18 @@ class CompanyViewSets(viewsets.ModelViewSet):
                 status.HTTP_404_NOT_FOUND,
             )
 
-        # filter based on pk
-        company_data = Company.objects.filter(company_id=pk)
-        serialized_company_data = self.serializer_class(company_data, many=True)
-        if serialized_company_data:
-            serialized_company_data = JobViewSets.get_active_jobs_count(serialized_company_data)
-        return response.create_response(serialized_company_data.data, status.HTTP_200_OK)
+        try:
+            # filter based on pk
+            company_data = Company.objects.filter(company_id=pk)
+            serialized_company_data = self.serializer_class(company_data, many=True)
+            if serialized_company_data:
+                serialized_company_data = JobViewSets.get_active_jobs_count(serialized_company_data)
+            return response.create_response(serialized_company_data.data, status.HTTP_200_OK)
+        except Exception:
+            return response.create_response(
+                response.SOMETHING_WENT_WRONG,
+                status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     @action(detail=False, methods=["get"])
     def jobs(self, request):
