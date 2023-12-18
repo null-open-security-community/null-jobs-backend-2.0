@@ -487,7 +487,7 @@ class UserViewSets(viewsets.ModelViewSet):
             )
 
     @action(detail=False, methods=['get'])
-    def my_profile(self, request):
+    def get_profile_details(self, request):
         """
         API: /api/v1/user/myProfile
         Returns user profile data in the response. 
