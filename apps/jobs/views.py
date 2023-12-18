@@ -2,8 +2,6 @@ import jwt
 import uuid
 from re import search
 import django.core.exceptions
-from datetime import datetime, timedelta
-from django.db.models.expressions import RawSQL
 from django.db.utils import IntegrityError
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
@@ -23,6 +21,8 @@ from apps.jobs.serializers import (
 from apps.jobs.utils.validators import validationClass
 
 from .utils.user_permissions import UserTypeCheck
+from datetime import timedelta
+from django.utils import datetime_safe, timezone
 
 # Create your views here.
 # the ModelViewSet provides basic crud methods like create, update etc.
@@ -305,33 +305,39 @@ class JobViewSets(viewsets.ModelViewSet):
         2. Job.is_active is True
         3. Find out 6 jobs with maximum number of applicants
         """
-        # Get datetime values of present and past
-        current_datetime = datetime.now()
-        past_3_weeks_datetime = current_datetime - timedelta(days=18)
+
+        # past 3 weeks datetime specified for featured jobs (can be modified as per use)
+        past_3_weeks_datetime = datetime_safe.datetime.now(tz=timezone.utc) - timedelta(days=18)
 
         # get the jobs_data and sort it in DESC order
         # `-` with column name indicates to return the result in DESC order
-        jobs_data = Job.objects.filter(
-            created_at__gt=past_3_weeks_datetime,
-            is_active=True
-        ).order_by("-created_at")
+        try:
+            jobs_data = Job.objects.filter(
+                created_at__gt=past_3_weeks_datetime,
+                is_active=True
+            ).order_by("-created_at")
 
-        jobs_posted_within_3_weeks = JobSerializer(jobs_data, many=True)
+            jobs_posted_within_3_weeks = JobSerializer(jobs_data, many=True)
 
-        # find out how many jobs were posted within past_3_weeks
-        jobs_posted_within_3_weeks = JobViewSets.get_number_of_applicants(jobs_posted_within_3_weeks)
+            # find out how many jobs were posted within past_3_weeks
+            jobs_posted_within_3_weeks = JobViewSets.get_number_of_applicants(jobs_posted_within_3_weeks)
 
-        # find 5 jobs with maximum number of applicants
-        featured_jobs = sorted(
-            jobs_posted_within_3_weeks.data,
-            key=lambda k: (k.get('Number of Applicants')),
-            reverse=True
-        )
+            # find 5 jobs with maximum number of applicants
+            featured_jobs = sorted(
+                jobs_posted_within_3_weeks.data,
+                key=lambda k: (k.get('Number of Applicants')),
+                reverse=True
+            )
 
-        return response.create_response(
-            featured_jobs[0:5],
-            status.HTTP_200_OK
-        )
+            return response.create_response(
+                featured_jobs[0:5],
+                status.HTTP_200_OK
+            )
+        except Exception:
+            return response.create_response(
+                response.SOMETHING_WENT_WRONG,
+                status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class UserViewSets(viewsets.ModelViewSet):
     """
@@ -481,7 +487,7 @@ class UserViewSets(viewsets.ModelViewSet):
             )
 
     @action(detail=False, methods=['get'])
-    def myProfile(self, request):
+    def my_profile(self, request):
         """
         API: /api/v1/user/myProfile
         Returns user profile data in the response. 
@@ -489,13 +495,13 @@ class UserViewSets(viewsets.ModelViewSet):
         """
         
         # Get the value from Access-Token header
-        if access_token:=request.headers.get("AccessToken", None):
+        if access_token:=request.headers.get(response.ACCESS_TOKEN, None):
             try:
                 # decode JWT Token; for any issues with it, raise an exception
                 decoded_user_access_token = jwt.decode(
                     access_token, options={"verify_signature": False}
                 )
-                user_id = decoded_user_access_token.get("user_id", None)
+                user_id = decoded_user_access_token.get(values.USER_ID, None)
                 if not user_id:
                     raise Exception
                 
@@ -509,17 +515,17 @@ class UserViewSets(viewsets.ModelViewSet):
                     )
                 else:
                     return response.create_response(
-                        "No User Data Present",
+                        response.USER_DATA_NOT_PRESENT,
                         status.HTTP_404_NOT_FOUND
                     )
             except Exception:
                 return response.create_response(
-                    "Invalid AccessToken provided",
+                    response.ACCESS_TOKEN_NOT_VALID,
                     status.HTTP_400_BAD_REQUEST
                 )
         else:
             return response.create_response(
-                "AccessToken not present",
+                response.ACCESS_TOKEN_NOT_PRESENT,
                 status.HTTP_401_UNAUTHORIZED
             )
 

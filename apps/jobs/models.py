@@ -111,7 +111,7 @@ class User(models.Model):
     age = models.PositiveIntegerField(default=None, null=True)
     education = models.TextField(max_length=500, default=None, null=True)
     professional_skills = models.TextField(max_length=500, default=None, null=True)
-    hiring_status = models.CharField(max_length=15, choices=HIRING_STATUS, default="N/A", null=True)
+    hiring_status = models.CharField(max_length=15, choices=HIRING_STATUS, default="Not Applied Yet", null=True)
 
     # These fields will be displayed as a part of "Contact" field
     email = models.CharField(max_length=30, null=False)

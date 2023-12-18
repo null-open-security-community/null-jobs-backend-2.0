@@ -16,9 +16,11 @@ def create_response(
         response = {"message": {"error": response_message}}
     return Response(response, status=status_code, content_type=content_type)
 
-
-SOMETHING_WENT_WRONG = "something went wrong"
-ACCESS_TOKEN_NOT_VALID = "Invalid access token provided"
-PERMISSION_DENIED = "Permission denied!"
-USER_INFORMATION_INVALID = "User information is not valid"
-REQUEST_BODY_NOT_PRESENT = "Request body not present"
+ACCESS_TOKEN = "AccessToken"
+SOMETHING_WENT_WRONG = "Something Went Wrong"
+ACCESS_TOKEN_NOT_VALID = "Invalid Access Token Provided"
+PERMISSION_DENIED = "Permission Denied!"
+USER_INFORMATION_INVALID = "User Information is Not Valid"
+REQUEST_BODY_NOT_PRESENT = "Request Body Not Present"
+ACCESS_TOKEN_NOT_PRESENT = "Access Token Not Present"
+USER_DATA_NOT_PRESENT = "User Data is Not Present"
