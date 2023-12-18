@@ -279,6 +279,35 @@ class JobViewSets(viewsets.ModelViewSet):
                 "Status has been updated!!", status.HTTP_200_OK
             )
 
+    @action(detail=False, methods=["get"])
+    def all_jobs(self, request):
+        """
+        API endpoint: /api/v1/jobs/all_jobs
+        Returns a list of all posted jobs.
+        """
+
+        try:
+            # Get all the jobs from the database
+            all_jobs_data = Job.objects.all()
+            serialized_all_jobs_data = JobSerializer(
+                all_jobs_data, many=True, context={"request": request}
+            )
+
+            # Optionally, added the number of applicants to each job
+            serialized_all_jobs_data = self.get_number_of_applicants(
+                serialized_all_jobs_data
+            )
+
+            return response.create_response(
+                serialized_all_jobs_data.data, status.HTTP_200_OK
+            )
+
+        except Exception as err:
+            return response.create_response(
+                f"Error retrieving all jobs: {err}",
+                status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
 
 class UserViewSets(viewsets.ModelViewSet):
     """
