@@ -280,6 +280,17 @@ class JobViewSets(viewsets.ModelViewSet):
             )
 
     @action(detail=False, methods=["get"])
+    def job_categories(self, request):
+        """
+        API endpoint: jobs/JobCategories
+        Returns all types of job categories.
+        """
+        job_categories = Job.objects.values_list("category", flat=True).distinct()
+        return response.create_response(
+            {"job_categories": list(job_categories)}, status.HTTP_200_OK
+        )
+
+    @action(detail=False, methods=["get"])
     def all_jobs(self, request):
         """
         API endpoint: /api/v1/jobs/all_jobs
@@ -511,6 +522,21 @@ class UserViewSets(viewsets.ModelViewSet):
                 job_data.update({"status": status})
 
         return serialized_data
+
+    @action(detail=False, methods=["get"])
+    def get_users(self, request):
+        page = self.paginate_queryset(User.objects.all())
+        count = request.query_params.get("count", 10)  # Default count is 10
+
+        users = User.objects.all()[: int(count)]
+        # If the page parameter is specified, paginate the result
+        if page is not None:
+            users = self.paginate_queryset(users)
+            serializer = self.get_serializer(users, many=True)
+            return Response(serializer.data)
+
+        serializer = self.get_serializer(users, many=True)
+        return Response(serializer.data)
 
 
 class CompanyViewSets(viewsets.ModelViewSet):
