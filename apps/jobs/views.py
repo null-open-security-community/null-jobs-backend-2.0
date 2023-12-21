@@ -19,6 +19,7 @@ from apps.jobs.serializers import (
     JobSerializer,
     UserSerializer,
     ContactUsSerializer,
+    JobListSerializer,
 )
 from apps.jobs.utils.validators import validationClass
 
@@ -100,16 +101,16 @@ class JobViewSets(viewsets.ModelViewSet):
 
         return super().create(request, *args, **kwargs)
 
-    def retrieve(self, request, pk=None):
-        """
-        retrieve the data of given job id
-        """
+        # def retrieve(self, request, pk=None):
+        #     """
+        #     retrieve the data of given job id
+        #     """
 
-        if not validationClass.is_valid_uuid(pk):
-            return response.create_response(
-                f"value {pk} isn't a correct id",
-                status.HTTP_404_NOT_FOUND,
-            )
+        #     if not validationClass.is_valid_uuid(pk):
+        #         return response.create_response(
+        #             f"value {pk} isn't a correct id",
+        #             status.HTTP_404_NOT_FOUND,
+        #         )
 
         # filter based on pk
         job_data = Job.objects.filter(job_id=pk)
@@ -280,44 +281,42 @@ class JobViewSets(viewsets.ModelViewSet):
             )
 
     @action(detail=False, methods=["get"])
-    def job_categories(self, request):
-        """
-        API endpoint: jobs/JobCategories
-        Returns all types of job categories.
-        """
-        job_categories = Job.objects.values_list("category", flat=True).distinct()
-        return response.create_response(
-            {"job_categories": list(job_categories)}, status.HTTP_200_OK
-        )
+    def get_posted_jobs(self, request):
+        """Get the list of posted jobs with JWT tokens."""
+        posted_jobs = Job.objects.filter(posted=True)
+        serializer = JobListSerializer(posted_jobs, many=True)
+
+        # Include the JWT token for each job
+        data = []
+        for job_data in serializer.data:
+            job_id = job_data["job_id"]
+
+            # Create a JWT token for the job_id
+            token_payload = {"job_id": job_id}
+            jwt_token = jwt.encode(
+                token_payload, "a1b2c3d4e5f6g7h8i9j0", algorithm="HS256"
+            )
+
+            job_data["jwt_token"] = jwt_token
+            data.append(job_data)
+
+        return Response(data)
 
     @action(detail=False, methods=["get"])
-    def all_jobs(self, request):
-        """
-        API endpoint: /api/v1/jobs/all_jobs
-        Returns a list of all posted jobs.
-        """
+    def details(self, request):
+        """Get details of a specific job."""
+        job_id = Job.objects.get(job_id=request)
+
+        if not job_id:
+            return Response({"error": "job_id parameter is required"}, status=400)
 
         try:
-            # Get all the jobs from the database
-            all_jobs_data = Job.objects.all()
-            serialized_all_jobs_data = JobSerializer(
-                all_jobs_data, many=True, context={"request": request}
-            )
+            job = Job.objects.get(job_id=job_id)
+        except Job.DoesNotExist:
+            return Response({"error": "Job not found"}, status=404)
 
-            # Optionally, added the number of applicants to each job
-            serialized_all_jobs_data = self.get_number_of_applicants(
-                serialized_all_jobs_data
-            )
-
-            return response.create_response(
-                serialized_all_jobs_data.data, status.HTTP_200_OK
-            )
-
-        except Exception as err:
-            return response.create_response(
-                f"Error retrieving all jobs: {err}",
-                status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+        serializer = JobSerializer(job)
+        return Response(serializer.data)
 
 
 class UserViewSets(viewsets.ModelViewSet):

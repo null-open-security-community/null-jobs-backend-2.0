@@ -66,6 +66,12 @@ class JobSerializer(serializers.ModelSerializer):
         return data
 
 
+class JobListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Job
+        fields = ["job_id", "job_role", "location"]
+
+
 class CompanySerializer(serializers.ModelSerializer):
     """Company object serializer class"""
 
