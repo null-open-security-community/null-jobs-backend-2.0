@@ -4,7 +4,7 @@ from django.db import models
 
 from apps.accounts.models import User as UserAuth
 from apps.jobs.constants import values
-from apps.jobs.constants.values import GENDER, STATUS_CHOICES
+from apps.jobs.constants.values import GENDER, STATUS_CHOICES, HIRING_STATUS, JOB_TYPE
 
 
 class Company(models.Model):
@@ -55,11 +55,13 @@ class Job(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)  # only add the timestamp once
     updated_at = models.DateTimeField(auto_now=True)  # update timestamp on every save()
     employer_id = models.UUIDField(null=False, editable=True, default=None)
-    job_type = models.CharField(max_length=80, null=False)
+    job_type = models.CharField(max_length=80, choices=JOB_TYPE, null=False)
     salary = models.DecimalField(max_digits=9, decimal_places=2)
     qualifications = models.CharField(max_length=60, default=None, null=True)
-    vacency_position = models.IntegerField(default=0, null=False)
-    industry = models.CharField(max_length=50, default=None, null=True)
+    vacency_count = models.IntegerField(default=0, null=False)
+    industry = models.CharField(max_length=50, default=None, null=True),
+    category = models.CharField(max_length=20, default=None, null=True),
+    is_active = models.BooleanField(null=False)
 
     # These fields will be displayed as a part of "description" field
     job_responsibilities = models.TextField(
@@ -109,6 +111,7 @@ class User(models.Model):
     age = models.PositiveIntegerField(default=None, null=True)
     education = models.TextField(max_length=500, default=None, null=True)
     professional_skills = models.TextField(max_length=500, default=None, null=True)
+    hiring_status = models.CharField(max_length=15, choices=HIRING_STATUS, default="Not Applied Yet", null=True)
 
     # These fields will be displayed as a part of "Contact" field
     email = models.CharField(max_length=30, null=False)
@@ -161,6 +164,8 @@ class ContactMessage(models.Model):
     full_name = models.CharField(max_length=100)
     email = models.EmailField()
     message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.full_name
