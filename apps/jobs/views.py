@@ -1,9 +1,7 @@
+import jwt
 import uuid
 from re import search
-
 import django.core.exceptions
-import jwt
-from django.db.models.expressions import RawSQL
 from django.db.utils import IntegrityError
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
@@ -19,11 +17,12 @@ from apps.jobs.serializers import (
     JobSerializer,
     UserSerializer,
     ContactUsSerializer,
-    JobListSerializer,
 )
 from apps.jobs.utils.validators import validationClass
 
 from .utils.user_permissions import UserTypeCheck
+from datetime import timedelta
+from django.utils import datetime_safe, timezone
 
 # Create your views here.
 # the ModelViewSet provides basic crud methods like create, update etc.
@@ -48,7 +47,7 @@ class JobViewSets(viewsets.ModelViewSet):
     # SearchFilter means the same except it'll operate on N number of fields but in the url
     # it'll be like (/api/company/?search="xyz")
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["job_role", "location"]
+    filterset_fields = ["job_role", "location", "is_active"]
 
     def list(self, request):
         """
@@ -79,7 +78,9 @@ class JobViewSets(viewsets.ModelViewSet):
 
             # get number of applicants
             if serialized_job_data:
-                serialized_job_data = self.get_number_of_applicants(serialized_job_data)
+                serialized_job_data = JobViewSets.get_number_of_applicants(
+                    serialized_job_data
+                )
 
             return response.create_response(
                 serialized_job_data.data, status.HTTP_200_OK
@@ -101,25 +102,14 @@ class JobViewSets(viewsets.ModelViewSet):
 
         return super().create(request, *args, **kwargs)
 
-        # def retrieve(self, request, pk=None):
-        #     """
-        #     retrieve the data of given job id
-        #     """
+    def retrieve(self, request, *args, **kwargs):
+        """
+        Overriding the retrieve method to redirect it to the new retrieve_job_by_id method.
+        """
+        return self.retrieve_job_by_id(request, *args, **kwargs)
 
-        #     if not validationClass.is_valid_uuid(pk):
-        #         return response.create_response(
-        #             f"value {pk} isn't a correct id",
-        #             status.HTTP_404_NOT_FOUND,
-        #         )
-
-        # filter based on pk
-        job_data = Job.objects.filter(job_id=pk)
-        serialized_job_data = self.serializer_class(job_data, many=True)
-        if serialized_job_data:
-            serialized_job_data = self.get_number_of_applicants(serialized_job_data)
-        return response.create_response(serialized_job_data.data, status.HTTP_200_OK)
-
-    def get_number_of_applicants(self, serialized_data):
+    @staticmethod
+    def get_number_of_applicants(serialized_data):
         """
         return serialized_data with a new field added to it,
         that contains count of number of applicants.
@@ -131,8 +121,9 @@ class JobViewSets(viewsets.ModelViewSet):
         # check for "error" key in the serialized data
         # this is necessary because we don't have to display
         # number_of_applications in case of error message
-        if not serialized_data.data or "error" in serialized_data.data[0]:
-            return serialized_data
+        if not serialized_data.data:
+            if "error" in serialized_data.data[0]:
+                return serialized_data
 
         for jobdata in serialized_data.data:
             job_id = jobdata.get(values.JOB_ID)
@@ -140,6 +131,47 @@ class JobViewSets(viewsets.ModelViewSet):
             jobdata.update({"Number of Applicants": number_of_applicants})
 
         return serialized_data
+
+    @staticmethod
+    def get_active_jobs_count(serialized_company_data):
+        """
+        Add a new field called "Active Jobs" to the serialized data,
+        that contains the count of active jobs present in the company.
+        """
+
+        for company in serialized_company_data.data:
+            jobs_belong_to_company = Job.objects.filter(
+                company_id=company.get("company_id")
+            )
+            active_jobs = sum(1 for job in jobs_belong_to_company if job.is_active)
+            company.update({"Active Jobs": active_jobs})
+
+        return serialized_company_data
+
+    @action(detail=False, methods=["get"], url_path="details")
+    def retrieve_job_by_id(self, request):
+        """
+        API: /api/v1/jobs/details
+        This method retrieves job data by job_id provided in the query parameter.
+        """
+        job_id = request.query_params.get("job_id")
+
+        if not job_id or not validationClass.is_valid_uuid(job_id):
+            return response.create_response(
+                "Invalid or missing 'job_id' parameter in the query",
+                status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            job_data = Job.objects.get(job_id=job_id)
+        except Job.DoesNotExist:
+            return response.create_response(
+                f"Job with job_id '{job_id}' does not exist", status.HTTP_404_NOT_FOUND
+            )
+
+        serialized_job_data = self.serializer_class(job_data)
+
+        return response.create_response(serialized_job_data.data, status.HTTP_200_OK)
 
     @action(detail=True, methods=["get"])
     def users(self, request, pk=None):
@@ -281,42 +313,47 @@ class JobViewSets(viewsets.ModelViewSet):
             )
 
     @action(detail=False, methods=["get"])
-    def get_posted_jobs(self, request):
-        """Get the list of posted jobs with JWT tokens."""
-        posted_jobs = Job.objects.filter(posted=True)
-        serializer = JobListSerializer(posted_jobs, many=True)
+    def featured_jobs(self, request):
+        """
+        API: /user/featured_jobs/
+        This method returns list of featured jobs based on
+        Following conditions:
+        1. Job posted within past 3 weeks till now
+        2. Job.is_active is True
+        3. Find out 6 jobs with maximum number of applicants
+        """
 
-        # Include the JWT token for each job
-        data = []
-        for job_data in serializer.data:
-            job_id = job_data["job_id"]
+        # past 3 weeks datetime specified for featured jobs (can be modified as per use)
+        past_3_weeks_datetime = datetime_safe.datetime.now(tz=timezone.utc) - timedelta(
+            days=18
+        )
 
-            # Create a JWT token for the job_id
-            token_payload = {"job_id": job_id}
-            jwt_token = jwt.encode(
-                token_payload, "a1b2c3d4e5f6g7h8i9j0", algorithm="HS256"
+        # get the jobs_data and sort it in DESC order
+        # `-` with column name indicates to return the result in DESC order
+        try:
+            jobs_data = Job.objects.filter(
+                created_at__gt=past_3_weeks_datetime, is_active=True
+            ).order_by("-created_at")
+
+            jobs_posted_within_3_weeks = JobSerializer(jobs_data, many=True)
+
+            # find out how many jobs were posted within past_3_weeks
+            jobs_posted_within_3_weeks = JobViewSets.get_number_of_applicants(
+                jobs_posted_within_3_weeks
             )
 
-            job_data["jwt_token"] = jwt_token
-            data.append(job_data)
+            # find 5 jobs with maximum number of applicants
+            featured_jobs = sorted(
+                jobs_posted_within_3_weeks.data,
+                key=lambda k: (k.get("Number of Applicants")),
+                reverse=True,
+            )
 
-        return Response(data)
-
-    @action(detail=False, methods=["get"])
-    def details(self, request):
-        """Get details of a specific job."""
-        job_id = Job.objects.get(job_id=request)
-
-        if not job_id:
-            return Response({"error": "job_id parameter is required"}, status=400)
-
-        try:
-            job = Job.objects.get(job_id=job_id)
-        except Job.DoesNotExist:
-            return Response({"error": "Job not found"}, status=404)
-
-        serializer = JobSerializer(job)
-        return Response(serializer.data)
+            return response.create_response(featured_jobs[0:5], status.HTTP_200_OK)
+        except Exception:
+            return response.create_response(
+                response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class UserViewSets(viewsets.ModelViewSet):
@@ -466,6 +503,45 @@ class UserViewSets(viewsets.ModelViewSet):
                 UserSerializer(user_data).data, status.HTTP_200_OK
             )
 
+    @action(detail=False, methods=["get"])
+    def get_profile_details(self, request):
+        """
+        API: /api/v1/user/myProfile
+        Returns user profile data in the response.
+        This method gets the user_id from "access-token".
+        """
+
+        # Get the value from Access-Token header
+        if access_token := request.headers.get(response.ACCESS_TOKEN, None):
+            try:
+                # decode JWT Token; for any issues with it, raise an exception
+                decoded_user_access_token = jwt.decode(
+                    access_token, options={"verify_signature": False}
+                )
+                user_id = decoded_user_access_token.get(values.USER_ID, None)
+                if not user_id:
+                    raise Exception
+
+                # get user data
+                user_data = self.queryset.filter(user_id=user_id)
+                if user_data:
+                    serialized_user_data = self.serializer_class(user_data, many=True)
+                    return response.create_response(
+                        serialized_user_data.data, status.HTTP_200_OK
+                    )
+                else:
+                    return response.create_response(
+                        response.USER_DATA_NOT_PRESENT, status.HTTP_404_NOT_FOUND
+                    )
+            except Exception:
+                return response.create_response(
+                    response.ACCESS_TOKEN_NOT_VALID, status.HTTP_400_BAD_REQUEST
+                )
+        else:
+            return response.create_response(
+                response.ACCESS_TOKEN_NOT_PRESENT, status.HTTP_401_UNAUTHORIZED
+            )
+
     @action(detail=True, methods=["get"])
     def jobs(self, request, pk=None):
         """
@@ -522,21 +598,6 @@ class UserViewSets(viewsets.ModelViewSet):
 
         return serialized_data
 
-    @action(detail=False, methods=["get"])
-    def get_users(self, request):
-        page = self.paginate_queryset(User.objects.all())
-        count = request.query_params.get("count", 10)  # Default count is 10
-
-        users = User.objects.all()[: int(count)]
-        # If the page parameter is specified, paginate the result
-        if page is not None:
-            users = self.paginate_queryset(users)
-            serializer = self.get_serializer(users, many=True)
-            return Response(serializer.data)
-
-        serializer = self.get_serializer(users, many=True)
-        return Response(serializer.data)
-
 
 class CompanyViewSets(viewsets.ModelViewSet):
     """
@@ -556,6 +617,58 @@ class CompanyViewSets(viewsets.ModelViewSet):
     # Basic filters
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["name", "location"]
+
+    def list(self, request):
+        """
+        Method to return a list of companies available,
+        Along with the count of active jobs present in the company
+        """
+
+        try:
+            serialized_company_data = self.serializer_class(
+                self.queryset, many=True, context={"request": request}
+            )
+
+            # get number of applicants
+            if serialized_company_data:
+                serialized_company_data = JobViewSets.get_active_jobs_count(
+                    serialized_company_data
+                )
+
+            return response.create_response(
+                serialized_company_data.data, status.HTTP_200_OK
+            )
+        except Exception:
+            return response.create_response(
+                response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def retrieve(self, request, pk=None):
+        """
+        retrieve the data of given company id
+        """
+
+        if not validationClass.is_valid_uuid(pk):
+            return response.create_response(
+                f"value {pk} isn't a correct id",
+                status.HTTP_404_NOT_FOUND,
+            )
+
+        try:
+            # filter based on pk
+            company_data = Company.objects.filter(company_id=pk)
+            serialized_company_data = self.serializer_class(company_data, many=True)
+            if serialized_company_data:
+                serialized_company_data = JobViewSets.get_active_jobs_count(
+                    serialized_company_data
+                )
+            return response.create_response(
+                serialized_company_data.data, status.HTTP_200_OK
+            )
+        except Exception:
+            return response.create_response(
+                response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     @action(detail=False, methods=["get"])
     def jobs(self, request):
