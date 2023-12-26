@@ -102,11 +102,34 @@ class JobViewSets(viewsets.ModelViewSet):
 
         return super().create(request, *args, **kwargs)
 
-    def retrieve(self, request, *args, **kwargs):
+    @action(detail=False, methods=["get"], url_path="details")
+    def details(self, request, *args, **kwargs):
         """
-        Overriding the retrieve method to redirect it to the new retrieve_job_by_id method.
+        API: /api/v1/jobs/details
+        This method retrieves job data by job_id provided in the query parameter.
         """
-        return self.retrieve_job_by_id(request, *args, **kwargs)
+
+        job_id = request.query_params.get("job_id")
+
+        if not job_id or not validationClass.is_valid_uuid(job_id):
+            return response.create_response(
+                "Invalid or missing 'job_id' parameter in the query",
+                status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            job_data = Job.objects.filter(job_id=job_id)
+        except Job.DoesNotExist:
+            return response.create_response(
+                f"Job with job_id '{job_id}' does not exist", status.HTTP_404_NOT_FOUND
+            )
+
+        serialized_job_data = self.serializer_class(job_data, many=True)
+        if serialized_job_data:
+            serialized_job_data = JobViewSets.get_number_of_applicants(
+                serialized_job_data
+            )
+        return response.create_response(serialized_job_data.data, status.HTTP_200_OK)
 
     @staticmethod
     def get_number_of_applicants(serialized_data):
@@ -147,31 +170,6 @@ class JobViewSets(viewsets.ModelViewSet):
             company.update({"Active Jobs": active_jobs})
 
         return serialized_company_data
-
-    @action(detail=False, methods=["get"], url_path="details")
-    def retrieve_job_by_id(self, request):
-        """
-        API: /api/v1/jobs/details
-        This method retrieves job data by job_id provided in the query parameter.
-        """
-        job_id = request.query_params.get("job_id")
-
-        if not job_id or not validationClass.is_valid_uuid(job_id):
-            return response.create_response(
-                "Invalid or missing 'job_id' parameter in the query",
-                status.HTTP_400_BAD_REQUEST,
-            )
-
-        try:
-            job_data = Job.objects.get(job_id=job_id)
-        except Job.DoesNotExist:
-            return response.create_response(
-                f"Job with job_id '{job_id}' does not exist", status.HTTP_404_NOT_FOUND
-            )
-
-        serialized_job_data = self.serializer_class(job_data)
-
-        return response.create_response(serialized_job_data.data, status.HTTP_200_OK)
 
     @action(detail=True, methods=["get"])
     def users(self, request, pk=None):
@@ -354,6 +352,16 @@ class JobViewSets(viewsets.ModelViewSet):
             return response.create_response(
                 response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+    @action(detail=False, methods=["get"])
+    def get_job_categories(self, request):
+        """
+        API: /api/v1/jobs/getJobCategories
+        This method retrieves a list of unique job categories.
+        """
+        job_categories = Job.objects.values_list("category", flat=True).distinct()
+
+        return Response(job_categories, status.HTTP_200_OK)
 
 
 class UserViewSets(viewsets.ModelViewSet):
