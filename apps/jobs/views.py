@@ -171,6 +171,22 @@ class JobViewSets(viewsets.ModelViewSet):
 
         return serialized_company_data
 
+    @staticmethod
+    def get_active_jobs_count(serialized_company_data):
+        """
+        Add a new field called "Active Jobs" to the serialized data,
+        that contains the count of active jobs present in the company.
+        """
+
+        for company in serialized_company_data.data:
+            jobs_belong_to_company = Job.objects.filter(
+                company_id=company.get("company_id")
+            )
+            active_jobs = sum(1 for job in jobs_belong_to_company if job.is_active)
+            company.update({"Active Jobs": active_jobs})
+
+        return serialized_company_data
+
     @action(detail=True, methods=["get"])
     def users(self, request, pk=None):
         """
@@ -322,6 +338,7 @@ class JobViewSets(viewsets.ModelViewSet):
         """
 
         # past 3 weeks datetime specified for featured jobs (can be modified as per use)
+
         past_3_weeks_datetime = datetime_safe.datetime.now(tz=timezone.utc) - timedelta(
             days=18
         )
@@ -352,16 +369,6 @@ class JobViewSets(viewsets.ModelViewSet):
             return response.create_response(
                 response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
-    @action(detail=False, methods=["get"])
-    def get_job_categories(self, request):
-        """
-        API: /api/v1/jobs/getJobCategories
-        This method retrieves a list of unique job categories.
-        """
-        job_categories = Job.objects.values_list("category", flat=True).distinct()
-
-        return Response(job_categories, status.HTTP_200_OK)
 
 
 class UserViewSets(viewsets.ModelViewSet):
@@ -529,7 +536,6 @@ class UserViewSets(viewsets.ModelViewSet):
                 user_id = decoded_user_access_token.get(values.USER_ID, None)
                 if not user_id:
                     raise Exception
-
                 # get user data
                 user_data = self.queryset.filter(user_id=user_id)
                 if user_data:
@@ -642,7 +648,6 @@ class CompanyViewSets(viewsets.ModelViewSet):
                 serialized_company_data = JobViewSets.get_active_jobs_count(
                     serialized_company_data
                 )
-
             return response.create_response(
                 serialized_company_data.data, status.HTTP_200_OK
             )

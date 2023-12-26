@@ -6,6 +6,7 @@ from rest_framework import serializers
 from apps.accounts.models import User
 from apps.accounts.utils import *
 
+
 # from apps.accounts.views import generate_guest_token
 
 

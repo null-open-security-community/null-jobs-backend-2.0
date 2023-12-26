@@ -59,9 +59,10 @@ class Job(models.Model):
     salary = models.DecimalField(max_digits=9, decimal_places=2)
     qualifications = models.CharField(max_length=60, default=None, null=True)
     vacency_count = models.IntegerField(default=0, null=False)
-    industry = (models.CharField(max_length=50, default=None, null=True),)
-    category = (models.CharField(max_length=20, default=None, null=True),)
-    application_status = models.IntegerField(default=None, null=True)
+    industry = models.CharField(max_length=50, default=None, null=True),
+    category = models.CharField(max_length=20, default=None, null=True),
+    is_active = models.BooleanField(null=False)
+
 
     # These fields will be displayed as a part of "description" field
     job_responsibilities = models.TextField(
@@ -111,9 +112,8 @@ class User(models.Model):
     age = models.PositiveIntegerField(default=None, null=True)
     education = models.TextField(max_length=500, default=None, null=True)
     professional_skills = models.TextField(max_length=500, default=None, null=True)
-    hiring_status = models.CharField(
-        max_length=15, choices=HIRING_STATUS, default="N/A", null=True
-    )
+    hiring_status = models.CharField(max_length=15, choices=HIRING_STATUS, default="Not Applied Yet", null=True)
+
 
     # These fields will be displayed as a part of "Contact" field
     email = models.CharField(max_length=30, null=False)
