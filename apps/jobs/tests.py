@@ -37,7 +37,7 @@ class JobViewSetsTestCase(TestCase):
             "job_type": "Full-Time",
             "salary": 75000.00,
             "qualifications": "Bachelor's degree in Computer Science",
-            "vacency_position": 3,
+            "vacency_count": 3,
             "industry": "Technology",
             "job_responsibilities": "Sample responsibilities",
             "skills_required": "Python, Django, REST API",
