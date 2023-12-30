@@ -63,6 +63,7 @@ class Job(models.Model):
     category = models.CharField(max_length=20, default=None, null=True),
     is_active = models.BooleanField(null=False)
 
+
     # These fields will be displayed as a part of "description" field
     job_responsibilities = models.TextField(
         default="No Job Responsibilities provided", max_length=1000
@@ -112,6 +113,7 @@ class User(models.Model):
     education = models.TextField(max_length=500, default=None, null=True)
     professional_skills = models.TextField(max_length=500, default=None, null=True)
     hiring_status = models.CharField(max_length=15, choices=HIRING_STATUS, default="Not Applied Yet", null=True)
+
 
     # These fields will be displayed as a part of "Contact" field
     email = models.CharField(max_length=30, null=False)
