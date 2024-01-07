@@ -3,7 +3,9 @@ import datetime
 # from django.urls import reverse
 import urllib.parse
 
+import secrets
 import requests
+import logging
 from django.conf import settings
 from django.contrib.auth import authenticate
 from rest_framework import status
@@ -27,6 +29,8 @@ from apps.jobs.models import User as user_profile
 # from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 # from dj_rest_auth.registration.views import SocialLoginView
 
+
+logger = logging.getLogger(__name__)
 
 # Generate token Manually
 class TokenUtility:
@@ -344,29 +348,32 @@ class UserChangePasswordOTPView(APIView):
         )
 
 
-# Hit on that url to get the callback
-# https://accounts.google.com/o/oauth2/v2/auth?client_id=<google-client-id>&response_type=code&scope=https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile&access_type=offline&redirect_uri=http://localhost:8000/api/user/google/login/callback/
-
-
 class GoogleHandle(APIView):
     renderer_classes = [UserRenderer]
 
-    def get(self, request):
-        client_id = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
-        response_type = "code"
-        scope = f"https://www.googleapis.com/auth/userinfo.email "
-        scope += f"https://www.googleapis.com/auth/userinfo.profile"
-        access_type = "offline"
-        redirect_uri = settings.GOOGLE_REDIRECT_URI
-
-        google_redirect_url = "https://accounts.google.com/o/oauth2/v2/auth"
-        google_redirect_url += f"?client_id={urllib.parse.quote(client_id)}"
-        google_redirect_url += f"&response_type={urllib.parse.quote(response_type)}"
-        google_redirect_url += f"&scope={urllib.parse.quote(scope)}"
-        google_redirect_url += f"&access_type={urllib.parse.quote(access_type)}"
-        google_redirect_url += f"&redirect_uri={urllib.parse.quote(redirect_uri)}"
+    def get(self, request): 
+        # creating a random state
+        state = secrets.token_urlsafe(32)   
+        
+        # defining the sessions params 
+        params = {
+            "redirect_uri": settings.GOOGLE_REDIRECT_URI,
+            "scope": "openid email profile",
+            "state": state,
+            "client_id": settings.GOOGLE_CLIENT_ID,
+            "response_type": "code",
+        }
+        request_url = "{}?{}".format(
+            "https://accounts.google.com/o/oauth2/v2/auth", 
+            urllib.parse.urlencode(params)
+        )
+        
+        # setting  the state in sessions
+        request.session["oauth_token"] = state
+        
         return Response(
-            {"google_redirect_url": google_redirect_url}, status=status.HTTP_200_OK
+            {"google_redirect_url": request_url}, 
+            status=status.HTTP_200_OK
         )
 
 
@@ -374,18 +381,30 @@ class CallbackHandleView(APIView):
     renderer_classes = [UserRenderer]
 
     def get(self, request):
+        # verify the state on this request
+        state = request.query_params.get("state")
+        if request.session["oauth_token"] != state:
+            return Response(
+                {"msg": "Invalid request"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # using the code to get the tokens
+        # and eventually the user profile 
         code = request.query_params.get("code")
         data = {
             "code": code,
-            "client_id": os.environ.get("GOOGLE_OAUTH_CLIENT_ID"),
-            "client_secret": os.environ.get("GOOGLE_OAUTH_SECRET"),
+            "client_id": settings.GOOGLE_CLIENT_ID,
+            "client_secret": settings.GOOGLE_SECRET_KEY,
             "redirect_uri": settings.GOOGLE_REDIRECT_URI,
             "grant_type": "authorization_code",
         }
 
         token_response = requests.post("https://oauth2.googleapis.com/token", data=data)
         token_data = token_response.json()
+        logger.debug(token_data)
 
+        # if the token data has error
         if "error" in token_data:
             return Response(
                 {"error": "Failed to get access token from Google."},
@@ -394,7 +413,6 @@ class CallbackHandleView(APIView):
 
         # Get the access token from the response
         access_token = token_data.get("access_token", None)
-        # print(access_token)
         if not access_token:
             return Response(
                 {"error": "Failed to get access token from Google response."},
@@ -406,48 +424,37 @@ class CallbackHandleView(APIView):
             f"https://www.googleapis.com/oauth2/v2/userinfo?access_token={access_token}"
         )
         user_info = user_info_response.json()
-        # print(user_info)
+        
         # Extract the email and name from the user information
         email = user_info.get("email", None)
         name = user_info.get("name", None)
-        if not email:
+        if not email or not name:
             return Response(
-                {"error": "Failed to get email from Google user info."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        if not name:
-            return Response(
-                {"error": "Failed to get name from Google user info."},
+                {"error": "Failed to get data from Google user info."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
             # Login the user
-            user = User.objects.get(email=email)
+            user, created = User.objects.get_or_create(email=email, defaults={
+                "name": name,
+                "login_method": "google_login",
+                "last_verified_identity": datetime.datetime.now()
+            })
+            
+            if not created:
+                user.last_verified_identity = datetime.datetime.now()
+                user.save()
+                
             jwt_token = TokenUtility.get_tokens_for_user(user)
             return Response(
-                {"token": jwt_token, "msg": "Login Success"}, status=status.HTTP_200_OK
+                {"token": jwt_token, "msg": "Success"}, status=status.HTTP_200_OK
             )
-
-        except User.DoesNotExist:
-            userdata = {"email": email, "name": name}
-            serializer = GoogleAuthSerializer(
-                data=request.data, context={"userdata": userdata}
-            )
-            serializer.is_valid(raise_exception=True)
-            user = serializer.save()
-            user.provider = "google"
-            user.is_verified = True
-            user.save()
-            token = TokenUtility.get_tokens_for_user(user)
+        except Exception as e:
+            print(e)
             return Response(
-                {"msg": "Registration Completed", "token": token},
-                status=status.HTTP_201_CREATED,
-            )
-
-        except:
-            return Response(
-                {"errors": "Invalid user"}, status=status.HTTP_400_BAD_REQUEST
+                {"msg": "There was an error authenticating the user"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
 
