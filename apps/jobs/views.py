@@ -3,6 +3,7 @@ import uuid
 from re import search
 import django.core.exceptions
 from django.db.utils import IntegrityError
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -72,6 +73,17 @@ class JobViewSets(viewsets.ModelViewSet):
         except django.core.exceptions.ValidationError as err:
             return response.create_response(err.messages, status.HTTP_404_NOT_FOUND)
         else:
+            # Use Paginator for the queryset
+            page_number = request.GET.get("page", 1)
+            paginator = Paginator(jobs_data, 5)  # 5 items per page
+
+            try:
+                jobs_data = paginator.page(page_number)
+            except PageNotAnInteger:
+                jobs_data = paginator.page(1)
+            except EmptyPage:
+                return response.create_response([], status.HTTP_200_OK)
+
             serialized_job_data = self.serializer_class(
                 jobs_data, many=True, context={"request": request}
             )
@@ -130,7 +142,6 @@ class JobViewSets(viewsets.ModelViewSet):
                 serialized_job_data
             )
         return response.create_response(serialized_job_data.data, status.HTTP_200_OK)
-
 
     @staticmethod
     def get_number_of_applicants(serialized_data):
@@ -352,6 +363,68 @@ class JobViewSets(viewsets.ModelViewSet):
         except Exception:
             return response.create_response(
                 response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=False, methods=["get"])
+    def get_posted_jobs(self, request):
+        """
+        API: localhost:8000/jobs/get_posted_jobs/
+        This method returns a list of jobs where is_posted is True.
+        """
+
+        # Get only posted jobs
+        posted_jobs_data = Job.objects.filter(posted=True)
+        page_number = request.GET.get("page", 1)  # used paginator for queryset
+        paginator = Paginator(posted_jobs_data, 2)  # per page 2 items
+
+        try:
+            posted_jobs_data = paginator.page(page_number)
+        except PageNotAnInteger:
+            posted_jobs_data = paginator.page(1)
+        except EmptyPage:
+            return response.create_response([], status.HTTP_200_OK)
+
+        serialized_posted_jobs_data = self.serializer_class(
+            posted_jobs_data, many=True, context={"request": request}
+        )
+
+        # Add number of applicants to the serialized data
+        if serialized_posted_jobs_data:
+            serialized_posted_jobs_data = JobViewSets.get_number_of_applicants(
+                serialized_posted_jobs_data
+            )
+            return response.create_response(
+                serialized_posted_jobs_data.data, status.HTTP_200_OK
+            )
+
+    @action(detail=False, methods=["get"])
+    def get_job_categories(self, request):
+        """
+        API: /api/v1/jobs/get_job_categories/
+        This method returns a list of distinct job categories.
+        If a 'category' parameter is provided in the query string,
+        it filters jobs by the specified category.
+        """
+
+        # Check if 'category' parameter is provided in the query string
+        category = request.query_params.get("category", None)
+
+        if category:
+            # Filter jobs by the specified category
+            jobs_data = Job.objects.filter(category=category)
+            serialized_jobs_data = JobSerializer(
+                jobs_data, many=True, context={"request": request}
+            )
+            return response.create_response(
+                serialized_jobs_data.data, status.HTTP_200_OK
+            )
+        else:
+            # Get distinct job categories
+            job_categories = Job.objects.values_list("category", flat=True).distinct()
+            serialized_job_categories = list(job_categories)
+
+            return response.create_response(
+                serialized_job_categories, status.HTTP_200_OK
             )
 
 
