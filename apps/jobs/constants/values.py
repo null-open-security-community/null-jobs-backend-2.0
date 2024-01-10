@@ -16,6 +16,7 @@ HIRING_STATUS = (
     ("open to work", "OPEN TO WORK")
 )
 
+
 JOB_TYPE = (
     ("full time", "FULL TIME"),
     ("part time", "PART TIME"),
