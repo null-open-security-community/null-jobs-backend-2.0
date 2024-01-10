@@ -58,7 +58,7 @@ class Job(models.Model):
     job_type = models.CharField(max_length=80, choices=JOB_TYPE, null=False)
     salary = models.DecimalField(max_digits=9, decimal_places=2)
     qualifications = models.CharField(max_length=60, default=None, null=True)
-    vacency_count = models.IntegerField(default=0, null=False)
+    vacency_position = models.IntegerField(default=None, null=False)
     industry = models.CharField(max_length=50, default=None, null=True),
     category = models.CharField(max_length=20, default=None, null=True),
     is_active = models.BooleanField(null=False)
