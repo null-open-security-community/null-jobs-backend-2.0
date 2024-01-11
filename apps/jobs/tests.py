@@ -37,11 +37,12 @@ class JobViewSetsTestCase(TestCase):
             "job_type": "Full-Time",
             "salary": 75000.00,
             "qualifications": "Bachelor's degree in Computer Science",
-            "vacency_count": 3,
+            "vacency_position": 3,
             "industry": "Technology",
             "job_responsibilities": "Sample responsibilities",
             "skills_required": "Python, Django, REST API",
             "education_or_certifications": "Bachelor's degree",
+            "is_active": False
             # Add other required fields for Job model
         }
         self.job = Job.objects.create(**self.job_data)
@@ -65,5 +66,3 @@ class JobViewSetsTestCase(TestCase):
         response = self.client.get(self.job_url, {'location': 'Mumbai'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)  # Assuming one job matches the filter
-
-
