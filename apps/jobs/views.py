@@ -1,7 +1,9 @@
 import jwt
 import uuid
+import os
 from re import search
 import django.core.exceptions
+from django.http import FileResponse
 from django.db.utils import IntegrityError
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
@@ -78,7 +80,9 @@ class JobViewSets(viewsets.ModelViewSet):
 
             # get number of applicants
             if serialized_job_data:
-                serialized_job_data = JobViewSets.get_number_of_applicants(serialized_job_data)
+                serialized_job_data = JobViewSets.get_number_of_applicants(
+                    serialized_job_data
+                )
 
             return response.create_response(
                 serialized_job_data.data, status.HTTP_200_OK
@@ -129,7 +133,6 @@ class JobViewSets(viewsets.ModelViewSet):
             )
         return response.create_response(serialized_job_data.data, status.HTTP_200_OK)
 
-
     @staticmethod
     def get_number_of_applicants(serialized_data):
         """
@@ -153,7 +156,7 @@ class JobViewSets(viewsets.ModelViewSet):
             jobdata.update({"Number of Applicants": number_of_applicants})
 
         return serialized_data
-    
+
     @staticmethod
     def get_active_jobs_count(serialized_company_data):
         """
@@ -162,10 +165,12 @@ class JobViewSets(viewsets.ModelViewSet):
         """
 
         for company in serialized_company_data.data:
-                jobs_belong_to_company = Job.objects.filter(company_id=company.get("company_id"))
-                active_jobs = sum(1 for job in jobs_belong_to_company if job.is_active)
-                company.update({"Active Jobs": active_jobs})
-        
+            jobs_belong_to_company = Job.objects.filter(
+                company_id=company.get("company_id")
+            )
+            active_jobs = sum(1 for job in jobs_belong_to_company if job.is_active)
+            company.update({"Active Jobs": active_jobs})
+
         return serialized_company_data
 
     @action(detail=True, methods=["get"])
@@ -319,37 +324,37 @@ class JobViewSets(viewsets.ModelViewSet):
         """
 
         # past 3 weeks datetime specified for featured jobs (can be modified as per use)
-        past_3_weeks_datetime = datetime_safe.datetime.now(tz=timezone.utc) - timedelta(days=18)
+        past_3_weeks_datetime = datetime_safe.datetime.now(tz=timezone.utc) - timedelta(
+            days=18
+        )
 
         # get the jobs_data and sort it in DESC order
         # `-` with column name indicates to return the result in DESC order
         try:
             jobs_data = Job.objects.filter(
-                created_at__gt=past_3_weeks_datetime,
-                is_active=True
+                created_at__gt=past_3_weeks_datetime, is_active=True
             ).order_by("-created_at")
 
             jobs_posted_within_3_weeks = JobSerializer(jobs_data, many=True)
 
             # find out how many jobs were posted within past_3_weeks
-            jobs_posted_within_3_weeks = JobViewSets.get_number_of_applicants(jobs_posted_within_3_weeks)
+            jobs_posted_within_3_weeks = JobViewSets.get_number_of_applicants(
+                jobs_posted_within_3_weeks
+            )
 
             # find 5 jobs with maximum number of applicants
             featured_jobs = sorted(
                 jobs_posted_within_3_weeks.data,
-                key=lambda k: (k.get('Number of Applicants')),
-                reverse=True
+                key=lambda k: (k.get("Number of Applicants")),
+                reverse=True,
             )
 
-            return response.create_response(
-                featured_jobs[0:5],
-                status.HTTP_200_OK
-            )
+            return response.create_response(featured_jobs[0:5], status.HTTP_200_OK)
         except Exception:
             return response.create_response(
-                response.SOMETHING_WENT_WRONG,
-                status.HTTP_500_INTERNAL_SERVER_ERROR
+                response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
 
 class UserViewSets(viewsets.ModelViewSet):
     """
@@ -498,16 +503,16 @@ class UserViewSets(viewsets.ModelViewSet):
                 UserSerializer(user_data).data, status.HTTP_200_OK
             )
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=["get"])
     def get_profile_details(self, request):
         """
         API: /api/v1/user/myProfile
-        Returns user profile data in the response. 
+        Returns user profile data in the response.
         This method gets the user_id from "access-token".
         """
-        
+
         # Get the value from Access-Token header
-        if access_token:=request.headers.get(response.ACCESS_TOKEN, None):
+        if access_token := request.headers.get(response.ACCESS_TOKEN, None):
             try:
                 # decode JWT Token; for any issues with it, raise an exception
                 decoded_user_access_token = jwt.decode(
@@ -516,29 +521,25 @@ class UserViewSets(viewsets.ModelViewSet):
                 user_id = decoded_user_access_token.get(values.USER_ID, None)
                 if not user_id:
                     raise Exception
-                
+
                 # get user data
                 user_data = self.queryset.filter(user_id=user_id)
                 if user_data:
                     serialized_user_data = self.serializer_class(user_data, many=True)
                     return response.create_response(
-                        serialized_user_data.data,
-                        status.HTTP_200_OK
+                        serialized_user_data.data, status.HTTP_200_OK
                     )
                 else:
                     return response.create_response(
-                        response.USER_DATA_NOT_PRESENT,
-                        status.HTTP_404_NOT_FOUND
+                        response.USER_DATA_NOT_PRESENT, status.HTTP_404_NOT_FOUND
                     )
             except Exception:
                 return response.create_response(
-                    response.ACCESS_TOKEN_NOT_VALID,
-                    status.HTTP_400_BAD_REQUEST
+                    response.ACCESS_TOKEN_NOT_VALID, status.HTTP_400_BAD_REQUEST
                 )
         else:
             return response.create_response(
-                response.ACCESS_TOKEN_NOT_PRESENT,
-                status.HTTP_401_UNAUTHORIZED
+                response.ACCESS_TOKEN_NOT_PRESENT, status.HTTP_401_UNAUTHORIZED
             )
 
     @action(detail=True, methods=["get"])
@@ -597,6 +598,104 @@ class UserViewSets(viewsets.ModelViewSet):
 
         return serialized_data
 
+    @action(detail=True, methods=["put"])
+    def reupload_documents(self, request, pk=None):
+        """
+        API: /api/v1/user/{pk}/reupload-documents
+        Allows users to re-upload their documents (resume, profile picture, cover letter).
+        """
+        user = User.objects.get(user_id=pk)
+        if not user:
+            return response.create_response(
+                "User does not exist", status.HTTP_404_NOT_FOUND
+            )
+
+        # Resume re-upload
+        resume_data = request.FILES.get("resume")
+        if resume_data:
+            user.resume = resume_data
+            user.save()
+
+        # Profile Picture re-upload
+        profile_picture_data = request.FILES.get("profile_picture")
+        if profile_picture_data:
+            user.profile_picture = profile_picture_data
+            user.save()
+
+        # Cover Letter re-upload
+        cover_letter_data = request.FILES.get("cover_letter")
+        if cover_letter_data:
+            user.cover_letter = cover_letter_data
+            user.save()
+
+        return response.create_response(
+            "Documents re-uploaded successfully", status.HTTP_200_OK
+        )
+
+    @action(detail=True, methods=["get"])
+    def download_documents(self, request, pk=None):
+        """
+        API: /api/v1/user/{pk}/download-documents
+        Allows users to download their documents (resume, profile picture, cover letter).
+        """
+        user = User.objects.get(user_id=pk)
+        if not user:
+            return response.create_response(
+                "User does not exist", status.HTTP_404_NOT_FOUND
+            )
+
+        document_type = request.query_params.get("document_type", "")
+        file_path = None
+
+        # Determine the file path based on the requested document type
+        if document_type == "resume":
+            file_path = user.resume.path
+        elif document_type == "profile_picture":
+            file_path = user.profile_picture.path
+        elif document_type == "cover_letter":
+            file_path = user.cover_letter.path
+
+        if not file_path or not os.path.exists(file_path):
+            return response.create_response(
+                f"{document_type.capitalize()} not found", status.HTTP_404_NOT_FOUND
+            )
+
+        # Serve the file using Django FileResponse
+        return FileResponse(open(file_path, "rb"), as_attachment=True)
+
+    @action(detail=True, methods=["delete"])
+    def remove_documents(self, request, pk=None):
+        """
+        API: /api/v1/user/{pk}/remove-documents
+        Allows users to remove their documents (resume, profile picture, cover letter).
+        """
+        user = User.objects.get(user_id=pk)
+        if not user:
+            return response.create_response(
+                "User does not exist", status.HTTP_404_NOT_FOUND
+            )
+
+        document_type = request.query_params.get("document_type", "")
+        if not document_type:
+            return response.create_response(
+                "Please provide a valid document_type query parameter",
+                status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Remove the document based on the requested document type
+        if document_type == "resume":
+            user.resume = None
+        elif document_type == "profile_picture":
+            user.profile_picture = None
+        elif document_type == "cover_letter":
+            user.cover_letter = None
+
+        user.save()
+
+        return response.create_response(
+            f"{document_type.capitalize()} removed successfully", status.HTTP_200_OK
+        )
+
 
 class CompanyViewSets(viewsets.ModelViewSet):
     """
@@ -619,7 +718,7 @@ class CompanyViewSets(viewsets.ModelViewSet):
 
     def list(self, request):
         """
-        Method to return a list of companies available, 
+        Method to return a list of companies available,
         Along with the count of active jobs present in the company
         """
 
@@ -630,17 +729,18 @@ class CompanyViewSets(viewsets.ModelViewSet):
 
             # get number of applicants
             if serialized_company_data:
-                serialized_company_data = JobViewSets.get_active_jobs_count(serialized_company_data)
+                serialized_company_data = JobViewSets.get_active_jobs_count(
+                    serialized_company_data
+                )
 
             return response.create_response(
                 serialized_company_data.data, status.HTTP_200_OK
             )
         except Exception:
             return response.create_response(
-                response.SOMETHING_WENT_WRONG,
-                status.HTTP_500_INTERNAL_SERVER_ERROR
+                response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-    
+
     def retrieve(self, request, pk=None):
         """
         retrieve the data of given company id
@@ -657,12 +757,15 @@ class CompanyViewSets(viewsets.ModelViewSet):
             company_data = Company.objects.filter(company_id=pk)
             serialized_company_data = self.serializer_class(company_data, many=True)
             if serialized_company_data:
-                serialized_company_data = JobViewSets.get_active_jobs_count(serialized_company_data)
-            return response.create_response(serialized_company_data.data, status.HTTP_200_OK)
+                serialized_company_data = JobViewSets.get_active_jobs_count(
+                    serialized_company_data
+                )
+            return response.create_response(
+                serialized_company_data.data, status.HTTP_200_OK
+            )
         except Exception:
             return response.create_response(
-                response.SOMETHING_WENT_WRONG,
-                status.HTTP_500_INTERNAL_SERVER_ERROR
+                response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
     @action(detail=False, methods=["get"])
