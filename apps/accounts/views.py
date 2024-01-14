@@ -7,7 +7,7 @@ import requests
 from django.conf import settings
 from django.contrib.auth import authenticate
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
@@ -18,6 +18,7 @@ from apps.accounts.renderers import UserRenderer
 from apps.accounts.serializers import *
 from apps.accounts.utils import *
 from apps.jobs.models import User as user_profile
+from apps.jobs.utils.validators import validationClass
 
 # from django.shortcuts import render
 
@@ -81,7 +82,7 @@ def generate_guest_token(user, purpose):
         "user_type": user.user_type,
     }
     token = TokenUtility.generate_dummy_jwt_token(payload)
-    
+
     # for old user
     if user.otp_secret:
         otp = OTP.generate_otp(user)
@@ -119,7 +120,7 @@ class UserRegistrationView(APIView):
 
         user = User.objects.get(email=email)
         user.provider = "local"
-        
+
         token = generate_guest_token(user, "verify")
 
         # Add an entry in the tbl_user_profile with dummy data
@@ -457,3 +458,27 @@ class RestrictedPage(APIView):
 
     def get(self, request, format=None):
         return Response({"msg": "I am a restricted page"}, status=status.HTTP_200_OK)
+
+
+class Moderator(BasePermission):
+    """
+    This class contains everything related to operations
+    belong to Moderator. Moderator user is different from
+    Admin user, but has some level of responsibilities and
+    access to resources.
+    """
+
+    def has_permission(self, request):
+        """Method to check if the given user_id belongs to moderator or not"""
+
+        # check if user_id is valid or contains improper value
+        if not request.user_id or not validationClass.is_valid_uuid(request.user_id):
+            return False
+
+        # check if the given user_id is present or not, if present then moderator or not
+        is_moderator_value = User.objects.filter(id=request.user_id)
+        if is_moderator_value:
+            if not is_moderator_value.values("is_moderator").first()["is_moderator"]:
+                return False
+            return True
+        return False

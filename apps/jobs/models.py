@@ -4,7 +4,7 @@ from django.db import models
 
 from apps.accounts.models import User as UserAuth
 from apps.jobs.constants import values
-from apps.jobs.constants.values import GENDER, STATUS_CHOICES, HIRING_STATUS, JOB_TYPE
+from apps.jobs.constants.values import GENDER, HIRING_STATUS, JOB_TYPE, STATUS_CHOICES
 
 
 class Company(models.Model):
@@ -24,6 +24,8 @@ class Company(models.Model):
     company_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )  # uuid1 uses network address for random number, so it's better to use uuid4
+    is_created = models.BooleanField(default=False, null=True)
+    is_deleted = models.BooleanField(default=False, null=True)
 
     def __str__(self):
         return self.name
@@ -59,9 +61,11 @@ class Job(models.Model):
     salary = models.DecimalField(max_digits=9, decimal_places=2)
     qualifications = models.CharField(max_length=60, default=None, null=True)
     vacency_count = models.IntegerField(default=0, null=False)
-    industry = models.CharField(max_length=50, default=None, null=True),
-    category = models.CharField(max_length=20, default=None, null=True),
+    industry = (models.CharField(max_length=50, default=None, null=True),)
+    category = (models.CharField(max_length=20, default=None, null=True),)
     is_active = models.BooleanField(null=False)
+    is_created = models.BooleanField(default=False, null=True)
+    is_deleted = models.BooleanField(default=False, null=True)
 
     # These fields will be displayed as a part of "description" field
     job_responsibilities = models.TextField(
@@ -111,7 +115,9 @@ class User(models.Model):
     age = models.PositiveIntegerField(default=None, null=True)
     education = models.TextField(max_length=500, default=None, null=True)
     professional_skills = models.TextField(max_length=500, default=None, null=True)
-    hiring_status = models.CharField(max_length=15, choices=HIRING_STATUS, default="Not Applied Yet", null=True)
+    hiring_status = models.CharField(
+        max_length=15, choices=HIRING_STATUS, default="Not Applied Yet", null=True
+    )
 
     # These fields will be displayed as a part of "Contact" field
     email = models.CharField(max_length=30, null=False)

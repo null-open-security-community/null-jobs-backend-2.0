@@ -29,7 +29,7 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "UPDATE-ME-DURING-RUNTIME")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DJANGO_DEBUG", "") == "True"
 
-ALLOWED_HOSTS = ["139.84.137.26", "localhost", "127.0.0.1"]
+ALLOWED_HOSTS = [os.getenv("WEB_SERVER_HOST"), "localhost", "127.0.0.1"]
 
 CORS_ORIGIN_ALLOW_ALL = True
 
@@ -48,11 +48,12 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     "rest_framework_simplejwt",
-    'rest_framework_simplejwt.token_blacklist',  # used to blacklist the refresh token
+    "rest_framework_simplejwt.token_blacklist",  # used to blacklist the refresh token
     "drf_yasg",
     "apps.accounts",
     "apps.jobs",
     "django_filters",
+    "custom_middleware",
 ]
 
 MIDDLEWARE = [
@@ -64,6 +65,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "custom_middleware.validate_request.ValidateRequest",
 ]
 
 ROOT_URLCONF = "null_jobs_backend.urls"
