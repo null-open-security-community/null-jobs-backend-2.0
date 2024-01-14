@@ -108,9 +108,11 @@ class JobViewSets(viewsets.ModelViewSet):
 
         return super().create(request, *args, **kwargs)
 
-    def retrieve(self, request, pk=None):
+    @action(detail=False, methods=["get"], url_path="details")
+    def details(self, request, *args, **kwargs):
         """
-        retrieve the data of given job id
+        API: /api/v1/jobs/details
+        This method retrieves job data by job_id provided in the query parameter.
         """
 
         if not validationClass.is_valid_uuid(pk):

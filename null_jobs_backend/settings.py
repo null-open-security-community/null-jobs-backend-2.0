@@ -123,30 +123,16 @@ AUTH_PASSWORD_VALIDATORS = [
 # User Model
 AUTH_USER_MODEL = "accounts.User"
 
-# google auth configuration
-SOCIALACCOUNT_PROVIDERS = {
-    "google": {
-        "APP": {
-            "client_id": os.environ.get("GOOGLE_OAUTH_CLIENT_ID"),
-            "secret": os.environ.get("GOOGLE_OAUTH_SECRET"),
-        },
-        "SCOPE": [
-            "profile",
-            "email",
-        ],
-        "AUTH_PARAMS": {
-            "access_type": "online",
-        },
-    }
-}
-
 # google auth settings
 ACCOUNT_AUTHENTICATION_METHOD = "email"
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
-GOOGLE_REDIRECT_URI = "http://localhost:8000/google/login/callback/"
+
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
+GOOGLE_SECRET_KEY = os.environ.get("GOOGLE_OAUTH_SECRET")
+GOOGLE_REDIRECT_URI = os.environ.get("GOOGLE_REDIRECT_URI")
 
 # dj-rest-auth setting
 JWT_AUTH_SECURE = True
