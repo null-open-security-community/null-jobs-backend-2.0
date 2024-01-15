@@ -1,6 +1,7 @@
 import jwt
 import uuid
 from re import search
+from django.db.models import Count
 import django.core.exceptions
 from django.db.utils import IntegrityError
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
@@ -426,6 +427,54 @@ class JobViewSets(viewsets.ModelViewSet):
             return response.create_response(
                 serialized_job_categories, status.HTTP_200_OK
             )
+
+    @action(detail=False, methods=["get"])
+    def get_jobs(self, request):
+        """
+        API: /api/v1/jobs/get_jobs/
+        This method retrieves jobs based on dynamic filters such as
+        category, job type, experience, and qualification provided in the query parameters.
+        It also includes the count of active jobs for each filter.
+        """
+
+        # Extract filters from query parameters
+        filters = {}
+        category = request.query_params.get("category", None)
+        job_type = request.query_params.get("job_type", None)
+        experience = request.query_params.get("experience", None)
+        qualification = request.query_params.get("qualification", None)
+
+        if category:
+            filters["category"] = category
+        if job_type:
+            filters["job_type"] = job_type
+        if experience:
+            filters["experience__gte"] = int(
+                experience
+            )  # Filter jobs with experience greater than or equal to specified value
+        if qualification:
+            filters[
+                "qualifications__icontains"
+            ] = qualification  # Case-insensitive search for qualifications
+
+        # Get the filtered jobs
+        filtered_jobs_data = Job.objects.filter(**filters, is_active=True)
+
+        # If no jobs match the filters, return a specific response
+        if not filtered_jobs_data.exists():
+            return response.create_response(
+                "Sorry, currently no jobs available as per your request",
+                status.HTTP_200_OK,
+            )
+
+        # Serialize the filtered job data
+        serialized_filtered_jobs_data = JobSerializer(
+            filtered_jobs_data, many=True
+        ).data
+
+        return response.create_response(
+            serialized_filtered_jobs_data, status.HTTP_200_OK
+        )
 
 
 class UserViewSets(viewsets.ModelViewSet):
