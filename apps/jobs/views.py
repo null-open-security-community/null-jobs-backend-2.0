@@ -399,36 +399,6 @@ class JobViewSets(viewsets.ModelViewSet):
             )
 
     @action(detail=False, methods=["get"])
-    def get_job_categories(self, request):
-        """
-        API: /api/v1/jobs/get_job_categories/
-        This method returns a list of distinct job categories.
-        If a 'category' parameter is provided in the query string,
-        it filters jobs by the specified category.
-        """
-
-        # Check if 'category' parameter is provided in the query string
-        category = request.query_params.get("category", None)
-
-        if category:
-            # Filter jobs by the specified category
-            jobs_data = Job.objects.filter(category=category)
-            serialized_jobs_data = JobSerializer(
-                jobs_data, many=True, context={"request": request}
-            )
-            return response.create_response(
-                serialized_jobs_data.data, status.HTTP_200_OK
-            )
-        else:
-            # Get distinct job categories
-            job_categories = Job.objects.values_list("category", flat=True).distinct()
-            serialized_job_categories = list(job_categories)
-
-            return response.create_response(
-                serialized_job_categories, status.HTTP_200_OK
-            )
-
-    @action(detail=False, methods=["get"])
     def get_jobs(self, request):
         """
         API: /api/v1/jobs/get_jobs/
@@ -442,7 +412,6 @@ class JobViewSets(viewsets.ModelViewSet):
         category = request.query_params.get("category", None)
         job_type = request.query_params.get("job_type", None)
         experience = request.query_params.get("experience", None)
-        qualification = request.query_params.get("qualification", None)
 
         if category:
             filters["category"] = category
@@ -452,10 +421,6 @@ class JobViewSets(viewsets.ModelViewSet):
             filters["experience__gte"] = int(
                 experience
             )  # Filter jobs with experience greater than or equal to specified value
-        if qualification:
-            filters[
-                "qualifications__icontains"
-            ] = qualification  # Case-insensitive search for qualifications
 
         # Get the filtered jobs
         filtered_jobs_data = Job.objects.filter(**filters, is_active=True)
