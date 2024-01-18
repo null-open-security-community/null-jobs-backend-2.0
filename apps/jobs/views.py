@@ -76,7 +76,7 @@ class JobViewSets(viewsets.ModelViewSet):
         else:
             # Use Paginator for the queryset
             page_number = request.GET.get("page", 1)
-            paginator = Paginator(jobs_data, 5)  # 5 items per page
+            paginator = Paginator(jobs_data, values.ITEMS_PER_PAGE)  # 5 items per page
 
             try:
                 jobs_data = paginator.page(page_number)
@@ -336,7 +336,7 @@ class JobViewSets(viewsets.ModelViewSet):
 
         # past 3 weeks datetime specified for featured jobs (can be modified as per use)
         past_3_weeks_datetime = datetime_safe.datetime.now(tz=timezone.utc) - timedelta(
-            days=18
+            values.PAST_3_WEEK_DATETIME_DAYS18
         )
 
         # get the jobs_data and sort it in DESC order
@@ -376,7 +376,9 @@ class JobViewSets(viewsets.ModelViewSet):
         # Get only posted jobs
         posted_jobs_data = Job.objects.filter(posted=True)
         page_number = request.GET.get("page", 1)  # used paginator for queryset
-        paginator = Paginator(posted_jobs_data, 2)  # per page 2 items
+        paginator = Paginator(
+            posted_jobs_data, values.ITEMS_PER_PAGE
+        )  # per page 2 items
 
         try:
             posted_jobs_data = paginator.page(page_number)
@@ -418,7 +420,7 @@ class JobViewSets(viewsets.ModelViewSet):
         if job_type:
             filters["job_type"] = job_type
         if experience:
-            filters["experience__gte"] = int(
+            filters["experience__lte"] = int(
                 experience
             )  # Filter jobs with experience greater than or equal to specified value
 
