@@ -1,8 +1,10 @@
 import jwt
 import uuid
+import os
 from re import search
 from django.db.models import Count
 import django.core.exceptions
+from django.http import FileResponse
 from django.db.utils import IntegrityError
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django_filters.rest_framework import DjangoFilterBackend
@@ -441,7 +443,6 @@ class JobViewSets(viewsets.ModelViewSet):
             serialized_filtered_jobs_data, status.HTTP_200_OK
         )
 
-
 class UserViewSets(viewsets.ModelViewSet):
     """
     User object viewsets
@@ -683,6 +684,104 @@ class UserViewSets(viewsets.ModelViewSet):
                 job_data.update({"status": status})
 
         return serialized_data
+
+    @action(detail=True, methods=["put"])
+    def reupload_documents(self, request, pk=None):
+        """
+        API: /api/v1/user/{pk}/reupload-documents
+        Allows users to re-upload their documents (resume, profile picture, cover letter).
+        """
+        user = User.objects.get(user_id=pk)
+        if not user:
+            return response.create_response(
+                "User does not exist", status.HTTP_404_NOT_FOUND
+            )
+
+        # Resume re-upload
+        resume_data = request.FILES.get("resume")
+        if resume_data:
+            user.resume = resume_data
+            user.save()
+
+        # Profile Picture re-upload
+        profile_picture_data = request.FILES.get("profile_picture")
+        if profile_picture_data:
+            user.profile_picture = profile_picture_data
+            user.save()
+
+        # Cover Letter re-upload
+        cover_letter_data = request.FILES.get("cover_letter")
+        if cover_letter_data:
+            user.cover_letter = cover_letter_data
+            user.save()
+
+        return response.create_response(
+            "Documents re-uploaded successfully", status.HTTP_200_OK
+        )
+
+    @action(detail=True, methods=["get"])
+    def download_documents(self, request, pk=None):
+        """
+        API: /api/v1/user/{pk}/download-documents
+        Allows users to download their documents (resume, profile picture, cover letter).
+        """
+        user = User.objects.get(user_id=pk)
+        if not user:
+            return response.create_response(
+                "User does not exist", status.HTTP_404_NOT_FOUND
+            )
+
+        document_type = request.query_params.get("document_type", "")
+        file_path = None
+
+        # Determine the file path based on the requested document type
+        if document_type == "resume":
+            file_path = user.resume.path
+        elif document_type == "profile_picture":
+            file_path = user.profile_picture.path
+        elif document_type == "cover_letter":
+            file_path = user.cover_letter.path
+
+        if not file_path or not os.path.exists(file_path):
+            return response.create_response(
+                f"{document_type.capitalize()} not found", status.HTTP_404_NOT_FOUND
+            )
+
+        # Serve the file using Django FileResponse
+        return FileResponse(open(file_path, "rb"), as_attachment=True)
+
+    @action(detail=True, methods=["delete"])
+    def remove_documents(self, request, pk=None):
+        """
+        API: /api/v1/user/{pk}/remove-documents
+        Allows users to remove their documents (resume, profile picture, cover letter).
+        """
+        user = User.objects.get(user_id=pk)
+        if not user:
+            return response.create_response(
+                "User does not exist", status.HTTP_404_NOT_FOUND
+            )
+
+        document_type = request.query_params.get("document_type", "")
+        if not document_type:
+            return response.create_response(
+                "Please provide a valid document_type query parameter",
+                status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Remove the document based on the requested document type
+        if document_type == "resume":
+            user.resume = None
+        elif document_type == "profile_picture":
+            user.profile_picture = None
+        elif document_type == "cover_letter":
+            user.cover_letter = None
+
+        user.save()
+
+        return response.create_response(
+            f"{document_type.capitalize()} removed successfully", status.HTTP_200_OK
+        )
 
 
 class CompanyViewSets(viewsets.ModelViewSet):
