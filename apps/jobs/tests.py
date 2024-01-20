@@ -57,7 +57,7 @@ class JobViewSetsTestCase(TestCase):
         # Create an instance of the APIClient and set the Authorization header
         self.client = APIClient()
         # dummy token
-        self.access_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwidXNlcl9pZCI6IjhmMzdlZWRiLWM2MmEtNDIyZS05NTY1LTM2NjI3OTljMjlhOSJ9.L8FwFbO1I3ohhbcPZTAD0yxEyCYFuez2k_dn3B9pQ8U"
+        self.access_token = ""
         self.client.credentials(HTTP_ACCESSTOKEN=self.access_token)
 
 
