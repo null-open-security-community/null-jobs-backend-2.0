@@ -17,34 +17,37 @@ class JobViewSetsTestCase(TestCase):
     def setUp(self):
         # Create sample data for testing
         self.company_data = {
-            "name": "Test Company",
-            "location": "Test Location",
-            "about": "A test company for unit testing",
-            "company_id": uuid.uuid4(),
+            "name": "Testing name",
+            "location": "Testing Location",
+            "about": "Testing about",
+            "founded_year": 2011,
+            "team_members": 110,
+            "social_profiles": "https://testing.com/testing",
+            "company_id": uuid.uuid4()
         }
         self.company = Company.objects.create(**self.company_data)
 
         # job_data struct
         self.job_data = {
-            "job_role": "Software Engineer",
+            "job_role": "Data Scientist",
             "company": self.company,
-            "description": "Sample job description",
-            "location": "Mumbai",
-            "post_date": "2023-01-01",
+            "description": "Join our innovative team as a Data Scientist.",
+            "location": "New York, NY",
+            "post_date": "2024-02-15",
             "posted": True,
-            "experience": 2,
-            "employer_id": uuid.uuid4(),
-            "job_type": "Full-Time",
+            "experience": 3,
+            "job_type": "part time",
             "salary": 75000.00,
-            "qualifications": "Bachelor's degree in Computer Science",
-            "vacency_position": 3,
-            "industry": "Technology",
-            "job_responsibilities": "Sample responsibilities",
-            "skills_required": "Python, Django, REST API",
-            "education_or_certifications": "Bachelor's degree",
-            "is_active": False
-            # Add other required fields for Job model
+            "qualifications": "Master's degree in Data Science or related field",
+            "vacency_position": 2,
+            "industry": "Data Science",
+            "category": "Analytics",
+            "is_active": True,
+            "job_responsibilities": "Analyze and interpret complex data sets.",
+            "skills_required": "Python, R, Machine Learning",
+            "education_or_certifications": "Master's degree in Data Science or related field."
         }
+
         self.job = Job.objects.create(**self.job_data)
 
         # job url
@@ -52,7 +55,9 @@ class JobViewSetsTestCase(TestCase):
 
         # Create an instance of the APIClient and set the Authorization header
         self.client = APIClient()
-
+        # dummy token
+        self.access_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwidXNlcl9pZCI6IjhmMzdlZWRiLWM2MmEtNDIyZS05NTY1LTM2NjI3OTljMjlhOSJ9.L8FwFbO1I3ohhbcPZTAD0yxEyCYFuez2k_dn3B9pQ8U"
+        self.client.credentials(HTTP_ACCESSTOKEN=self.access_token)
 
 
     def test_list_jobs(self):
