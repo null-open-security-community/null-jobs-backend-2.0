@@ -1,0 +1,654 @@
+{
+	"info": {
+		"_postman_id": "6d4b0355-c7f4-4be1-9ee7-6913b34734a1",
+		"name": "NullJobs - Jobs API Testing",
+		"description": "### What we do here?\n\n**SCENARIO**: Right now, we already have a null job portal, but this time we are moving forward with new changes, new ideas and new implementations and especially with null job portal. Our task is to implement a basic workflow for now, and also cover the same from security perspective.\n\n**INSPIRATION**: To learn, collaborate and enjoy most importantly\n\nObjects we have available right now\n\n1. Companies\n2. User\n3. Job\n    \n\n<img src=\"https://content.pstmn.io/5e509f53-6014-4ec9-9363-b2279fc70bb2/UGFzdGVkIGltYWdlIDIwMjMwODA2MDMxMzAxLnBuZw==\">\n\nGithub: [job-api](https://)\n\n### FROM HR Perspective\n\n**SCENARIO**: Let's suppose, I am an HR Intern, and I've been given a task to update company details which also include the job postings as well. So now, my task is to perform two things for which I'll be using _**NULL JOB PORTAL**_ to do so.\n\n1. Create Company\n2. Add Jobs\n    1. Adding jobs functionality is only for the Employers, not any job seeker.\n3. Check how many users have applied for a specific job\n    \n\n### FROM JOB SEEKER Perspective\n\n**SCENARIO**: Anyone looking for a job related posts on the null job web portal, this person is different from the job provider, because job provider is allowed to posts about job, while this person is only able to see the jobs posted by the job provider.\n\n_**Things job seeker can do**_\n\n1. Discover jobs\n2. Apply for jobs\n3. Enhance its profile",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "29114272"
+	},
+	"item": [
+		{
+			"name": "Jobs API",
+			"item": [
+				{
+					"name": "List Jobs",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "AccessToken",
+								"value": "{{AccessToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{hostname}}/jobs/",
+							"host": [
+								"{{hostname}}"
+							],
+							"path": [
+								"jobs",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Specific Job Details",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "AccessToken",
+								"value": "{{AccessToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{hostname}}/jobs/details?job_id=88a5810d-7098-4cdb-a1b2-2b99a9092413",
+							"host": [
+								"{{hostname}}"
+							],
+							"path": [
+								"jobs",
+								"details"
+							],
+							"query": [
+								{
+									"key": "job_id",
+									"value": "88a5810d-7098-4cdb-a1b2-2b99a9092413"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Users Applied for a Job",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "AccessToken",
+								"value": "{{AccessToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{hostname}}/jobs/88a5810d-7098-4cdb-a1b2-2b99a9092413/users/",
+							"host": [
+								"{{hostname}}"
+							],
+							"path": [
+								"jobs",
+								"88a5810d-7098-4cdb-a1b2-2b99a9092413",
+								"users",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Job",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "AccessToken",
+								"value": "{{AccessToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"job_role\": \"Data Scientist\",\n  \"company\": \"6b2ed448-3b72-4e0c-9e34-69a609a10d33\",\n  \"description\": \"Join our innovative team as a Data Scientist.\",\n  \"location\": \"New York, NY\",\n  \"post_date\": \"2024-02-15\",\n  \"posted\": true,\n  \"experience\": 3,\n  \"job_type\": \"part time\",\n  \"salary\": 75000.00,\n  \"qualifications\": \"Master's degree in Data Science or related field\",\n  \"vacency_position\": 2,\n  \"industry\": \"Data Science\",\n  \"category\": \"Analytics\",\n  \"is_active\": true,\n  \"job_responsibilities\": \"Analyze and interpret complex data sets.\",\n  \"skills_required\": \"Python, R, Machine Learning\",\n  \"education_or_certifications\": \"Master's degree in Data Science or related field.\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{hostname}}/jobs/",
+							"host": [
+								"{{hostname}}"
+							],
+							"path": [
+								"jobs",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Apply for a Job",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "AccessToken",
+								"value": "{{AccessToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"user_id\": \"4acf7464-33a1-4fb8-b65d-3f9b44389007\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{hostname}}/jobs/88a5810d-7098-4cdb-a1b2-2b99a9092413/apply/",
+							"host": [
+								"{{hostname}}"
+							],
+							"path": [
+								"jobs",
+								"88a5810d-7098-4cdb-a1b2-2b99a9092413",
+								"apply",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Job Application Status",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "AccessToken",
+								"value": "{{AccessToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"rejected\",\n    \"employer_id\": \"9a76d162-8efe-4bdd-8380-7c8057efd946\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{hostname}}/jobs/88a5810d-7098-4cdb-a1b2-2b99a9092413/update_application/",
+							"host": [
+								"{{hostname}}"
+							],
+							"path": [
+								"jobs",
+								"88a5810d-7098-4cdb-a1b2-2b99a9092413",
+								"update_application",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Featured Jobs",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "AccessToken",
+								"value": "{{AccessToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{hostname}}/jobs/featured_jobs/",
+							"host": [
+								"{{hostname}}"
+							],
+							"path": [
+								"jobs",
+								"featured_jobs",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Job Details",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "AccessToken",
+								"value": "{{AccessToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"job_role\": \"Software Engineer\",\r\n    \"post_date\": \"2024-1-21\",\r\n    \"job_type\": \"full time\",\r\n    \"salary\": 50000.0,\r\n    \"company\": \"3d19d04e-5c67-4c12-8dd6-9a1b4cc51bea\",\r\n    \"is_created\": true,\r\n    \"is_deleted\": false\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{hostname}}/jobs/88a5810d-7098-4cdb-a1b2-2b99a9092413/",
+							"host": [
+								"{{hostname}}"
+							],
+							"path": [
+								"jobs",
+								"88a5810d-7098-4cdb-a1b2-2b99a9092413",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Job",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "AccessToken",
+								"value": "{{AccessToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{hostname}}/jobs/88a5810d-7098-4cdb-a1b2-2b99a9092413/",
+							"host": [
+								"{{hostname}}"
+							],
+							"path": [
+								"jobs",
+								"88a5810d-7098-4cdb-a1b2-2b99a9092413",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "- **LIST** all the available jobs  \n    API Endpoint: `/api/v1/jobs`  \n    METHOD: `GET`\n    \n\n- **GET** details for a specific job  \n    API Endpoint: `/api/v1/jobs/{job_id}`  \n    METHOD: `GET`\n    \n\n- **GET** number of users applied for a specific job  \n    API Endpoint: `/api/v1/jobs/{job_id}/user`  \n    METHOD: `GET`  \n    Usually we get a key called \"Number of applications\" which shows number of people  \n    applied for this job.\n    \n\n- **CREATE** a job  \n    API Endpoint: `/api/v1/jobs/`  \n    METHOD: `POST`"
+		},
+		{
+			"name": "User API",
+			"item": [
+				{
+					"name": "List Users",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "AccessToken",
+								"value": "{{AccessToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{hostname}}/user/",
+							"host": [
+								"{{hostname}}"
+							],
+							"path": [
+								"user",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Profile Details",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "AccessToken",
+								"value": "{{AccessToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{hostname}}/user/get_profile_details/",
+							"host": [
+								"{{hostname}}"
+							],
+							"path": [
+								"user",
+								"get_profile_details",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Jobs Applied By a User",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "AccessToken",
+								"value": "{{AccessToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{hostname}}/user/jobs/",
+							"host": [
+								"{{hostname}}"
+							],
+							"path": [
+								"user",
+								"jobs",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update User Details",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "AccessToken",
+								"value": "{{AccessToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Ritika Sharma\",\n    \"about\": \"Working as a Technical Security Analyst\",\n    \"user_type\": \"Employer\",\n    \"experience\": \"16\",\n    \"qualification\": \"Bachelors in Computer Applications\",\n    \"gender\": \"Female\",\n    \"age\": 29,\n    \"education\": \"B.C.A from MIT\",\n    \"professional_skills\": \"Python, C++, Auto CAD, Designing, Robotics\",\n    \"hiring_status\": \"Not Applied Yet\",\n    \"address\": \"Jameson Street, V12, Newyork\",\n    \"company\":\"15c1d88e-49ef-4f32-aa69-39f87722c5f5\",\n    \"phone\": \"124332555\",\n    \"social_handles\": [\n        \"r1t1k4\",\n        \"twitter.com/r1t1k4\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{hostname}}/user/115a9a33-3831-4f18-b3db-d09121b6264a/",
+							"host": [
+								"{{hostname}}"
+							],
+							"path": [
+								"user",
+								"115a9a33-3831-4f18-b3db-d09121b6264a",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "AccessToken",
+								"value": "{{AccessToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{hostname}}/user/delete_user/",
+							"host": [
+								"{{hostname}}"
+							],
+							"path": [
+								"user",
+								"delete_user",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "List of available functionalities for the USER API    \n    \n* LIST all the users\n   API Endpoint: `/api/v1/user/` \n   METHOD: GET    \n    \n    \n* GET specific user details    \n   API Endpoint: `/api/v1/user/{user_id}`\n   METHOD: GET\n    \n    \n* GET Jobs applied by a specific user\n   API Endpoint: `/api/v1/user/{user_id}/jobs`\n   METHOD: GET\n    \n    \n* CREATE users\n   API Endpoint: `/api/v1/user/`\n   METHOD: POST\n\n\n* UPDATE users\n   API Endpoint: `/api/v1/user/`\n   METHOD: PUT\n"
+		},
+		{
+			"name": "Company API",
+			"item": [
+				{
+					"name": "List Companies",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "AccessToken",
+								"value": "{{AccessToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{hostname}}/company/",
+							"host": [
+								"{{hostname}}"
+							],
+							"path": [
+								"company",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Specific Company Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "AccessToken",
+								"value": "{{AccessToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{hostname}}/company/15c1d88e-49ef-4f32-aa69-39f87722c5f5/",
+							"host": [
+								"{{hostname}}"
+							],
+							"path": [
+								"company",
+								"15c1d88e-49ef-4f32-aa69-39f87722c5f5",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "List Jobs Available in a Company",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "AccessToken",
+								"value": "{{AccessToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{hostname}}/company/jobs/",
+							"host": [
+								"{{hostname}}"
+							],
+							"path": [
+								"company",
+								"jobs",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "List Company Employees",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "AccessToken",
+								"value": "{{AccessToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{hostname}}/company/users/",
+							"host": [
+								"{{hostname}}"
+							],
+							"path": [
+								"company",
+								"users",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Company",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "AccessToken",
+								"value": "{{AccessToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Microsystems Pvt. Ltd.\",\n    \"location\": \"Mumbai, India\",\n    \"about\": \"India's most valuable and respectable company in microchips and circuits industry.\",\n    \"founded_year\": 2011,\n    \"team_members\": 110,\n    \"social_profiles\": \"https://instagram.com/microsystems\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{hostname}}/company/",
+							"host": [
+								"{{hostname}}"
+							],
+							"path": [
+								"company",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Specific Company Details",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "AccessToken",
+								"value": "{{AccessToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\" : \"Quantum Robitics Inc\",\r\n    \"location\": \"Las Vegas\",\r\n    \"team_members\": 100,\r\n    \"founded_year\": 2011\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{hostname}}/company/15c1d88e-49ef-4f32-aa69-39f87722c5f5/",
+							"host": [
+								"{{hostname}}"
+							],
+							"path": [
+								"company",
+								"15c1d88e-49ef-4f32-aa69-39f87722c5f5",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Company",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "AccessToken",
+								"value": "{{AccessToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{hostname}}/company/15c1d88e-49ef-4f32-aa69-39f87722c5f5/",
+							"host": [
+								"{{hostname}}"
+							],
+							"path": [
+								"company",
+								"15c1d88e-49ef-4f32-aa69-39f87722c5f5",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "- **LIST** all the available companies  \n    API Endpoint: `/api/v1/company/`  \n    METHOD: GET\n    1. In the companies data, show number of applicants as well\n\n- **GET** details for a specific job  \n    API Endpoint: `/api/v1/company/{company_id}`  \n    METHOD: GET\n    \n\n- **GET** number of **jobs** available in the company  \n    API Endpoint: `/api/v1/company/jobs`  \n    METHOD: GET\n    \n\n- **GET** number of **user** available in the company  \n    API Endpoint: `/api/v1/company/user`  \n    METHOD: GET\n    \n\n- **CREATE** company  \n    API Endpoint: `/api/v1/company/`  \n    METHOD: POST"
+		}
+	]
+}

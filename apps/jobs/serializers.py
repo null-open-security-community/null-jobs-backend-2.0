@@ -73,6 +73,40 @@ class CompanySerializer(serializers.ModelSerializer):
         model = Company
         fields = "__all__"
 
+    def to_representation(self, instance):
+        """
+        Overriding this method for a better representation of social_profiles field
+        """
+
+        data = super().to_representation(instance)
+
+        if data:
+            # Extract the URLs from social handles
+            try:
+                if instance.social_profiles:
+                    found_url_patterns = findall(
+                        "((https?:\/\/)?[\w\.\/?=]+)", data.pop("social_profiles", "")
+                    )
+                    if found_url_patterns:
+                        instance.social_profiles = [url[0] for url in found_url_patterns]
+
+                data.update(
+                    {
+                        "social_profiles": instance.social_profiles
+                    }
+                )
+
+            except Exception as err:
+                # We can also raise an exception here but this time, I am returning
+                # error message in the data
+                data = {
+                    "error": {
+                        "message": f"Something Went Wrong\n\nReason: {err.__str__()}"
+                    }
+                }
+
+        return data
+
 
 class UserSerializer(serializers.ModelSerializer):
     """User object serializer class"""

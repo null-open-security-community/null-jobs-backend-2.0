@@ -1,10 +1,8 @@
-import uuid
 from datetime import timedelta
 from re import search
 from typing import Any
 
 import django.core.exceptions
-import jwt
 from django.db.utils import IntegrityError
 from django.utils import datetime_safe, timezone
 from django_filters.rest_framework import DjangoFilterBackend
@@ -115,14 +113,21 @@ class JobViewSets(viewsets.ModelViewSet):
         This method retrieves job data by job_id provided in the query parameter.
         """
 
-        if not validationClass.is_valid_uuid(pk):
-            return response.create_response(
-                f"value {pk} isn't a correct id",
-                status.HTTP_404_NOT_FOUND,
-            )
+        job_id = request.query_params.get("job_id")
 
-        # filter based on pk
-        job_data = Job.objects.filter(job_id=pk)
+        if not job_id or not validationClass.is_valid_uuid(job_id):
+            return response.create_response(
+                "Invalid or missing 'job_id' query parameter in the URL",
+                status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            job_data = Job.objects.filter(job_id=job_id)
+        except Job.DoesNotExist:
+            return response.create_response(
+                f"Job with job_id '{job_id}' does not exist", status.HTTP_404_NOT_FOUND
+            )
+        
         serialized_job_data = self.serializer_class(job_data, many=True)
         if serialized_job_data:
             serialized_job_data = JobViewSets.get_number_of_applicants(
@@ -164,7 +169,7 @@ class JobViewSets(viewsets.ModelViewSet):
             jobs_belong_to_company = Job.objects.filter(
                 company_id=company.get("company_id")
             )
-            active_jobs = sum(1 for job in jobs_belong_to_company if job.is_active)
+            active_jobs = sum(1 for job in jobs_belong_to_company if job.is_active and job.is_created)
             company.update({"Active Jobs": active_jobs})
 
         return serialized_company_data
@@ -211,10 +216,10 @@ class JobViewSets(viewsets.ModelViewSet):
         # validate, if both of them exists or not
         response_message = validationClass.validate_id(
             job_id, "job-id", Job
-        ) or validationClass.validate_id(user_id, "user-id", User)
-        if response_message:
+        ) and validationClass.validate_id(user_id, "user-id", User)
+        if not response_message["status"]:
             return response.create_response(
-                response_message, status.HTTP_400_BAD_REQUEST
+                response_message["error"], status.HTTP_400_BAD_REQUEST
             )
 
         # Check whether the user has applied for the job before
@@ -276,9 +281,9 @@ class JobViewSets(viewsets.ModelViewSet):
 
         # check if job_id is valid & present in db or not
         response_message = validationClass.validate_id(pk, "job-id", Job)
-        if response_message:
+        if not response_message["status"]:
             return response.create_response(
-                response_message, status.HTTP_400_BAD_REQUEST
+                response_message["error"], status.HTTP_400_BAD_REQUEST
             )
 
         # check if the given employer_id has posted the job (given by job-id)
@@ -393,7 +398,7 @@ class JobViewSets(viewsets.ModelViewSet):
 
         # check if the job is already deleted or not
         job = Job.objects.filter(job_id=pk, is_created=False, is_deleted=True)
-        if not job:
+        if job.exists():
             return response.create_response(
                 "Given job_id does not exist or already deleted",
                 status.HTTP_404_NOT_FOUND,
@@ -403,9 +408,8 @@ class JobViewSets(viewsets.ModelViewSet):
         # else, set is_created=False and is_deleted=True
         if UserTypeCheck.is_user_employer(request.user_id):
             try:
-                updated_job_data = Job.objects.filter(job_id=pk).update(
-                    is_created=False, is_deleted=True
-                )
+                updated_job_data = Job.objects.filter(job_id=pk)
+                updated_job_data.update(is_created=False, is_deleted=True, is_active=False)
                 serialized_updated_job_data = JobSerializer(updated_job_data, many=True)
                 return response.create_response(
                     serialized_updated_job_data.data, status.HTTP_200_OK
@@ -473,23 +477,7 @@ class UserViewSets(viewsets.ModelViewSet):
         # only on the user-id present in access-token, not the one we get from
         # the API endpoint.
 
-        # perform check on payload["user_id"] if it exists in db or not
         user_id = request.user_id
-        try:
-            user_id_auth = user_auth.objects.filter(id=user_id).exists()
-            if not user_id_auth:
-                return response.create_response(
-                    response.USER_INFORMATION_INVALID, status.HTTP_404_NOT_FOUND
-                )
-        except Exception as err:
-            print(
-                "Exception occurred while performing check on user_id in the database"
-            )
-            return response.create_response(
-                response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-        # Once everything's fine, update the db table
-        # payload["user_id"] is used in the filter() not the pk present in url
 
         # get data from the request
         user_data = request.data
@@ -503,7 +491,7 @@ class UserViewSets(viewsets.ModelViewSet):
 
         try:
             # update in the tbl_user_profile
-            User.objects.filter(user_id=request.user_id).update(**user_data)
+            User.objects.filter(user_id=user_id).update(**user_data)
 
             # update in the tbl_user_auth (only - user_name, user_email, user_type)
             tbl_user_auth_data = {
@@ -511,7 +499,7 @@ class UserViewSets(viewsets.ModelViewSet):
                 for key in ("name", "email", "user_type")
                 if key in user_data
             }
-            user_auth.objects.filter(id=request.user_id).update(**tbl_user_auth_data)
+            user_auth.objects.filter(id=user_id).update(**tbl_user_auth_data)
         except IntegrityError:
             return response.create_response(
                 "You've supplied either improper values or same values to update, Use a different one",
@@ -524,7 +512,7 @@ class UserViewSets(viewsets.ModelViewSet):
                 status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         else:
-            user_data = User.objects.get(user_id=request.user_id)
+            user_data = User.objects.get(user_id=user_id)
             return response.create_response(
                 UserSerializer(user_data).data, status.HTTP_200_OK
             )
@@ -542,37 +530,27 @@ class UserViewSets(viewsets.ModelViewSet):
 
             # get user data
             user_data = self.queryset.filter(user_id=user_id)
-            if user_data:
-                serialized_user_data = self.serializer_class(user_data, many=True)
-                return response.create_response(
-                    serialized_user_data.data, status.HTTP_200_OK
-                )
-            else:
-                return response.create_response(
-                    response.USER_DATA_NOT_PRESENT, status.HTTP_404_NOT_FOUND
-                )
+            serialized_user_data = self.serializer_class(user_data, many=True)
+            return response.create_response(
+                serialized_user_data.data, status.HTTP_200_OK
+            )
         except Exception:
             return response.create_response(
                 response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-    @action(detail=True, methods=["get"])
-    def jobs(self, request, pk=None):
+    @action(detail=False, methods=["get"])
+    def jobs(self, request):
         """
-        API: /api/v1/user/{pk}/jobs
+        API: /api/v1/user/jobs/
         This method finds out how many jobs a person has applied so far,
-        pk here means primary key (basically the user_id)
         """
 
         try:
-            if not validationClass.is_valid_uuid(pk):
-                return response.create_response(
-                    f"value {pk} isn't a correct id",
-                    status.HTTP_404_NOT_FOUND,
-                )
+            user_id = request.user_id
             jobs_data = None
             # get the applications submmited by this user
-            applications = Applicants.objects.filter(user_id=pk).values(values.JOB_ID)
+            applications = Applicants.objects.filter(user_id=user_id).values(values.JOB_ID)
             if applications.exists():
                 # get the job_ids
                 applications_count = applications.count()
@@ -594,12 +572,13 @@ class UserViewSets(viewsets.ModelViewSet):
                 return response.create_response(
                     "You haven't applied to any job", status.HTTP_200_OK
                 )
-        except django.core.exceptions.ObjectDoesNotExist:
+        except Exception:
             return response.create_response(
-                f"person id '{pk}' doesn't exist", status.HTTP_404_NOT_FOUND
+                response.SOMETHING_WENT_WRONG, 
+                status.HTTP_404_NOT_FOUND
             )
 
-    @action(detail=False, methods=["get"], permission_classes=[Moderator])
+    @action(detail=False, methods=["delete"])
     def delete_user(self, request):
         """
         API: /delete_user/
@@ -609,20 +588,22 @@ class UserViewSets(viewsets.ModelViewSet):
         """
 
         user_id = request.user_id
-        if user_id:
-            try:
-                # remove user details from tbl_user_profile
-                User.objects.filter(user_id=user_id).delete()
-                # remove user details from tbl_user_auth
-                user_auth.objects.filter(id=user_id).delete()
-                return response.create_response(
-                    "User Profile Deleted Successfully", status_code=status.HTTP_200_OK
-                )
-            except Exception as err:
-                return response.create_response(
-                    response.SOMETHING_WENT_WRONG + err.__str__(),
-                    status_code=status.HTTP_404_NOT_FOUND,
-                )
+
+        try:
+            # check if the given user_id exists or not
+            user_object = User.objects.filter(user_id=user_id)
+            # remove user details from tbl_user_profile
+            user_object.delete()
+            # remove user details from tbl_user_auth
+            user_auth.objects.filter(id=user_id).delete()
+            return response.create_response(
+                "User Profile Deleted Successfully", status_code=status.HTTP_200_OK
+            )
+        except Exception as err:
+            return response.create_response(
+                response.SOMETHING_WENT_WRONG + err.__str__(),
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
 
     def get_application_status(self, serialized_data):
         if not serialized_data:
@@ -664,8 +645,10 @@ class CompanyViewSets(viewsets.ModelViewSet):
         """
 
         try:
+
+            company_data = self.queryset.filter(is_created=True, is_deleted=False)
             serialized_company_data = self.serializer_class(
-                self.queryset, many=True, context={"request": request}
+                company_data, many=True, context={"request": request}
             )
 
             # get number of applicants
@@ -753,7 +736,7 @@ class CompanyViewSets(viewsets.ModelViewSet):
         company_data = Company.objects.filter(
             company_id=pk, is_created=False, is_deleted=True
         )
-        if not company_data:
+        if company_data.exists():
             return response.create_response(
                 "Given company_id does not exist or already deleted",
                 status.HTTP_404_NOT_FOUND,
@@ -763,7 +746,7 @@ class CompanyViewSets(viewsets.ModelViewSet):
         # else, set is_created=False and is_deleted=True
         if UserTypeCheck.is_user_employer(request.user_id):
             try:
-                company_data = Company.objects.filter(job_id=pk)
+                company_data = Company.objects.filter(company_id=pk)
                 company_data.update(is_created=False, is_deleted=True)
                 serialized_company_data = CompanySerializer(company_data, many=True)
                 return response.create_response(
@@ -789,8 +772,9 @@ class CompanyViewSets(viewsets.ModelViewSet):
             # get jobs data by company_id from database
             # .values() returns the QuerySet
             # jobData = Job.objects.filter(company=companyId).values()
-            job_data = Job.objects.filter(company_id=company_id).values()
-            company_data.update({"Jobs": job_data})
+            job_data = Job.objects.filter(company_id=company_id, is_created=True, is_deleted=False)
+            if job_data.exists():
+                company_data.update({"Jobs": job_data.values()})
 
         return response.create_response(
             serialized_company_data.data, status.HTTP_200_OK
@@ -877,6 +861,7 @@ class ModeratorViewSet(viewsets.ViewSet):
     def __init__(self, **kwargs: Any) -> None:
         self.objects = ["company", "job"]
         super().__init__(**kwargs)
+        self._type = ""
 
     @action(detail=False, methods=["post"], permission_classes=[Moderator])
     def list_pending_items(self, request):
@@ -885,14 +870,14 @@ class ModeratorViewSet(viewsets.ViewSet):
         Method to list unapproved jobs and companies
         """
 
-        if response := self.validate_request_data(request):
-            return response
+        if response_value := self.validate_request_data(request):
+            return response_value
 
-        if type == "job":
+        if self._type == "job":
             return response.create_response(
                 self.list_pending_jobs(), status.HTTP_200_OK
             )
-        elif type == "company":
+        elif self._type == "company":
             return response.create_response(
                 self.list_pending_companies(), status.HTTP_200_OK
             )
@@ -904,16 +889,16 @@ class ModeratorViewSet(viewsets.ViewSet):
         Method to set is_created=True for given object
         """
 
-        if response := self.validate_request_data(request):
-            return response
+        if response_value := self.validate_request_data(request):
+            return response_value
 
-        if type == "job":
+        if self._type == "job":
             return response.create_response(
-                self.approve_created_jobs(), status.HTTP_200_OK
+                self.approve_pending_jobs(request), status.HTTP_200_OK
             )
-        elif type == "company":
+        elif self._type == "company":
             return response.create_response(
-                self.approve_created_companies(), status.HTTP_200_OK
+                self.approve_pending_companies(request), status.HTTP_200_OK
             )
 
     @action(detail=False, methods=["post"], permission_classes=[Moderator])
@@ -924,22 +909,22 @@ class ModeratorViewSet(viewsets.ViewSet):
         the database
         """
 
-        if response := self.validate_request_data(request):
-            return response
+        if response_value := self.validate_request_data(request):
+            return response_value
 
-        if type == "job":
+        if self._type == "job":
             return response.create_response(
-                self.remove_deleted_jobs(), status.HTTP_200_OK
+                self.remove_deleted_jobs(request), status.HTTP_200_OK
             )
-        elif type == "company":
+        elif self._type == "company":
             return response.create_response(
-                self.remove_deleted_companies(), status.HTTP_200_OK
+                self.remove_deleted_companies(request), status.HTTP_200_OK
             )
 
     def validate_request_data(self, request):
         """Method to perform checks on request.data"""
 
-        if request.data.get("type", None):
+        if not request.data.get("type", None):
             return response.create_response(
                 "'type' not provided", status.HTTP_400_BAD_REQUEST
             )
@@ -949,6 +934,8 @@ class ModeratorViewSet(viewsets.ViewSet):
             return response.create_response(
                 "wrong 'type' value specified", status.HTTP_404_NOT_FOUND
             )
+        
+        self._type = type
 
     def list_pending_jobs(self):
         """
@@ -984,8 +971,8 @@ class ModeratorViewSet(viewsets.ViewSet):
         if job_id := request.data.get("job_id", None):
             try:
                 # check if the given job_id belongs to the job object
-                job_data = Job.objects.filter(job_id=job_id).values("is_created")
-                if job_data and not job_data[0]["is_created"]:
+                job_data = Job.objects.filter(job_id=job_id).values("is_created", "is_deleted")
+                if job_data and (not job_data[0]["is_created"] and not job_data[0]["is_deleted"]):
                     job_data.update(is_created=True, is_deleted=False)
                     return f"Job with id {job_id} has been approved successfully!!"
                 return "No pending job associated with the given job_id exist"
@@ -1004,9 +991,9 @@ class ModeratorViewSet(viewsets.ViewSet):
             try:
                 # check if the given company_id belongs to the job object
                 company_data = Company.objects.filter(company_id=company_id).values(
-                    "is_created"
+                    "is_created", "is_deleted"
                 )
-                if company_data and not company_data[0]["is_created"]:
+                if company_data and (not company_data[0]["is_created"] and not company_data[0]["is_deleted"]):
                     company_data.update(is_created=True, is_deleted=False)
                     return (
                         f"Company with id {company_id} has been approved successfully"

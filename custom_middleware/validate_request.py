@@ -10,6 +10,7 @@ from rest_framework.renderers import JSONRenderer
 
 from apps.jobs.constants import response, values
 from apps.jobs.utils.validators import validationClass
+from apps.accounts.models import User as user_auth
 
 
 class ValidateRequest:
@@ -55,10 +56,20 @@ class ValidateRequest:
         4. X-Request-ID
         5. Content-Length
         6. AccessToken
+        7. user_id in AccessToken exists or not
 
         Return type: [exit_status, message]
         """
-        return self.check_and_decode_access_token(request)
+        
+        response_tuple = self.check_and_decode_access_token(request)
+        if response_tuple[0]:
+            return response_tuple
+        
+        response_tuple = self.check_user_exists(request)
+        if response_tuple[0]:
+            return response_tuple
+        
+        return (0, "Exit Successfully")
 
     def check_and_decode_access_token(self, request) -> tuple:
         """method to perform the following things
@@ -97,3 +108,24 @@ class ValidateRequest:
 
     def process_response(self, response):
         pass
+
+    def check_user_exists(self, request):
+        """
+        check if user_id exists in the db or not
+        database table for ref: tbl_user_auth
+
+        Expected Extra arguments: 
+        1. request.path
+        """
+
+        if request.path in self.excluded_paths:
+            return (0, "Rejecting user_id existence check")
+
+        try:
+            user_id = request.user_id
+            response = validationClass().validate_id(user_id, 'id', user_auth)
+            if not response["status"]:
+                return (1, "User does not exist")
+            return (0, "Exit Successfully")
+        except Exception:
+            return (1, "Something Went Wrong")

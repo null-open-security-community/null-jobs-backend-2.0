@@ -475,7 +475,7 @@ class Moderator(BasePermission):
     access to resources.
     """
 
-    def has_permission(self, request):
+    def has_permission(self, request, *args):
         """Method to check if the given user_id belongs to moderator or not"""
 
         # check if user_id is valid or contains improper value

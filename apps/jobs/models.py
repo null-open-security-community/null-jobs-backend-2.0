@@ -20,12 +20,15 @@ class Company(models.Model):
 
     name = models.CharField(max_length=255, null=False)
     location = models.CharField(max_length=255, null=False)
-    about = models.TextField(max_length=500, default=None)
+    about = models.TextField(max_length=500, default=False, null=False)
     company_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )  # uuid1 uses network address for random number, so it's better to use uuid4
     is_created = models.BooleanField(default=False, null=True)
     is_deleted = models.BooleanField(default=False, null=True)
+    team_members = models.PositiveIntegerField(default=False, null=True)
+    social_profiles = models.URLField(default=None, null=True)
+    founded_year = models.PositiveIntegerField(default=False, null=False)
 
     def __str__(self):
         return self.name

@@ -34,10 +34,12 @@ class validationClass:
         exists in the database."""
 
         if not validationClass.is_valid_uuid(uuid):
-            return {"error": f"{idtype} isn't a valid UUID"}
+            return {"error": f"{idtype} isn't a valid UUID", "status": False}
 
         if model_class.objects.filter(pk=uuid).count() < 1:
-            return {"error": f"This {idtype} doesn't exist"}
+            return {"error": f"This {idtype} doesn't exist", "status": False}
+        
+        return {"success": f"id {uuid} exists", "status": True}
 
     def image_validation(self, image_file):
         # check size
