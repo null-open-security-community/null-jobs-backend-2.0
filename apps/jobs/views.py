@@ -613,18 +613,27 @@ class UserViewSets(viewsets.ModelViewSet):
         # Resume re-upload
         resume_data = request.FILES.get("resume")
         if resume_data:
+            # Delete the previous resume if it exists
+            if user.resume:
+                user.resume.delete()
             user.resume = resume_data
             user.save()
 
         # Profile Picture re-upload
         profile_picture_data = request.FILES.get("profile_picture")
         if profile_picture_data:
+            # Delete the previous profile picture if it exists
+            if user.profile_picture:
+                user.profile_picture.delete()
             user.profile_picture = profile_picture_data
             user.save()
 
         # Cover Letter re-upload
         cover_letter_data = request.FILES.get("cover_letter")
         if cover_letter_data:
+            # Delete the previous cover letter if it exists
+            if user.cover_letter:
+                user.cover_letter.delete()
             user.cover_letter = cover_letter_data
             user.save()
 
@@ -648,11 +657,11 @@ class UserViewSets(viewsets.ModelViewSet):
         file_path = None
 
         # Determine the file path based on the requested document type
-        if document_type == "resume":
+        if document_type == values.RESUME_DOCUMENT_TYPE:
             file_path = user.resume.path
-        elif document_type == "profile_picture":
+        elif document_type == values.PROFILE_PICTURE_DOCUMENT_TYPE:
             file_path = user.profile_picture.path
-        elif document_type == "cover_letter":
+        elif document_type == values.COVER_LETTER_DOCUMENT_TYPE:
             file_path = user.cover_letter.path
 
         if not file_path or not os.path.exists(file_path):
