@@ -45,7 +45,8 @@ class JobViewSetsTestCase(TestCase):
             "is_active": True,
             "job_responsibilities": "Analyze and interpret complex data sets.",
             "skills_required": "Python, R, Machine Learning",
-            "education_or_certifications": "Master's degree in Data Science or related field."
+            "education_or_certifications": "Master's degree in Data Science or related field.",
+            "employer_id": uuid.uuid4()
         }
 
         self.job = Job.objects.create(**self.job_data)
