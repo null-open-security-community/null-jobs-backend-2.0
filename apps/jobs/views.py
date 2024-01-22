@@ -672,39 +672,6 @@ class UserViewSets(viewsets.ModelViewSet):
         # Serve the file using Django FileResponse
         return FileResponse(open(file_path, "rb"), as_attachment=True)
 
-    @action(detail=True, methods=["delete"])
-    def remove_documents(self, request, pk=None):
-        """
-        API: /api/v1/user/{pk}/remove-documents
-        Allows users to remove their documents (resume, profile picture, cover letter).
-        """
-        user = User.objects.get(user_id=pk)
-        if not user:
-            return response.create_response(
-                "User does not exist", status.HTTP_404_NOT_FOUND
-            )
-
-        document_type = request.query_params.get("document_type", "")
-        if not document_type:
-            return response.create_response(
-                "Please provide a valid document_type query parameter",
-                status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Remove the document based on the requested document type
-        if document_type == "resume":
-            user.resume = None
-        elif document_type == "profile_picture":
-            user.profile_picture = None
-        elif document_type == "cover_letter":
-            user.cover_letter = None
-
-        user.save()
-
-        return response.create_response(
-            f"{document_type.capitalize()} removed successfully", status.HTTP_200_OK
-        )
-
 
 class CompanyViewSets(viewsets.ModelViewSet):
     """
