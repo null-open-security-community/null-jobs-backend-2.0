@@ -18,6 +18,5 @@ router.register(r"jobs", JobViewSets)
 router.register(r"user", UserViewSets)
 router.register(r"company", CompanyViewSets)
 router.register(r"contact-us", ContactUsViewSet, basename="contact-us")
-router.register(r"moderator-actions", ModeratorViewSet, basename="moderator-actions")
 
 urlpatterns = [path("", include(router.urls), name="Default")]
