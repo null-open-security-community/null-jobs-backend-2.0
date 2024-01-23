@@ -698,7 +698,7 @@ class UserViewSets(viewsets.ModelViewSet):
         )
 
     @action(detail=False, methods=["post"])
-    def find_user(self, request):
+    def retrive_users(self, request):
         """
         to retrive user as per the filters in the post body.
         """
@@ -713,7 +713,7 @@ class UserViewSets(viewsets.ModelViewSet):
         if qualification:
             queryset = queryset.filter(qualification__icontains=qualification)
 
-        if experience:
+        if experience is not None:
             queryset = queryset.filter(experience=experience)
 
         if location:
