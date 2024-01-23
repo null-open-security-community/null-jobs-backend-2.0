@@ -1,9 +1,10 @@
 import jwt
 import uuid
 import os
+import json
 from re import search
 import django.core.exceptions
-from django.http import FileResponse
+from django.http import FileResponse, JsonResponse
 from django.db.utils import IntegrityError
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
@@ -695,6 +696,31 @@ class UserViewSets(viewsets.ModelViewSet):
         return response.create_response(
             f"{document_type.capitalize()} removed successfully", status.HTTP_200_OK
         )
+
+    @action(detail=False, methods=["post"])
+    def retrive_users(self, request):
+        """
+        to retrive user as per the filters in the post body.
+        """
+
+        data = request.data
+        qualification = data.get("qualification", None)
+        experience = data.get("experience", None)
+        location = data.get("location", None)
+
+        queryset = User.objects.all()
+
+        if qualification:
+            queryset = queryset.filter(qualification__icontains=qualification)
+
+        if experience is not None:
+            queryset = queryset.filter(experience=experience)
+
+        if location:
+            queryset = queryset.filter(address__icontains=location)
+
+        serialized_data = UserSerializer(queryset, many=True)
+        return Response(serialized_data.data, status=status.HTTP_200_OK)
 
 
 class CompanyViewSets(viewsets.ModelViewSet):
