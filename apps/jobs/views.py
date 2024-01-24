@@ -1,10 +1,13 @@
 import jwt
 import uuid
 import os
+import json
 from re import search
+from django.db.models import Count
 import django.core.exceptions
-from django.http import FileResponse
+from django.http import FileResponse, JsonResponse
 from django.db.utils import IntegrityError
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -74,6 +77,17 @@ class JobViewSets(viewsets.ModelViewSet):
         except django.core.exceptions.ValidationError as err:
             return response.create_response(err.messages, status.HTTP_404_NOT_FOUND)
         else:
+            # Use Paginator for the queryset
+            page_number = request.GET.get("page", 1)
+            paginator = Paginator(jobs_data, values.ITEMS_PER_PAGE)  # 5 items per page
+
+            try:
+                jobs_data = paginator.page(page_number)
+            except PageNotAnInteger:
+                jobs_data = paginator.page(1)
+            except EmptyPage:
+                return response.create_response([], status.HTTP_200_OK)
+
             serialized_job_data = self.serializer_class(
                 jobs_data, many=True, context={"request": request}
             )
@@ -325,7 +339,7 @@ class JobViewSets(viewsets.ModelViewSet):
 
         # past 3 weeks datetime specified for featured jobs (can be modified as per use)
         past_3_weeks_datetime = datetime_safe.datetime.now(tz=timezone.utc) - timedelta(
-            days=18
+            values.PAST_3_WEEK_DATETIME_DAYS18
         )
 
         # get the jobs_data and sort it in DESC order
@@ -355,6 +369,82 @@ class JobViewSets(viewsets.ModelViewSet):
                 response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+    @action(detail=False, methods=["get"])
+    def get_posted_jobs(self, request):
+        """
+        API: localhost:8000/jobs/get_posted_jobs/
+        This method returns a list of jobs where is_posted is True.
+        """
+
+        # Get only posted jobs
+        posted_jobs_data = Job.objects.filter(posted=True)
+        page_number = request.GET.get("page", 1)  # used paginator for queryset
+        paginator = Paginator(
+            posted_jobs_data, values.ITEMS_PER_PAGE
+        )  # per page 2 items
+
+        try:
+            posted_jobs_data = paginator.page(page_number)
+        except PageNotAnInteger:
+            posted_jobs_data = paginator.page(1)
+        except EmptyPage:
+            return response.create_response([], status.HTTP_200_OK)
+
+        serialized_posted_jobs_data = self.serializer_class(
+            posted_jobs_data, many=True, context={"request": request}
+        )
+
+        # Add number of applicants to the serialized data
+        if serialized_posted_jobs_data:
+            serialized_posted_jobs_data = JobViewSets.get_number_of_applicants(
+                serialized_posted_jobs_data
+            )
+            return response.create_response(
+                serialized_posted_jobs_data.data, status.HTTP_200_OK
+            )
+
+    @action(detail=False, methods=["get"])
+    def get_jobs(self, request):
+        """
+        API: /api/v1/jobs/get_jobs/
+        This method retrieves jobs based on dynamic filters such as
+        category, job type, experience, and qualification provided in the query parameters.
+        It also includes the count of active jobs for each filter.
+        """
+
+        # Extract filters from query parameters
+        filters = {}
+        category = request.query_params.get("category", None)
+        job_type = request.query_params.get("job_type", None)
+        experience = request.query_params.get("experience", None)
+
+        if category:
+            filters["category"] = category
+        if job_type:
+            filters["job_type"] = job_type
+        if experience:
+            filters["experience__lte"] = int(
+                experience
+            )  # Filter jobs with experience greater than or equal to specified value
+
+        # Get the filtered jobs
+        filtered_jobs_data = Job.objects.filter(**filters, is_active=True)
+
+        # If no jobs match the filters, return a specific response
+        if not filtered_jobs_data.exists():
+            return response.create_response(
+                "Sorry, currently no jobs available as per your request",
+                status.HTTP_200_OK,
+            )
+
+        # Serialize the filtered job data
+        serialized_filtered_jobs_data = JobSerializer(
+            filtered_jobs_data, many=True
+        ).data
+
+        return response.create_response(
+            serialized_filtered_jobs_data, status.HTTP_200_OK
+        )
 
 class UserViewSets(viewsets.ModelViewSet):
     """
@@ -671,7 +761,6 @@ class UserViewSets(viewsets.ModelViewSet):
 
         # Serve the file using Django FileResponse
         return FileResponse(open(file_path, "rb"), as_attachment=True)
-
 
 class CompanyViewSets(viewsets.ModelViewSet):
     """
