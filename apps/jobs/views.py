@@ -1,9 +1,13 @@
 from datetime import timedelta
+import json
 from re import search
 from typing import Any
 
+from django.db.models import Count
 import django.core.exceptions
+from django.http import FileResponse, JsonResponse
 from django.db.utils import IntegrityError
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.utils import datetime_safe, timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
@@ -75,6 +79,17 @@ class JobViewSets(viewsets.ModelViewSet):
         except django.core.exceptions.ValidationError as err:
             return response.create_response(err.messages, status.HTTP_404_NOT_FOUND)
         else:
+            # Use Paginator for the queryset
+            page_number = request.GET.get("page", 1)
+            paginator = Paginator(jobs_data, values.ITEMS_PER_PAGE)  # 5 items per page
+
+            try:
+                jobs_data = paginator.page(page_number)
+            except PageNotAnInteger:
+                jobs_data = paginator.page(1)
+            except EmptyPage:
+                return response.create_response([], status.HTTP_200_OK)
+
             serialized_job_data = self.serializer_class(
                 jobs_data, many=True, context={"request": request}
             )
@@ -326,7 +341,7 @@ class JobViewSets(viewsets.ModelViewSet):
 
         # past 3 weeks datetime specified for featured jobs (can be modified as per use)
         past_3_weeks_datetime = datetime_safe.datetime.now(tz=timezone.utc) - timedelta(
-            days=18
+            values.PAST_3_WEEK_DATETIME_DAYS18
         )
 
         # get the jobs_data and sort it in DESC order
@@ -421,6 +436,82 @@ class JobViewSets(viewsets.ModelViewSet):
 
         return super().destroy(request, *args, **kwargs)
 
+    @action(detail=False, methods=["get"])
+    def get_posted_jobs(self, request):
+        """
+        API: localhost:8000/jobs/get_posted_jobs/
+        This method returns a list of jobs where is_posted is True.
+        """
+
+        # Get only posted jobs
+        posted_jobs_data = Job.objects.filter(posted=True)
+        page_number = request.GET.get("page", 1)  # used paginator for queryset
+        paginator = Paginator(
+            posted_jobs_data, values.ITEMS_PER_PAGE
+        )  # per page 2 items
+
+        try:
+            posted_jobs_data = paginator.page(page_number)
+        except PageNotAnInteger:
+            posted_jobs_data = paginator.page(1)
+        except EmptyPage:
+            return response.create_response([], status.HTTP_200_OK)
+
+        serialized_posted_jobs_data = self.serializer_class(
+            posted_jobs_data, many=True, context={"request": request}
+        )
+
+        # Add number of applicants to the serialized data
+        if serialized_posted_jobs_data:
+            serialized_posted_jobs_data = JobViewSets.get_number_of_applicants(
+                serialized_posted_jobs_data
+            )
+            return response.create_response(
+                serialized_posted_jobs_data.data, status.HTTP_200_OK
+            )
+
+    @action(detail=False, methods=["get"])
+    def get_jobs(self, request):
+        """
+        API: /api/v1/jobs/get_jobs/
+        This method retrieves jobs based on dynamic filters such as
+        category, job type, experience, and qualification provided in the query parameters.
+        It also includes the count of active jobs for each filter.
+        """
+
+        # Extract filters from query parameters
+        filters = {}
+        category = request.query_params.get("category", None)
+        job_type = request.query_params.get("job_type", None)
+        experience = request.query_params.get("experience", None)
+
+        if category:
+            filters["category"] = category
+        if job_type:
+            filters["job_type"] = job_type
+        if experience:
+            filters["experience__lte"] = int(
+                experience
+            )  # Filter jobs with experience greater than or equal to specified value
+
+        # Get the filtered jobs
+        filtered_jobs_data = Job.objects.filter(**filters, is_active=True)
+
+        # If no jobs match the filters, return a specific response
+        if not filtered_jobs_data.exists():
+            return response.create_response(
+                "Sorry, currently no jobs available as per your request",
+                status.HTTP_200_OK,
+            )
+
+        # Serialize the filtered job data
+        serialized_filtered_jobs_data = JobSerializer(
+            filtered_jobs_data, many=True
+        ).data
+
+        return response.create_response(
+            serialized_filtered_jobs_data, status.HTTP_200_OK
+        )
 
 class UserViewSets(viewsets.ModelViewSet):
     """
@@ -617,6 +708,129 @@ class UserViewSets(viewsets.ModelViewSet):
                 job_data.update({"status": status})
 
         return serialized_data
+
+    @action(detail=True, methods=["put"])
+    def reupload_documents(self, request, pk=None):
+        """
+        API: /api/v1/user/{pk}/reupload-documents
+        Allows users to re-upload their documents (resume, profile picture, cover letter).
+        """
+        user = User.objects.get(user_id=pk)
+        if not user:
+            return response.create_response(
+                "User does not exist", status.HTTP_404_NOT_FOUND
+            )
+
+        # Resume re-upload
+        resume_data = request.FILES.get("resume")
+        if resume_data:
+            user.resume = resume_data
+            user.save()
+
+        # Profile Picture re-upload
+        profile_picture_data = request.FILES.get("profile_picture")
+        if profile_picture_data:
+            user.profile_picture = profile_picture_data
+            user.save()
+
+        # Cover Letter re-upload
+        cover_letter_data = request.FILES.get("cover_letter")
+        if cover_letter_data:
+            user.cover_letter = cover_letter_data
+            user.save()
+
+        return response.create_response(
+            "Documents re-uploaded successfully", status.HTTP_200_OK
+        )
+
+    @action(detail=True, methods=["get"])
+    def download_documents(self, request, pk=None):
+        """
+        API: /api/v1/user/{pk}/download-documents
+        Allows users to download their documents (resume, profile picture, cover letter).
+        """
+        user = User.objects.get(user_id=pk)
+        if not user:
+            return response.create_response(
+                "User does not exist", status.HTTP_404_NOT_FOUND
+            )
+
+        document_type = request.query_params.get("document_type", "")
+        file_path = None
+
+        # Determine the file path based on the requested document type
+        if document_type == "resume":
+            file_path = user.resume.path
+        elif document_type == "profile_picture":
+            file_path = user.profile_picture.path
+        elif document_type == "cover_letter":
+            file_path = user.cover_letter.path
+
+        if not file_path or not os.path.exists(file_path):
+            return response.create_response(
+                f"{document_type.capitalize()} not found", status.HTTP_404_NOT_FOUND
+            )
+
+        # Serve the file using Django FileResponse
+        return FileResponse(open(file_path, "rb"), as_attachment=True)
+
+    @action(detail=True, methods=["delete"])
+    def remove_documents(self, request, pk=None):
+        """
+        API: /api/v1/user/{pk}/remove-documents
+        Allows users to remove their documents (resume, profile picture, cover letter).
+        """
+        user = User.objects.get(user_id=pk)
+        if not user:
+            return response.create_response(
+                "User does not exist", status.HTTP_404_NOT_FOUND
+            )
+
+        document_type = request.query_params.get("document_type", "")
+        if not document_type:
+            return response.create_response(
+                "Please provide a valid document_type query parameter",
+                status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Remove the document based on the requested document type
+        if document_type == "resume":
+            user.resume = None
+        elif document_type == "profile_picture":
+            user.profile_picture = None
+        elif document_type == "cover_letter":
+            user.cover_letter = None
+
+        user.save()
+
+        return response.create_response(
+            f"{document_type.capitalize()} removed successfully", status.HTTP_200_OK
+        )
+
+    @action(detail=False, methods=["post"])
+    def retrive_users(self, request):
+        """
+        to retrive user as per the filters in the post body.
+        """
+
+        data = request.data
+        qualification = data.get("qualification", None)
+        experience = data.get("experience", None)
+        location = data.get("location", None)
+
+        queryset = User.objects.all()
+
+        if qualification:
+            queryset = queryset.filter(qualification__icontains=qualification)
+
+        if experience is not None:
+            queryset = queryset.filter(experience=experience)
+
+        if location:
+            queryset = queryset.filter(address__icontains=location)
+
+        serialized_data = UserSerializer(queryset, many=True)
+        return Response(serialized_data.data, status=status.HTTP_200_OK)
 
 
 class CompanyViewSets(viewsets.ModelViewSet):
