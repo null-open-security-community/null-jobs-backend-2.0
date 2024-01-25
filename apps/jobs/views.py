@@ -703,18 +703,27 @@ class UserViewSets(viewsets.ModelViewSet):
         # Resume re-upload
         resume_data = request.FILES.get("resume")
         if resume_data:
+            # Delete the previous resume if it exists
+            if user.resume:
+                user.resume.delete()
             user.resume = resume_data
             user.save()
 
         # Profile Picture re-upload
         profile_picture_data = request.FILES.get("profile_picture")
         if profile_picture_data:
+            # Delete the previous profile picture if it exists
+            if user.profile_picture:
+                user.profile_picture.delete()
             user.profile_picture = profile_picture_data
             user.save()
 
         # Cover Letter re-upload
         cover_letter_data = request.FILES.get("cover_letter")
         if cover_letter_data:
+            # Delete the previous cover letter if it exists
+            if user.cover_letter:
+                user.cover_letter.delete()
             user.cover_letter = cover_letter_data
             user.save()
 
@@ -738,11 +747,11 @@ class UserViewSets(viewsets.ModelViewSet):
         file_path = None
 
         # Determine the file path based on the requested document type
-        if document_type == "resume":
+        if document_type == values.RESUME_DOCUMENT_TYPE:
             file_path = user.resume.path
-        elif document_type == "profile_picture":
+        elif document_type == values.PROFILE_PICTURE_DOCUMENT_TYPE:
             file_path = user.profile_picture.path
-        elif document_type == "cover_letter":
+        elif document_type == values.COVER_LETTER_DOCUMENT_TYPE:
             file_path = user.cover_letter.path
 
         if not file_path or not os.path.exists(file_path):
@@ -752,65 +761,6 @@ class UserViewSets(viewsets.ModelViewSet):
 
         # Serve the file using Django FileResponse
         return FileResponse(open(file_path, "rb"), as_attachment=True)
-
-    @action(detail=True, methods=["delete"])
-    def remove_documents(self, request, pk=None):
-        """
-        API: /api/v1/user/{pk}/remove-documents
-        Allows users to remove their documents (resume, profile picture, cover letter).
-        """
-        user = User.objects.get(user_id=pk)
-        if not user:
-            return response.create_response(
-                "User does not exist", status.HTTP_404_NOT_FOUND
-            )
-
-        document_type = request.query_params.get("document_type", "")
-        if not document_type:
-            return response.create_response(
-                "Please provide a valid document_type query parameter",
-                status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Remove the document based on the requested document type
-        if document_type == "resume":
-            user.resume = None
-        elif document_type == "profile_picture":
-            user.profile_picture = None
-        elif document_type == "cover_letter":
-            user.cover_letter = None
-
-        user.save()
-
-        return response.create_response(
-            f"{document_type.capitalize()} removed successfully", status.HTTP_200_OK
-        )
-
-    @action(detail=False, methods=["post"])
-    def retrive_users(self, request):
-        """
-        to retrive user as per the filters in the post body.
-        """
-
-        data = request.data
-        qualification = data.get("qualification", None)
-        experience = data.get("experience", None)
-        location = data.get("location", None)
-
-        queryset = User.objects.all()
-
-        if qualification:
-            queryset = queryset.filter(qualification__icontains=qualification)
-
-        if experience is not None:
-            queryset = queryset.filter(experience=experience)
-
-        if location:
-            queryset = queryset.filter(address__icontains=location)
-
-        serialized_data = UserSerializer(queryset, many=True)
-        return Response(serialized_data.data, status=status.HTTP_200_OK)
-
 
 class CompanyViewSets(viewsets.ModelViewSet):
     """
