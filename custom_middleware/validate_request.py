@@ -30,7 +30,13 @@ class ValidateRequest:
             "/login/",
             "/google/login/",
             "/jobs/public_jobs/",
-            "/google/login/callback/"
+            "/google/login/callback/",
+            "/forget-password/",
+            "/forget-password/verify/",
+            "/token/refresh/",
+            "/token/verify/",
+            "/otp/verify/",
+            "/restricted/"
         ]
 
     def __call__(self, request, *args: Any, **kwds: Any) -> Any:
