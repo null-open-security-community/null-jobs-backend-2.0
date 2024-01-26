@@ -5,6 +5,7 @@ from typing import Any
 
 from django.db.models import Count
 import django.core.exceptions
+from django.forms import ValidationError
 from django.http import FileResponse, JsonResponse
 from django.db.utils import IntegrityError
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
@@ -262,11 +263,14 @@ class JobViewSets(viewsets.ModelViewSet):
 
         # Get the employer-id from the database
         # employer-id always exists in the db, without this job can't be created
-        employer_id = (
-            Job.objects.filter(job_id=job_id)
-            .values(values.EMPLOYER_ID)
-            .first()[values.EMPLOYER_ID]
-        )
+        job_data = Job.objects.filter(job_id=job_id)
+        if job_data.exists():
+            employer_id = job_data.first()[values.EMPLOYER_ID]
+        else:
+            return response.create_response(
+                f"Given job_id \'{job_id}\' does not exist",
+                status.HTTP_404_NOT_FOUND
+            )
 
         # Prepare the overall dictionary to save into the database
         # Add job-id, user-id, employer-id to the applyjob_data
@@ -412,13 +416,18 @@ class JobViewSets(viewsets.ModelViewSet):
             )
 
         # check if the job is already deleted or not
-        job = Job.objects.filter(job_id=pk, is_created=False, is_deleted=True)
-        if job.exists():
+        if validationClass.is_valid_uuid(pk):
+            job = Job.objects.filter(job_id=pk, is_created=False, is_deleted=True)
+            if job.exists():
+                return response.create_response(
+                    "Given job_id does not exist or already deleted",
+                    status.HTTP_404_NOT_FOUND,
+                )
+        else:
             return response.create_response(
-                "Given job_id does not exist or already deleted",
-                status.HTTP_404_NOT_FOUND,
+                "Job id is not valid",
+                status.HTTP_400_BAD_REQUEST
             )
-
         # if user is employer don't remove the job from the db table
         # else, set is_created=False and is_deleted=True
         if UserTypeCheck.is_user_employer(request.user_id):
@@ -816,7 +825,7 @@ class UserViewSets(viewsets.ModelViewSet):
         data = request.data
         qualification = data.get("qualification", None)
         experience = data.get("experience", None)
-        location = data.get("location", None)
+        address = data.get("address", None)
 
         queryset = User.objects.all()
 
@@ -826,8 +835,8 @@ class UserViewSets(viewsets.ModelViewSet):
         if experience is not None:
             queryset = queryset.filter(experience=experience)
 
-        if location:
-            queryset = queryset.filter(address__icontains=location)
+        if address:
+            queryset = queryset.filter(address__icontains=address)
 
         serialized_data = UserSerializer(queryset, many=True)
         return Response(serialized_data.data, status=status.HTTP_200_OK)
@@ -1065,7 +1074,7 @@ class ContactUsViewSet(viewsets.ModelViewSet):
 
 class ModeratorViewSet(viewsets.ViewSet):
     """
-    API: /api/v1/moderator/
+    API: /api/v1/moderator-actions/
     Functions:
         1. list pending items (jobs or companies)
         2. approve pending items (jobs or companies)
@@ -1089,11 +1098,11 @@ class ModeratorViewSet(viewsets.ViewSet):
 
         if self._type == "job":
             return response.create_response(
-                self.list_pending_jobs(), status.HTTP_200_OK
+                self.list_pending_objects(request, Job, JobSerializer), status.HTTP_200_OK
             )
         elif self._type == "company":
             return response.create_response(
-                self.list_pending_companies(), status.HTTP_200_OK
+                self.list_pending_objects(request, Company, CompanySerializer), status.HTTP_200_OK
             )
 
     @action(detail=False, methods=["post"], permission_classes=[Moderator])
@@ -1108,11 +1117,11 @@ class ModeratorViewSet(viewsets.ViewSet):
 
         if self._type == "job":
             return response.create_response(
-                self.approve_pending_jobs(request), status.HTTP_200_OK
+                self.approve_pending_objects(request, Job, "job"), status.HTTP_200_OK
             )
         elif self._type == "company":
             return response.create_response(
-                self.approve_pending_companies(request), status.HTTP_200_OK
+                self.approve_pending_objects(request, Company, "company"), status.HTTP_200_OK
             )
 
     @action(detail=False, methods=["post"], permission_classes=[Moderator])
@@ -1128,11 +1137,11 @@ class ModeratorViewSet(viewsets.ViewSet):
 
         if self._type == "job":
             return response.create_response(
-                self.remove_deleted_jobs(request), status.HTTP_200_OK
+                self.remove_pending_objects(request, Job, "job"), status.HTTP_200_OK
             )
         elif self._type == "company":
             return response.create_response(
-                self.remove_deleted_companies(request), status.HTTP_200_OK
+                self.remove_pending_objects(request, Company, "company"), status.HTTP_200_OK
             )
 
     def validate_request_data(self, request):
@@ -1151,108 +1160,65 @@ class ModeratorViewSet(viewsets.ViewSet):
         
         self._type = type
 
-    def list_pending_jobs(self):
+    def list_pending_objects(self, request, model, serializer):
         """
-        Method to list all the jobs that are yet to be approved
-        """
-
-        try:
-            pending_jobs = Job.objects.filter(is_created=False)
-            pending_jobs = JobSerializer(pending_jobs, many=True)
-            return pending_jobs.data
-        except Exception:
-            return response.SOMETHING_WENT_WRONG
-
-    def list_pending_companies(self):
-        """
-        Method to list all the companies that are yet to be approved
+        Method to list all the items that are yet to be approved
+        objects: Job and Company
         """
 
         try:
-            pending_companies = Company.objects.filter(is_created=False)
-            pending_companies = CompanySerializer(pending_companies, many=True)
-            return pending_companies.data
+            pending_objects = model.objects.filter(is_created=False)
+            pending_objects = serializer(pending_objects, many=True)
+            return pending_objects.data
         except Exception:
             return response.SOMETHING_WENT_WRONG
 
-    def approve_pending_jobs(self, request):
+    def approve_pending_objects(self, request, model, object_type):
         """
         Endpoint where a moderator can approve pending jobs
         created by employer
         """
 
-        # check if the request body contains job_id
-        if job_id := request.data.get("job_id", None):
+        # check if the request body contains object_id
+        object_id = object_type.lower()
+        if object_type == "job":
+            object_id = "job_id"
+        elif object_type == "company":
+            object_id = "company_id"
+
+        if object_id := request.data.get(object_id, None):
             try:
-                # check if the given job_id belongs to the job object
-                job_data = Job.objects.filter(job_id=job_id).values("is_created", "is_deleted")
-                if job_data and (not job_data[0]["is_created"] and not job_data[0]["is_deleted"]):
-                    job_data.update(is_created=True, is_deleted=False)
-                    return f"Job with id {job_id} has been approved successfully!!"
-                return "No pending job associated with the given job_id exist"
+                # check if the given object_id belongs to the object_type
+                object_data = model.objects.filter(**{object_type:object_id}).values("is_created")
+                if object_data and not object_data[0]["is_created"]:
+                    object_data.update(is_created=True, is_deleted=False)
+                    return f"{object_type} with id {object_id} has been approved successfully!!"
+                return f"No pending {object_type} associated with the given {object_id} exist"
             except Exception:
                 return response.SOMETHING_WENT_WRONG
-        return "'job_id' not provided"
+        return f"\'{object_id}\' not provided"
 
-    def approve_pending_companies(self, request):
-        """
-        Endpoint where a moderator can approve pending companies
-        created by employer
-        """
-
-        # check if the request body contains company_id
-        if company_id := request.data.get("company_id", None):
-            try:
-                # check if the given company_id belongs to the job object
-                company_data = Company.objects.filter(company_id=company_id).values(
-                    "is_created", "is_deleted"
-                )
-                if company_data and (not company_data[0]["is_created"] and not company_data[0]["is_deleted"]):
-                    company_data.update(is_created=True, is_deleted=False)
-                    return (
-                        f"Company with id {company_id} has been approved successfully"
-                    )
-                return "No pending company associated with the given company_id exist"
-            except Exception:
-                return response.SOMETHING_WENT_WRONG
-        return "'company_id' not provided"
-
-    def remove_deleted_jobs(self, request):
+    def remove_pending_objects(self, request, model, object_type):
         """
         Endpoint where a moderator can delete jobs deleted by employer
         This removes the jobs details from db as well.
         """
 
+        object_type = object_type.lower()
+        if object_type == "job":
+            object_id = "job_id"
+        elif object_type == "company":
+            object_id = "company_id"
+        
         # check if the request body contains job_id
-        if job_id := request.data.get("job_id", None):
+        if object_id := request.data.get(object_id, None):
             try:
                 # check if the given job_id belongs to the job object
-                job_data = Job.objects.filter(job_id=job_id)
-                if job_data and job_data[0].is_deleted:
-                    job_data.delete()
-                    return f"Job with id {job_id} has been deleted successfully!!"
-                return "No pending job associated with the given job_id exist"
+                object_data = model.objects.filter(**{object_type:object_id})
+                if object_data and object_data[0].is_deleted:
+                    object_data.delete()
+                    return f"{object_type} with id {object_id} has been deleted successfully!!"
+                return f"No pending {object_type} associated with the given {object_id} exist"
             except Exception:
                 return response.SOMETHING_WENT_WRONG
-        return "'job_id' not provided"
-
-    def remove_deleted_companies(self, request):
-        """
-        Endpoint where a moderator can delete companies deleted by employer
-        This removes the companies details from db as well.
-        """
-
-        # check if the request body contains job_id
-        if company_id := request.data.get("company_id", None):
-            try:
-                # check if the given job_id belongs to the job object
-                company_data = Company.objects.filter(company_id=company_id)
-                if company_data and company_data[0].is_deleted:
-                    company_data.delete()
-                    return (
-                        f"Comapny with id {company_id} has been deleted successfully!!"
-                    )
-                return "No pending company associated with the given company_id exist"
-            except Exception:
-                return response.SOMETHING_WENT_WRONG
-        return "'company_id' not provided"
+        return f"'{object_id}' not provided"

@@ -482,10 +482,9 @@ class Moderator(BasePermission):
         if not request.user_id or not validationClass.is_valid_uuid(request.user_id):
             return False
 
-        # check if the given user_id is present or not, if present then moderator or not
-        is_moderator_value = User.objects.filter(id=request.user_id)
-        if is_moderator_value:
-            if not is_moderator_value.values("is_moderator").first()["is_moderator"]:
-                return False
-            return True
-        return False
+        try:
+            # check if the given user_id is present or not, if present then moderator or not
+            user_data = User.objects.filter(id=request.user_id)
+            return user_data.is_moderator
+        except Exception:
+            return False

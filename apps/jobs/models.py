@@ -24,7 +24,7 @@ class Company(models.Model):
     company_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )  # uuid1 uses network address for random number, so it's better to use uuid4
-    is_created = models.BooleanField(default=False, null=True)
+    is_created = models.BooleanField(default=True, null=True)
     is_deleted = models.BooleanField(default=False, null=True)
     team_members = models.PositiveIntegerField(default=False, null=True)
     social_profiles = models.URLField(default=None, null=True)
@@ -68,7 +68,7 @@ class Job(models.Model):
     category = models.CharField(max_length=20, default=None, null=True)
     is_active = models.BooleanField(default=None, null=False)
 
-    is_created = models.BooleanField(default=False, null=True)
+    is_created = models.BooleanField(default=True, null=True)
     is_deleted = models.BooleanField(default=False, null=True)
 
     # These fields will be displayed as a part of "description" field
