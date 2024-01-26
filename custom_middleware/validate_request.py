@@ -24,7 +24,7 @@ class ValidateRequest:
 
         self.get_response = get_response
         self.response_obj = response
-        self.excluded_paths = ["/register/"]
+        self.excluded_paths = ["/register/", "/api/docs/"]
 
     def __call__(self, request, *args: Any, **kwds: Any) -> Any:
         """Called once per request"""
