@@ -876,7 +876,7 @@ class CompanyViewSets(viewsets.ModelViewSet):
 
         try:
             # filter based on pk
-            company_data = Company.objects.filter(company_id=pk)
+            company_data = Company.objects.filter(company_id=pk, is_created=True, is_deleted=False)
             serialized_company_data = self.serializer_class(company_data, many=True)
             if serialized_company_data:
                 serialized_company_data = JobViewSets.get_active_jobs_count(
@@ -963,7 +963,8 @@ class CompanyViewSets(viewsets.ModelViewSet):
         Method to get a list of jobs
         """
 
-        serialized_company_data = self.serializer_class(self.get_queryset(), many=True)
+        queryset_data = self.get_queryset().filter(is_created=True, is_deleted=False)
+        serialized_company_data = self.serializer_class(queryset_data, many=True)
         for company_data in serialized_company_data.data:
             company_id = company_data.get(values.COMPANY_ID)
 
@@ -971,8 +972,7 @@ class CompanyViewSets(viewsets.ModelViewSet):
             # .values() returns the QuerySet
             # jobData = Job.objects.filter(company=companyId).values()
             job_data = Job.objects.filter(company_id=company_id, is_created=True, is_deleted=False)
-            if job_data.exists():
-                company_data.update({"Jobs": job_data.values()})
+            company_data.update({"Jobs": job_data.values()})
 
         return response.create_response(
             serialized_company_data.data, status.HTTP_200_OK
@@ -984,7 +984,8 @@ class CompanyViewSets(viewsets.ModelViewSet):
         Method to get the list of users
         """
 
-        serialized_company_data = self.serializer_class(self.get_queryset(), many=True)
+        queryset_data = self.get_queryset().filter(is_created=True, is_deleted=False)
+        serialized_company_data = self.serializer_class(queryset_data, many=True)
         for company_data in serialized_company_data.data:
             company_id = company_data.get(values.COMPANY_ID)
 

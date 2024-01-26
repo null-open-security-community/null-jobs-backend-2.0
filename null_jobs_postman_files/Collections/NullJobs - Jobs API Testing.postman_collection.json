@@ -34,13 +34,12 @@
 							}
 						},
 						"url": {
-							"raw": "{{hostname}}/jobs/",
+							"raw": "{{hostname}}/jobs",
 							"host": [
 								"{{hostname}}"
 							],
 							"path": [
-								"jobs",
-								""
+								"jobs"
 							]
 						}
 					},
@@ -61,7 +60,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{hostname}}/jobs/details?job_id=88a5810d-7098-4cdb-a1b2-2b99a9092413",
+							"raw": "{{hostname}}/jobs/details?job_id=c09a934d-8c84-4122-bf5e-2c276995b69d",
 							"host": [
 								"{{hostname}}"
 							],
@@ -72,7 +71,7 @@
 							"query": [
 								{
 									"key": "job_id",
-									"value": "88a5810d-7098-4cdb-a1b2-2b99a9092413"
+									"value": "c09a934d-8c84-4122-bf5e-2c276995b69d"
 								}
 							]
 						}
@@ -91,15 +90,14 @@
 							}
 						],
 						"url": {
-							"raw": "{{hostname}}/jobs/88a5810d-7098-4cdb-a1b2-2b99a9092413/users/",
+							"raw": "{{hostname}}/jobs/c09a934d-8c84-4122-bf5e-2c276995b69d/users",
 							"host": [
 								"{{hostname}}"
 							],
 							"path": [
 								"jobs",
-								"88a5810d-7098-4cdb-a1b2-2b99a9092413",
-								"users",
-								""
+								"c09a934d-8c84-4122-bf5e-2c276995b69d",
+								"users"
 							]
 						}
 					},
@@ -118,7 +116,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"job_role\": \"Data Scientist\",\n  \"company\": \"6b2ed448-3b72-4e0c-9e34-69a609a10d33\",\n  \"description\": \"Join our innovative team as a Data Scientist.\",\n  \"location\": \"New York, NY\",\n  \"post_date\": \"2024-02-15\",\n  \"posted\": true,\n  \"experience\": 3,\n  \"job_type\": \"part time\",\n  \"salary\": 75000.00,\n  \"qualifications\": \"Master's degree in Data Science or related field\",\n  \"vacency_position\": 2,\n  \"industry\": \"Data Science\",\n  \"category\": \"Analytics\",\n  \"is_active\": true,\n  \"job_responsibilities\": \"Analyze and interpret complex data sets.\",\n  \"skills_required\": \"Python, R, Machine Learning\",\n  \"education_or_certifications\": \"Master's degree in Data Science or related field.\"\n}\n",
+							"raw": "{\n  \"job_role\": \"Data Scientist\",\n  \"company\":\"6ac6eb31-9349-427b-a1a5-9281b256bd4e\",\n  \"description\": \"Join our innovative team as a Data Scientist.\",\n  \"location\": \"New York, NY\",\n  \"post_date\": \"2024-02-15\",\n  \"posted\": false,\n  \"experience\": 3,\n  \"job_type\": \"part time\",\n  \"salary\": 75000.00,\n  \"qualifications\": \"Master's degree in Data Science or related field\",\n  \"vacency_position\": 2,\n  \"industry\": \"Data Science\",\n  \"category\": \"Analytics\",\n  \"is_active\": true,\n  \"job_responsibilities\": \"Analyze and interpret complex data sets.\",\n  \"skills_required\": \"Python, R, Machine Learning\",\n  \"education_or_certifications\": \"Master's degree in Data Science or related field.\"\n}\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -220,14 +218,13 @@
 							}
 						],
 						"url": {
-							"raw": "{{hostname}}/jobs/featured_jobs/",
+							"raw": "{{hostname}}/jobs/featured_jobs",
 							"host": [
 								"{{hostname}}"
 							],
 							"path": [
 								"jobs",
-								"featured_jobs",
-								""
+								"featured_jobs"
 							]
 						}
 					},
@@ -279,14 +276,76 @@
 							}
 						],
 						"url": {
-							"raw": "{{hostname}}/jobs/88a5810d-7098-4cdb-a1b2-2b99a9092413/",
+							"raw": "{{hostname}}/jobs/c09a934d-8c84-4122-bf5e-2c276995b69z/",
 							"host": [
 								"{{hostname}}"
 							],
 							"path": [
 								"jobs",
-								"88a5810d-7098-4cdb-a1b2-2b99a9092413",
+								"c09a934d-8c84-4122-bf5e-2c276995b69z",
 								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Posted Jobs",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "AccessToken",
+								"value": "{{AccessToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{hostname}}/jobs/get_posted_jobs",
+							"host": [
+								"{{hostname}}"
+							],
+							"path": [
+								"jobs",
+								"get_posted_jobs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Jobs Based on Filters",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "AccessToken",
+								"value": "{{AccessToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{hostname}}/jobs/get_jobs?job_type=part+time&experience=3&category=Analytics",
+							"host": [
+								"{{hostname}}"
+							],
+							"path": [
+								"jobs",
+								"get_jobs"
+							],
+							"query": [
+								{
+									"key": "job_type",
+									"value": "part+time"
+								},
+								{
+									"key": "experience",
+									"value": "3"
+								},
+								{
+									"key": "category",
+									"value": "Analytics"
+								}
 							]
 						}
 					},
@@ -353,14 +412,13 @@
 							"raw": ""
 						},
 						"url": {
-							"raw": "{{hostname}}/user/get_profile_details/",
+							"raw": "{{hostname}}/user/get_profile_details",
 							"host": [
 								"{{hostname}}"
 							],
 							"path": [
 								"user",
-								"get_profile_details",
-								""
+								"get_profile_details"
 							]
 						}
 					},
@@ -378,14 +436,13 @@
 							}
 						],
 						"url": {
-							"raw": "{{hostname}}/user/jobs/",
+							"raw": "{{hostname}}/user/jobs",
 							"host": [
 								"{{hostname}}"
 							],
 							"path": [
 								"user",
-								"jobs",
-								""
+								"jobs"
 							]
 						}
 					},
@@ -404,7 +461,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Ritika Sharma\",\n    \"about\": \"Working as a Technical Security Analyst\",\n    \"user_type\": \"Employer\",\n    \"experience\": \"16\",\n    \"qualification\": \"Bachelors in Computer Applications\",\n    \"gender\": \"Female\",\n    \"age\": 29,\n    \"education\": \"B.C.A from MIT\",\n    \"professional_skills\": \"Python, C++, Auto CAD, Designing, Robotics\",\n    \"hiring_status\": \"Not Applied Yet\",\n    \"address\": \"Jameson Street, V12, Newyork\",\n    \"company\":\"15c1d88e-49ef-4f32-aa69-39f87722c5f5\",\n    \"phone\": \"124332555\",\n    \"social_handles\": [\n        \"r1t1k4\",\n        \"twitter.com/r1t1k4\"\n    ]\n}",
+							"raw": "{\n    \"name\": \"Himanshu Sharma\",\n    \"about\": \"Working as a Technical Security Analyst\",\n    \"user_type\": \"Employer\",\n    \"experience\": \"16\",\n    \"qualification\": \"Bachelors in Computer Applications\",\n    \"gender\": \"Female\",\n    \"age\": 29,\n    \"professional_skills\": \"Python, C++, Auto CAD, Designing, Robotics\",\n    \"hiring_status\": \"Not Applied Yet\",\n    \"address\": \"Jameson Street, V12, Newyork\",\n    \"company\":\"15c1d88e-49ef-4f32-aa69-39f87722c5f5\",\n    \"phone\": \"1234123\",\n    \"social_handles\": [\n        \"r1t1k4\",\n        \"twitter.com/r1t1k4\"\n    ]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -412,13 +469,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{hostname}}/user/115a9a33-3831-4f18-b3db-d09121b6264a/",
+							"raw": "{{hostname}}/user/a3f14d2b-da90-4b6f-b32e-a09694244bc6/",
 							"host": [
 								"{{hostname}}"
 							],
 							"path": [
 								"user",
-								"115a9a33-3831-4f18-b3db-d09121b6264a",
+								"a3f14d2b-da90-4b6f-b32e-a09694244bc6",
 								""
 							]
 						}
@@ -444,6 +501,40 @@
 							"path": [
 								"user",
 								"delete_user",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Retrieve Users based on filters",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "AccessToken",
+								"value": "{{AccessToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"address\":\"Jameson Street, V12, Newyork\",\r\n    \"qualification\": \"\",\r\n    \"experience\":\"\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{hostname}}/user/retrive_users/",
+							"host": [
+								"{{hostname}}"
+							],
+							"path": [
+								"user",
+								"retrive_users",
 								""
 							]
 						}
@@ -517,14 +608,13 @@
 							}
 						],
 						"url": {
-							"raw": "{{hostname}}/company/jobs/",
+							"raw": "{{hostname}}/company/jobs",
 							"host": [
 								"{{hostname}}"
 							],
 							"path": [
 								"company",
-								"jobs",
-								""
+								"jobs"
 							]
 						}
 					},
@@ -542,14 +632,13 @@
 							}
 						],
 						"url": {
-							"raw": "{{hostname}}/company/users/",
+							"raw": "{{hostname}}/company/users",
 							"host": [
 								"{{hostname}}"
 							],
 							"path": [
 								"company",
-								"users",
-								""
+								"users"
 							]
 						}
 					},
@@ -568,7 +657,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Microsystems Pvt. Ltd.\",\n    \"location\": \"Mumbai, India\",\n    \"about\": \"India's most valuable and respectable company in microchips and circuits industry.\",\n    \"founded_year\": 2011,\n    \"team_members\": 110,\n    \"social_profiles\": \"https://instagram.com/microsystems\"\n}",
+							"raw": "{\n    \"name\": \"Microsystems Pvt. Ltd.\",\n    \"location\": \"Mumbai, India\",\n    \"about\": \"India's most valuable and respectable company in microchips and circuits industry.\",\n    \"founded_year\": 2011,\n    \"team_members\": 110\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -609,13 +698,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{hostname}}/company/15c1d88e-49ef-4f32-aa69-39f87722c5f5/",
+							"raw": "{{hostname}}/company/58a302b1-bd3b-42d9-850f-4a433cd41cbb/",
 							"host": [
 								"{{hostname}}"
 							],
 							"path": [
 								"company",
-								"15c1d88e-49ef-4f32-aa69-39f87722c5f5",
+								"58a302b1-bd3b-42d9-850f-4a433cd41cbb",
 								""
 							]
 						}
@@ -634,13 +723,13 @@
 							}
 						],
 						"url": {
-							"raw": "{{hostname}}/company/15c1d88e-49ef-4f32-aa69-39f87722c5f5/",
+							"raw": "{{hostname}}/company/6ac6eb31-9349-427b-a1a5-9281b256bd4e/",
 							"host": [
 								"{{hostname}}"
 							],
 							"path": [
 								"company",
-								"15c1d88e-49ef-4f32-aa69-39f87722c5f5",
+								"6ac6eb31-9349-427b-a1a5-9281b256bd4e",
 								""
 							]
 						}
