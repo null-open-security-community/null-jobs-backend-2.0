@@ -24,7 +24,14 @@ class ValidateRequest:
 
         self.get_response = get_response
         self.response_obj = response
-        self.excluded_paths = ["/register/", "/api/docs/"]
+        self.excluded_paths = [
+            "/register/", 
+            "/api/docs/",
+            "/login/",
+            "/google/login/",
+            "/jobs/public_jobs/",
+            "/google/login/callback/"
+        ]
 
     def __call__(self, request, *args: Any, **kwds: Any) -> Any:
         """Called once per request"""
@@ -104,6 +111,7 @@ class ValidateRequest:
         return (0, "Exit Successfully")
 
     def verify_jwt(self, jwt_token):
+        #TODO
         pass
 
     def process_response(self, response):

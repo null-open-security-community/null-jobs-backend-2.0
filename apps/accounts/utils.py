@@ -9,7 +9,7 @@ class Util:
         email = EmailMessage(
             subject=data["subject"],
             body=data["body"],
-            from_email=os.environ.get("EMAIL_FROM"),
+            from_email=os.environ.get("DEFAULT_FROM_EMAIL"),
             to=[data["to_email"]],
         )
         email.send()
