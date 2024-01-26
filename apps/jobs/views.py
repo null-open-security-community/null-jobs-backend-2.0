@@ -33,7 +33,6 @@ from .utils.user_permissions import UserTypeCheck
 # Create your views here.
 # the ModelViewSet provides basic crud methods like create, update etc.
 
-
 class JobViewSets(viewsets.ModelViewSet):
     """
     Job object viewsets
@@ -55,6 +54,20 @@ class JobViewSets(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["job_role", "location", "is_active"]
 
+    @action(detail=False, methods=['get'])
+    def public_jobs(self, request):
+        """
+        API: /public_jobs
+        Return only 10-20 jobs
+        """
+
+        jobs_data = self.queryset.filter(is_created=True, is_deleted=False)
+        serialized_jobs_data = JobSerializer(jobs_data, many=True)
+        return response.create_response(
+            serialized_jobs_data.data[0:2],
+            status.HTTP_200_OK
+        )
+    
     def list(self, request):
         """
         Overrided the default list action provided by
@@ -793,7 +806,7 @@ class UserViewSets(viewsets.ModelViewSet):
         return FileResponse(open(file_path, "rb"), as_attachment=True)
     
     @action(detail=False, methods=["post"])
-    def retrive_users(self, request):
+    def retrieve_users(self, request):
         """
         to retrive user as per the filters in the post body.
         """
