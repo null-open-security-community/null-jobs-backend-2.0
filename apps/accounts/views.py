@@ -413,6 +413,16 @@ class CallbackHandleView(APIView):
                     "last_verified_identity": datetime.datetime.now(),
                 },
             )
+            
+            user_instance = user_profile.objects.get_or_create(
+                email=email,
+                defaults={
+                    "user_id": user.id,
+                    "name": user.name,
+                    "email": user.email,
+                    "user_type": "Job Seeker",
+                }
+            )
 
             if not created:
                 user.last_verified_identity = datetime.datetime.now()
@@ -428,6 +438,7 @@ class CallbackHandleView(APIView):
                 {"msg": "There was an error authenticating the user"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
 
 
 class RestrictedPage(APIView):
