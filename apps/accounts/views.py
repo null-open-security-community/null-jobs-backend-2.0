@@ -380,43 +380,14 @@ class CallbackHandleView(APIView):
     renderer_classes = [UserRenderer]
 
     def get(self, request):
-        # verify the state on this request
-        state = request.query_params.get("state")
-        if request.session["oauth_token"] != state:
+        access_token = request.query_params.get("access_token")
+        
+        if access_token is None:
             return Response(
-                {"msg": "Invalid request"}, status=status.HTTP_403_FORBIDDEN
-            )
-
-        # using the code to get the tokens
-        # and eventually the user profile
-        code = request.query_params.get("code")
-        data = {
-            "code": code,
-            "client_id": settings.GOOGLE_CLIENT_ID,
-            "client_secret": settings.GOOGLE_SECRET_KEY,
-            "redirect_uri": settings.GOOGLE_REDIRECT_URI,
-            "grant_type": "authorization_code",
-        }
-
-        token_response = requests.post("https://oauth2.googleapis.com/token", data=data)
-        token_data = token_response.json()
-        logger.debug(token_data)
-
-        # if the token data has error
-        if "error" in token_data:
-            return Response(
-                {"error": "Failed to get access token from Google."},
+                {"error": "Invaid request."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
-        # Get the access token from the response
-        access_token = token_data.get("access_token", None)
-        if not access_token:
-            return Response(
-                {"error": "Failed to get access token from Google response."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
+            
         # Use the access token to retrieve user information from Google
         user_info_response = requests.get(
             f"https://www.googleapis.com/oauth2/v2/userinfo?access_token={access_token}"
