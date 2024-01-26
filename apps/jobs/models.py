@@ -4,7 +4,7 @@ from django.db import models
 
 from apps.accounts.models import User as UserAuth
 from apps.jobs.constants import values
-from apps.jobs.constants.values import GENDER, STATUS_CHOICES, HIRING_STATUS, JOB_TYPE
+from apps.jobs.constants.values import GENDER, HIRING_STATUS, JOB_TYPE, STATUS_CHOICES
 
 
 class Company(models.Model):
@@ -20,10 +20,15 @@ class Company(models.Model):
 
     name = models.CharField(max_length=255, null=False)
     location = models.CharField(max_length=255, null=False)
-    about = models.TextField(max_length=500, default=None)
+    about = models.TextField(max_length=500, default=False, null=False)
     company_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )  # uuid1 uses network address for random number, so it's better to use uuid4
+    is_created = models.BooleanField(default=True, null=True)
+    is_deleted = models.BooleanField(default=False, null=True)
+    team_members = models.PositiveIntegerField(default=False, null=True)
+    social_profiles = models.URLField(default=None, null=True)
+    founded_year = models.PositiveIntegerField(default=False, null=False)
 
     def __str__(self):
         return self.name
@@ -62,6 +67,9 @@ class Job(models.Model):
     industry = models.CharField(max_length=50, default=None, null=False)
     category = models.CharField(max_length=20, default=None, null=True)
     is_active = models.BooleanField(default=None, null=False)
+
+    is_created = models.BooleanField(default=True, null=True)
+    is_deleted = models.BooleanField(default=False, null=True)
 
     # These fields will be displayed as a part of "description" field
     job_responsibilities = models.TextField(

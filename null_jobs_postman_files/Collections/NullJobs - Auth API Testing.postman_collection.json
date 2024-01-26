@@ -1,10 +1,9 @@
 {
 	"info": {
-		"_postman_id": "d3b98b3b-f416-4b57-89e5-975b5c9ac74a",
-		"name": "null_auth",
+		"_postman_id": "d2b23435-5f35-4356-bd2f-75c61c138f54",
+		"name": "NullJobs - Auth API Testing",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "28101485",
-		"_collection_link": "https://web.postman.co/workspace/New-Team-Workspace~bc7c9091-a01b-48f0-a79e-996f3df4be58/collection/28101485-d3b98b3b-f416-4b57-89e5-975b5c9ac74a?action=share&source=collection_link&creator=28101485"
+		"_exporter_id": "29114272"
 	},
 	"item": [
 		{
@@ -1564,10 +1563,6 @@
 										"type": "text"
 									}
 								],
-								"body": {
-									"mode": "raw",
-									"raw": ""
-								},
 								"url": {
 									"raw": "http://127.0.0.1:8000/restricted/",
 									"protocol": "http",

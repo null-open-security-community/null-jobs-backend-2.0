@@ -1,33 +1,34 @@
-import jwt
-import uuid
+from datetime import timedelta
 import os
-import json
 from re import search
+from typing import Any
+
 from django.db.models import Count
 import django.core.exceptions
+from django.forms import ValidationError
 from django.http import FileResponse, JsonResponse
 from django.db.utils import IntegrityError
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.utils import datetime_safe, timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from apps.accounts.models import User as user_auth
+from apps.accounts.views import Moderator
 from apps.jobs.constants import response, values
-from apps.jobs.models import Applicants, Company, Job, User, ContactMessage
+from apps.jobs.models import Applicants, Company, ContactMessage, Job, User
 from apps.jobs.serializers import (
     ApplicantsSerializer,
     CompanySerializer,
+    ContactUsSerializer,
     JobSerializer,
     UserSerializer,
-    ContactUsSerializer,
 )
 from apps.jobs.utils.validators import validationClass
 
 from .utils.user_permissions import UserTypeCheck
-from datetime import timedelta
-from django.utils import datetime_safe, timezone
 
 # Create your views here.
 # the ModelViewSet provides basic crud methods like create, update etc.
@@ -73,7 +74,9 @@ class JobViewSets(viewsets.ModelViewSet):
         # overall data present in the Job, exception if wrong
         # uuid value is given.
         try:
-            jobs_data = self.queryset.filter(**filters_dict)
+            jobs_data = self.queryset.filter(
+                **filters_dict, is_created=True, is_deleted=False
+            )
         except django.core.exceptions.ValidationError as err:
             return response.create_response(err.messages, status.HTTP_404_NOT_FOUND)
         else:
@@ -105,16 +108,17 @@ class JobViewSets(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         """Overriding the create method to include permissions"""
 
-        employer_id = request.data.get(values.EMPLOYER_ID)
+        employer_id = request.user_id
 
-        if not employer_id or not UserTypeCheck.is_user_employer(
-            request.data[values.EMPLOYER_ID]
-        ):
+        if not employer_id or not UserTypeCheck.is_user_employer(employer_id):
             return response.create_response(
                 response.PERMISSION_DENIED
-                + " You don't have permissions to create jobs",
+                + " You don't have permissions to create a job",
                 status.HTTP_401_UNAUTHORIZED,
             )
+
+        # Add employer_id to the request.data
+        request.data["employer_id"] = employer_id
 
         return super().create(request, *args, **kwargs)
 
@@ -129,17 +133,17 @@ class JobViewSets(viewsets.ModelViewSet):
 
         if not job_id or not validationClass.is_valid_uuid(job_id):
             return response.create_response(
-                "Invalid or missing 'job_id' parameter in the query",
-                status.HTTP_400_BAD_REQUEST,
+                "Invalid or missing 'job_id' query parameter in the URL",
+                status.HTTP_400_BAD_REQUEST
             )
-
+        
         try:
             job_data = Job.objects.filter(job_id=job_id)
         except Job.DoesNotExist:
             return response.create_response(
                 f"Job with job_id '{job_id}' does not exist", status.HTTP_404_NOT_FOUND
             )
-
+        
         serialized_job_data = self.serializer_class(job_data, many=True)
         if serialized_job_data:
             serialized_job_data = JobViewSets.get_number_of_applicants(
@@ -160,9 +164,8 @@ class JobViewSets(viewsets.ModelViewSet):
         # check for "error" key in the serialized data
         # this is necessary because we don't have to display
         # number_of_applications in case of error message
-        if not serialized_data.data:
-            if "error" in serialized_data.data[0]:
-                return serialized_data
+        if not serialized_data.data or "error" in serialized_data.data[0]:
+            return serialized_data
 
         for jobdata in serialized_data.data:
             job_id = jobdata.get(values.JOB_ID)
@@ -182,7 +185,7 @@ class JobViewSets(viewsets.ModelViewSet):
             jobs_belong_to_company = Job.objects.filter(
                 company_id=company.get("company_id")
             )
-            active_jobs = sum(1 for job in jobs_belong_to_company if job.is_active)
+            active_jobs = sum(1 for job in jobs_belong_to_company if job.is_active and job.is_created)
             company.update({"Active Jobs": active_jobs})
 
         return serialized_company_data
@@ -229,10 +232,10 @@ class JobViewSets(viewsets.ModelViewSet):
         # validate, if both of them exists or not
         response_message = validationClass.validate_id(
             job_id, "job-id", Job
-        ) or validationClass.validate_id(user_id, "user-id", User)
-        if response_message:
+        ) and validationClass.validate_id(user_id, "user-id", User)
+        if not response_message["status"]:
             return response.create_response(
-                response_message, status.HTTP_400_BAD_REQUEST
+                response_message["error"], status.HTTP_400_BAD_REQUEST
             )
 
         # Check whether the user has applied for the job before
@@ -260,11 +263,14 @@ class JobViewSets(viewsets.ModelViewSet):
 
         # Get the employer-id from the database
         # employer-id always exists in the db, without this job can't be created
-        employer_id = (
-            Job.objects.filter(job_id=job_id)
-            .values(values.EMPLOYER_ID)
-            .first()[values.EMPLOYER_ID]
-        )
+        job_data = Job.objects.filter(job_id=job_id)
+        if job_data.exists():
+            employer_id = job_data.first()[values.EMPLOYER_ID]
+        else:
+            return response.create_response(
+                f"Given job_id \'{job_id}\' does not exist",
+                status.HTTP_404_NOT_FOUND
+            )
 
         # Prepare the overall dictionary to save into the database
         # Add job-id, user-id, employer-id to the applyjob_data
@@ -294,9 +300,9 @@ class JobViewSets(viewsets.ModelViewSet):
 
         # check if job_id is valid & present in db or not
         response_message = validationClass.validate_id(pk, "job-id", Job)
-        if response_message:
+        if not response_message["status"]:
             return response.create_response(
-                response_message, status.HTTP_400_BAD_REQUEST
+                response_message["error"], status.HTTP_400_BAD_REQUEST
             )
 
         # check if the given employer_id has posted the job (given by job-id)
@@ -368,6 +374,76 @@ class JobViewSets(viewsets.ModelViewSet):
             return response.create_response(
                 response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+    def update(self, request, *args, **kwargs):
+        """
+        API: UPDATE /jobs/{id}
+        Overriding update method to first check for
+        Moderator and Employer user_type associated with the user, and
+        then perform an update
+        """
+
+        # check if the user_id present in the request belongs to Employer or Moderator
+        if not (
+            UserTypeCheck.is_user_employer(request.user_id)
+            or Moderator().has_permission(request)
+        ):
+            return response.create_response(
+                response.PERMISSION_DENIED
+                + " You don't have permissions to update a job",
+                status.HTTP_401_UNAUTHORIZED,
+            )
+
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, pk, *args, **kwargs):
+        """
+        API: DELETE /jobs/{id}
+        Overriding destroy method to first check for
+        Moderator and Employer associated with the user, and
+        then perform an update.
+        """
+
+        # check if the user_id present in the request belongs to Employer or Moderator
+        if not (
+            UserTypeCheck.is_user_employer(request.user_id)
+            or Moderator().has_permission(request)
+        ):
+            return response.create_response(
+                response.PERMISSION_DENIED
+                + " You don't have permissions to delete a job",
+                status.HTTP_401_UNAUTHORIZED,
+            )
+
+        # check if the job is already deleted or not
+        if validationClass.is_valid_uuid(pk):
+            job = Job.objects.filter(job_id=pk, is_created=False, is_deleted=True)
+            if job.exists():
+                return response.create_response(
+                    "Given job_id does not exist or already deleted",
+                    status.HTTP_404_NOT_FOUND,
+                )
+        else:
+            return response.create_response(
+                "Job id is not valid",
+                status.HTTP_400_BAD_REQUEST
+            )
+        # if user is employer don't remove the job from the db table
+        # else, set is_created=False and is_deleted=True
+        if UserTypeCheck.is_user_employer(request.user_id):
+            try:
+                updated_job_data = Job.objects.filter(job_id=pk)
+                updated_job_data.update(is_created=False, is_deleted=True, is_active=False)
+                serialized_updated_job_data = JobSerializer(updated_job_data, many=True)
+                return response.create_response(
+                    serialized_updated_job_data.data, status.HTTP_200_OK
+                )
+            except Exception:
+                return response.create_response(
+                    response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+
+        return super().destroy(request, *args, **kwargs)
 
     @action(detail=False, methods=["get"])
     def get_posted_jobs(self, request):
@@ -468,41 +544,6 @@ class UserViewSets(viewsets.ModelViewSet):
         NOTE: tbl_user_auth has "id", tbl_user_profile has "user_id" as primary key.
         """
 
-        if request.headers and "AccessToken" in request.headers:
-            # decode the "user_id" from AccessToken
-            try:
-                payload = jwt.decode(
-                    request.headers["AccessToken"], options={"verify_signature": False}
-                )
-            except jwt.exceptions.DecodeError:
-                return response.create_response(
-                    response.ACCESS_TOKEN_NOT_VALID, status.HTTP_400_BAD_REQUEST
-                )
-            except Exception as err:
-                print("Exception occurred while decoding AccessToken")
-                return response.create_response(
-                    response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
-            else:
-                # check if the user_id is of type UUID or not
-                if payload and values.USER_ID in payload:
-                    try:
-                        uuid.UUID(payload[values.USER_ID])
-                    except Exception as err:
-                        return response.create_response(
-                            response.USER_INFORMATION_INVALID,
-                            status.HTTP_406_NOT_ACCEPTABLE,
-                        )
-                else:
-                    return response.create_response(
-                        response.ACCESS_TOKEN_NOT_VALID, status.HTTP_406_NOT_ACCEPTABLE
-                    )
-        else:
-            return response.create_response(
-                response.PERMISSION_DENIED + " You can't perform this operation",
-                status.HTTP_401_UNAUTHORIZED,
-            )
-
         # Perform check on data with PUT Request
         if not request.data:
             return response.create_response(
@@ -536,22 +577,7 @@ class UserViewSets(viewsets.ModelViewSet):
         # only on the user-id present in access-token, not the one we get from
         # the API endpoint.
 
-        # perform check on payload["user_id"] if it exists in db or not
-        try:
-            user_id_auth = user_auth.objects.filter(id=payload[values.USER_ID]).exists()
-            if not user_id_auth:
-                return response.create_response(
-                    response.USER_INFORMATION_INVALID, status.HTTP_404_NOT_FOUND
-                )
-        except Exception as err:
-            print(
-                "Exception occurred while performing check on user_id in the database"
-            )
-            return response.create_response(
-                response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-        # Once everything's fine, update the db table
-        # payload["user_id"] is used in the filter() not the pk present in url
+        user_id = request.user_id
 
         # get data from the request
         user_data = request.data
@@ -565,7 +591,7 @@ class UserViewSets(viewsets.ModelViewSet):
 
         try:
             # update in the tbl_user_profile
-            User.objects.filter(user_id=payload[values.USER_ID]).update(**user_data)
+            User.objects.filter(user_id=user_id).update(**user_data)
 
             # update in the tbl_user_auth (only - user_name, user_email, user_type)
             tbl_user_auth_data = {
@@ -573,9 +599,7 @@ class UserViewSets(viewsets.ModelViewSet):
                 for key in ("name", "email", "user_type")
                 if key in user_data
             }
-            user_auth.objects.filter(id=payload[values.USER_ID]).update(
-                **tbl_user_auth_data
-            )
+            user_auth.objects.filter(id=user_id).update(**tbl_user_auth_data)
         except IntegrityError:
             return response.create_response(
                 "You've supplied either improper values or same values to update, Use a different one",
@@ -588,7 +612,7 @@ class UserViewSets(viewsets.ModelViewSet):
                 status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         else:
-            user_data = User.objects.get(user_id=payload[values.USER_ID])
+            user_data = User.objects.get(user_id=user_id)
             return response.create_response(
                 UserSerializer(user_data).data, status.HTTP_200_OK
             )
@@ -597,58 +621,36 @@ class UserViewSets(viewsets.ModelViewSet):
     def get_profile_details(self, request):
         """
         API: /api/v1/user/myProfile
-        Returns user profile data in the response.
-        This method gets the user_id from "access-token".
-        """
-
-        # Get the value from Access-Token header
-        if access_token := request.headers.get(response.ACCESS_TOKEN, None):
-            try:
-                # decode JWT Token; for any issues with it, raise an exception
-                decoded_user_access_token = jwt.decode(
-                    access_token, options={"verify_signature": False}
-                )
-                user_id = decoded_user_access_token.get(values.USER_ID, None)
-                if not user_id:
-                    raise Exception
-
-                # get user data
-                user_data = self.queryset.filter(user_id=user_id)
-                if user_data:
-                    serialized_user_data = self.serializer_class(user_data, many=True)
-                    return response.create_response(
-                        serialized_user_data.data, status.HTTP_200_OK
-                    )
-                else:
-                    return response.create_response(
-                        response.USER_DATA_NOT_PRESENT, status.HTTP_404_NOT_FOUND
-                    )
-            except Exception:
-                return response.create_response(
-                    response.ACCESS_TOKEN_NOT_VALID, status.HTTP_400_BAD_REQUEST
-                )
-        else:
-            return response.create_response(
-                response.ACCESS_TOKEN_NOT_PRESENT, status.HTTP_401_UNAUTHORIZED
-            )
-
-    @action(detail=True, methods=["get"])
-    def jobs(self, request, pk=None):
-        """
-        API: /api/v1/user/{pk}/jobs
-        This method finds out how many jobs a person has applied so far,
-        pk here means primary key (basically the user_id)
+        Returns user profile data in the response based on
+        user_id present in the AccessToken
         """
 
         try:
-            if not validationClass.is_valid_uuid(pk):
-                return response.create_response(
-                    f"value {pk} isn't a correct id",
-                    status.HTTP_404_NOT_FOUND,
-                )
+            user_id = request.user_id
+
+            # get user data
+            user_data = self.queryset.filter(user_id=user_id)
+            serialized_user_data = self.serializer_class(user_data, many=True)
+            return response.create_response(
+                serialized_user_data.data, status.HTTP_200_OK
+            )
+        except Exception:
+            return response.create_response(
+                response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=False, methods=["get"])
+    def jobs(self, request):
+        """
+        API: /api/v1/user/jobs/
+        This method finds out how many jobs a person has applied so far,
+        """
+
+        try:
+            user_id = request.user_id
             jobs_data = None
             # get the applications submmited by this user
-            applications = Applicants.objects.filter(user_id=pk).values(values.JOB_ID)
+            applications = Applicants.objects.filter(user_id=user_id).values(values.JOB_ID)
             if applications.exists():
                 # get the job_ids
                 applications_count = applications.count()
@@ -670,9 +672,37 @@ class UserViewSets(viewsets.ModelViewSet):
                 return response.create_response(
                     "You haven't applied to any job", status.HTTP_200_OK
                 )
-        except django.core.exceptions.ObjectDoesNotExist:
+        except Exception:
             return response.create_response(
-                f"person id '{pk}' doesn't exist", status.HTTP_404_NOT_FOUND
+                response.SOMETHING_WENT_WRONG, 
+                status.HTTP_404_NOT_FOUND
+            )
+
+    @action(detail=False, methods=["delete"])
+    def delete_user(self, request):
+        """
+        API: /delete_user/
+        This method deletes a user from the tbl_user_profile and tbl_user_profile,
+        However this endpoint should be called only when the user provide proper
+        authentication details before proceeding further.
+        """
+
+        user_id = request.user_id
+
+        try:
+            # check if the given user_id exists or not
+            user_object = User.objects.filter(user_id=user_id)
+            # remove user details from tbl_user_profile
+            user_object.delete()
+            # remove user details from tbl_user_auth
+            user_auth.objects.filter(id=user_id).delete()
+            return response.create_response(
+                "User Profile Deleted Successfully", status_code=status.HTTP_200_OK
+            )
+        except Exception as err:
+            return response.create_response(
+                response.SOMETHING_WENT_WRONG + err.__str__(),
+                status_code=status.HTTP_404_NOT_FOUND,
             )
 
     def get_application_status(self, serialized_data):
@@ -761,6 +791,31 @@ class UserViewSets(viewsets.ModelViewSet):
 
         # Serve the file using Django FileResponse
         return FileResponse(open(file_path, "rb"), as_attachment=True)
+    
+    @action(detail=False, methods=["post"])
+    def retrive_users(self, request):
+        """
+        to retrive user as per the filters in the post body.
+        """
+
+        data = request.data
+        qualification = data.get("qualification", None)
+        experience = data.get("experience", None)
+        address = data.get("address", None)
+
+        queryset = User.objects.all()
+
+        if qualification:
+            queryset = queryset.filter(qualification__icontains=qualification)
+
+        if experience is not None:
+            queryset = queryset.filter(experience=experience)
+
+        if address:
+            queryset = queryset.filter(address__icontains=address)
+
+        serialized_data = UserSerializer(queryset, many=True)
+        return Response(serialized_data.data, status=status.HTTP_200_OK)
 
 class CompanyViewSets(viewsets.ModelViewSet):
     """
@@ -788,8 +843,10 @@ class CompanyViewSets(viewsets.ModelViewSet):
         """
 
         try:
+
+            company_data = self.queryset.filter(is_created=True, is_deleted=False)
             serialized_company_data = self.serializer_class(
-                self.queryset, many=True, context={"request": request}
+                company_data, many=True, context={"request": request}
             )
 
             # get number of applicants
@@ -819,7 +876,7 @@ class CompanyViewSets(viewsets.ModelViewSet):
 
         try:
             # filter based on pk
-            company_data = Company.objects.filter(company_id=pk)
+            company_data = Company.objects.filter(company_id=pk, is_created=True, is_deleted=False)
             serialized_company_data = self.serializer_class(company_data, many=True)
             if serialized_company_data:
                 serialized_company_data = JobViewSets.get_active_jobs_count(
@@ -833,21 +890,89 @@ class CompanyViewSets(viewsets.ModelViewSet):
                 response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+    def update(self, request, *args, **kwargs):
+        """
+        API: UPDATE /company/{id}
+        Overriding update method to first check for
+        Moderator and Employer user_type associated with the user, and
+        then perform an update
+        """
+
+        # check if the user_id present in the request belongs to Employer or Moderator
+        if not (
+            UserTypeCheck.is_user_employer(request.user_id)
+            or Moderator().has_permission(request)
+        ):
+            return response.create_response(
+                response.PERMISSION_DENIED
+                + " You don't have permissions to update company details",
+                status.HTTP_401_UNAUTHORIZED,
+            )
+
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, pk=None, *args, **kwargs):
+        """
+        API: DELETE /company/{id}
+        Overriding destroy method to first check for
+        Moderator and Employer associated with the user, and
+        then perform an update.
+        """
+
+        # check if the user_id present in the request belongs to Employer or Moderator
+        if not (
+            UserTypeCheck.is_user_employer(request.user_id)
+            or Moderator().has_permission(request)
+        ):
+            return response.create_response(
+                response.PERMISSION_DENIED
+                + " You don't have permissions to delete a company",
+                status.HTTP_401_UNAUTHORIZED,
+            )
+
+        # check if the job is already deleted or not
+        company_data = Company.objects.filter(
+            company_id=pk, is_created=False, is_deleted=True
+        )
+        if company_data.exists():
+            return response.create_response(
+                "Given company_id does not exist or already deleted",
+                status.HTTP_404_NOT_FOUND,
+            )
+
+        # if user is employer don't remove the company from the db table
+        # else, set is_created=False and is_deleted=True
+        if UserTypeCheck.is_user_employer(request.user_id):
+            try:
+                company_data = Company.objects.filter(company_id=pk)
+                company_data.update(is_created=False, is_deleted=True)
+                serialized_company_data = CompanySerializer(company_data, many=True)
+                return response.create_response(
+                    serialized_company_data.data, status.HTTP_200_OK
+                )
+            except Exception:
+                return response.create_response(
+                    response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+
+        return super().destroy(request, *args, **kwargs)
+
     @action(detail=False, methods=["get"])
     def jobs(self, request):
         """
         Method to get a list of jobs
         """
 
-        serialized_company_data = self.serializer_class(self.get_queryset(), many=True)
+        queryset_data = self.get_queryset().filter(is_created=True, is_deleted=False)
+        serialized_company_data = self.serializer_class(queryset_data, many=True)
         for company_data in serialized_company_data.data:
             company_id = company_data.get(values.COMPANY_ID)
 
             # get jobs data by company_id from database
             # .values() returns the QuerySet
             # jobData = Job.objects.filter(company=companyId).values()
-            job_data = Job.objects.filter(company_id=company_id).values()
-            company_data.update({"Jobs": job_data})
+            job_data = Job.objects.filter(company_id=company_id, is_created=True, is_deleted=False)
+            company_data.update({"Jobs": job_data.values()})
 
         return response.create_response(
             serialized_company_data.data, status.HTTP_200_OK
@@ -859,7 +984,8 @@ class CompanyViewSets(viewsets.ModelViewSet):
         Method to get the list of users
         """
 
-        serialized_company_data = self.serializer_class(self.get_queryset(), many=True)
+        queryset_data = self.get_queryset().filter(is_created=True, is_deleted=False)
+        serialized_company_data = self.serializer_class(queryset_data, many=True)
         for company_data in serialized_company_data.data:
             company_id = company_data.get(values.COMPANY_ID)
 
@@ -920,3 +1046,155 @@ class ContactUsViewSet(viewsets.ModelViewSet):
                 return super().list(request, *args, **kwargs)
         else:
             return super().list(request, *args, **kwargs)
+
+
+class ModeratorViewSet(viewsets.ViewSet):
+    """
+    API: /api/v1/moderator-actions/
+    Functions:
+        1. list pending items (jobs or companies)
+        2. approve pending items (jobs or companies)
+        3. reject pending items (jobs or companies)
+    """
+
+    def __init__(self, **kwargs: Any) -> None:
+        self.objects = ["company", "job"]
+        super().__init__(**kwargs)
+        self._type = ""
+
+    @action(detail=False, methods=["post"], permission_classes=[Moderator])
+    def list_pending_items(self, request):
+        """
+        API: /list_pending_items/
+        Method to list unapproved jobs and companies
+        """
+
+        if response_value := self.validate_request_data(request):
+            return response_value
+
+        if self._type == "job":
+            return response.create_response(
+                self.list_pending_objects(request, Job, JobSerializer), status.HTTP_200_OK
+            )
+        elif self._type == "company":
+            return response.create_response(
+                self.list_pending_objects(request, Company, CompanySerializer), status.HTTP_200_OK
+            )
+
+    @action(detail=False, methods=["post"], permission_classes=[Moderator])
+    def approve_pending_items(self, request):
+        """
+        API: /approve_pending_items/
+        Method to set is_created=True for given object
+        """
+
+        if response_value := self.validate_request_data(request):
+            return response_value
+
+        if self._type == "job":
+            return response.create_response(
+                self.approve_pending_objects(request, Job, "job"), status.HTTP_200_OK
+            )
+        elif self._type == "company":
+            return response.create_response(
+                self.approve_pending_objects(request, Company, "company"), status.HTTP_200_OK
+            )
+
+    @action(detail=False, methods=["post"], permission_classes=[Moderator])
+    def delete_pending_items(self, request):
+        """
+        API: /delete_pending_items/
+        Method to remove records for the specific objects from
+        the database
+        """
+
+        if response_value := self.validate_request_data(request):
+            return response_value
+
+        if self._type == "job":
+            return response.create_response(
+                self.remove_pending_objects(request, Job, "job"), status.HTTP_200_OK
+            )
+        elif self._type == "company":
+            return response.create_response(
+                self.remove_pending_objects(request, Company, "company"), status.HTTP_200_OK
+            )
+
+    def validate_request_data(self, request):
+        """Method to perform checks on request.data"""
+
+        if not request.data.get("type", None):
+            return response.create_response(
+                "'type' not provided", status.HTTP_400_BAD_REQUEST
+            )
+
+        type = request.data.get("type").lower()
+        if type not in self.objects:
+            return response.create_response(
+                "wrong 'type' value specified", status.HTTP_404_NOT_FOUND
+            )
+        
+        self._type = type
+
+    def list_pending_objects(self, request, model, serializer):
+        """
+        Method to list all the items that are yet to be approved
+        objects: Job and Company
+        """
+
+        try:
+            pending_objects = model.objects.filter(is_created=False)
+            pending_objects = serializer(pending_objects, many=True)
+            return pending_objects.data
+        except Exception:
+            return response.SOMETHING_WENT_WRONG
+
+    def approve_pending_objects(self, request, model, object_type):
+        """
+        Endpoint where a moderator can approve pending jobs
+        created by employer
+        """
+
+        # check if the request body contains object_id
+        object_id = object_type.lower()
+        if object_type == "job":
+            object_id = "job_id"
+        elif object_type == "company":
+            object_id = "company_id"
+
+        if object_id := request.data.get(object_id, None):
+            try:
+                # check if the given object_id belongs to the object_type
+                object_data = model.objects.filter(**{object_type:object_id}).values("is_created")
+                if object_data and not object_data[0]["is_created"]:
+                    object_data.update(is_created=True, is_deleted=False)
+                    return f"{object_type} with id {object_id} has been approved successfully!!"
+                return f"No pending {object_type} associated with the given {object_id} exist"
+            except Exception:
+                return response.SOMETHING_WENT_WRONG
+        return f"\'{object_id}\' not provided"
+
+    def remove_pending_objects(self, request, model, object_type):
+        """
+        Endpoint where a moderator can delete jobs deleted by employer
+        This removes the jobs details from db as well.
+        """
+
+        object_type = object_type.lower()
+        if object_type == "job":
+            object_id = "job_id"
+        elif object_type == "company":
+            object_id = "company_id"
+        
+        # check if the request body contains job_id
+        if object_id := request.data.get(object_id, None):
+            try:
+                # check if the given job_id belongs to the job object
+                object_data = model.objects.filter(**{object_type:object_id})
+                if object_data and object_data[0].is_deleted:
+                    object_data.delete()
+                    return f"{object_type} with id {object_id} has been deleted successfully!!"
+                return f"No pending {object_type} associated with the given {object_id} exist"
+            except Exception:
+                return response.SOMETHING_WENT_WRONG
+        return f"'{object_id}' not provided"

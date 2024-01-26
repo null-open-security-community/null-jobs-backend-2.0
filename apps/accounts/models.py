@@ -60,8 +60,11 @@ class User(AbstractBaseUser):
     otp_secret = models.CharField(max_length=200, null=True)
     dummy_password = models.CharField(max_length=200, null=True)
     user_type = models.CharField(max_length=12, choices=USER_TYPE, null=False)
-    last_verified_identity = models.DateTimeField(auto_now=False, auto_now_add=False, null=True)
+    last_verified_identity = models.DateTimeField(
+        auto_now=False, auto_now_add=False, null=True
+    )
     login_method = models.CharField(max_length=50, null=True)
+    is_moderator = models.BooleanField(default=False, null=True)
 
     objects = UserManager()
 

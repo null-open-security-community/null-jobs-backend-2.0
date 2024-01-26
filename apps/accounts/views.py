@@ -1,15 +1,15 @@
 import datetime
+import logging
+import secrets
 
 # from django.urls import reverse
 import urllib.parse
 
-import secrets
 import requests
-import logging
 from django.conf import settings
 from django.contrib.auth import authenticate
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
@@ -20,6 +20,7 @@ from apps.accounts.renderers import UserRenderer
 from apps.accounts.serializers import *
 from apps.accounts.utils import *
 from apps.jobs.models import User as user_profile
+from apps.jobs.utils.validators import validationClass
 
 # from django.shortcuts import render
 
@@ -31,6 +32,7 @@ from apps.jobs.models import User as user_profile
 
 
 logger = logging.getLogger(__name__)
+
 
 # Generate token Manually
 class TokenUtility:
@@ -85,7 +87,7 @@ def generate_guest_token(user, purpose):
         "user_type": user.user_type,
     }
     token = TokenUtility.generate_dummy_jwt_token(payload)
-    
+
     # for old user
     if user.otp_secret:
         otp = OTP.generate_otp(user)
@@ -123,7 +125,7 @@ class UserRegistrationView(APIView):
 
         user = User.objects.get(email=email)
         user.provider = "local"
-        
+
         token = generate_guest_token(user, "verify")
 
         # Add an entry in the tbl_user_profile with dummy data
@@ -351,11 +353,11 @@ class UserChangePasswordOTPView(APIView):
 class GoogleHandle(APIView):
     renderer_classes = [UserRenderer]
 
-    def get(self, request): 
+    def get(self, request):
         # creating a random state
-        state = secrets.token_urlsafe(32)   
-        
-        # defining the sessions params 
+        state = secrets.token_urlsafe(32)
+
+        # defining the sessions params
         params = {
             "redirect_uri": settings.GOOGLE_REDIRECT_URI,
             "scope": "openid email profile",
@@ -364,17 +366,14 @@ class GoogleHandle(APIView):
             "response_type": "code",
         }
         request_url = "{}?{}".format(
-            "https://accounts.google.com/o/oauth2/v2/auth", 
-            urllib.parse.urlencode(params)
+            "https://accounts.google.com/o/oauth2/v2/auth",
+            urllib.parse.urlencode(params),
         )
-        
+
         # setting  the state in sessions
         request.session["oauth_token"] = state
-        
-        return Response(
-            {"google_redirect_url": request_url}, 
-            status=status.HTTP_200_OK
-        )
+
+        return Response({"google_redirect_url": request_url}, status=status.HTTP_200_OK)
 
 
 class CallbackHandleView(APIView):
@@ -394,7 +393,7 @@ class CallbackHandleView(APIView):
             f"https://www.googleapis.com/oauth2/v2/userinfo?access_token={access_token}"
         )
         user_info = user_info_response.json()
-        
+
         # Extract the email and name from the user information
         email = user_info.get("email", None)
         name = user_info.get("name", None)
@@ -406,16 +405,19 @@ class CallbackHandleView(APIView):
 
         try:
             # Login the user
-            user, created = User.objects.get_or_create(email=email, defaults={
-                "name": name,
-                "login_method": "google_login",
-                "last_verified_identity": datetime.datetime.now()
-            })
-            
+            user, created = User.objects.get_or_create(
+                email=email,
+                defaults={
+                    "name": name,
+                    "login_method": "google_login",
+                    "last_verified_identity": datetime.datetime.now(),
+                },
+            )
+
             if not created:
                 user.last_verified_identity = datetime.datetime.now()
                 user.save()
-                
+
             jwt_token = TokenUtility.get_tokens_for_user(user)
             return Response(
                 {"token": jwt_token, "msg": "Success"}, status=status.HTTP_200_OK
@@ -434,3 +436,26 @@ class RestrictedPage(APIView):
 
     def get(self, request, format=None):
         return Response({"msg": "I am a restricted page"}, status=status.HTTP_200_OK)
+
+
+class Moderator(BasePermission):
+    """
+    This class contains everything related to operations
+    belong to Moderator. Moderator user is different from
+    Admin user, but has some level of responsibilities and
+    access to resources.
+    """
+
+    def has_permission(self, request, *args):
+        """Method to check if the given user_id belongs to moderator or not"""
+
+        # check if user_id is valid or contains improper value
+        if not request.user_id or not validationClass.is_valid_uuid(request.user_id):
+            return False
+
+        try:
+            # check if the given user_id is present or not, if present then moderator or not
+            user_data = User.objects.filter(id=request.user_id)
+            return user_data.is_moderator
+        except Exception:
+            return False
