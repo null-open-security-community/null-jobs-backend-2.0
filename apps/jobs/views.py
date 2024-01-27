@@ -382,7 +382,7 @@ class JobViewSets(viewsets.ModelViewSet):
                 reverse=True,
             )
 
-            return response.create_response(featured_jobs[0:5], status.HTTP_200_OK)
+            return response.create_response(featured_jobs[0:10], status.HTTP_200_OK)
         except Exception:
             return response.create_response(
                 response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
