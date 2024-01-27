@@ -36,7 +36,8 @@ class ValidateRequest:
             "/token/refresh/",
             "/token/verify/",
             "/otp/verify/",
-            "/restricted/"
+            "/restricted/",
+            "/jobs/get_jobs_categories/"
         ]
 
     def __call__(self, request, *args: Any, **kwds: Any) -> Any:
