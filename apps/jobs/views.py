@@ -1,5 +1,6 @@
 from datetime import timedelta
 import os
+import uuid
 from re import search
 from typing import Any
 
@@ -534,6 +535,45 @@ class JobViewSets(viewsets.ModelViewSet):
         return response.create_response(
             serialized_filtered_jobs_data, status.HTTP_200_OK
         )
+    
+    @action(detail=False, methods=['get'])
+    def get_jobs_categories(self, request):
+        """
+        API: /get_jobs_categories
+        Return open positions present in specific job category
+        """
+        
+        try:
+            job_data = self.queryset.filter(is_created=True, is_deleted=False)
+            
+            if job_data.exists():
+                category_counts = {}
+
+                for job in job_data:
+                    category = job.category.lower().strip()
+                    category_counts[category] = category_counts.get(category, 0) + 1
+                
+                open_positions_in_category = [
+                    {"id": str(index + 1), "category": category, "open_position": count}
+                    for index, (category, count) in enumerate(category_counts.items())
+                ]
+
+                return response.create_response(
+                    open_positions_in_category,
+                    status.HTTP_200_OK
+                )
+
+            return response.create_response(
+                "No jobs are present right now",
+                status.HTTP_200_OK
+            )
+
+        except Exception:
+            return response.create_response(
+                response.SOMETHING_WENT_WRONG,
+                status.HTTP_400_BAD_REQUEST
+            )
+
 
 class UserViewSets(viewsets.ModelViewSet):
     """
