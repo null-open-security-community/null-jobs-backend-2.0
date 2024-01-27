@@ -553,16 +553,10 @@ class JobViewSets(viewsets.ModelViewSet):
                     category = job.category.lower().strip()
                     category_counts[category] = category_counts.get(category, 0) + 1
                 
-                open_positions_in_category = []
-
-                for category, count in category_counts.items():
-                    open_positions_in_category.append(
-                        {
-                            "id": len(open_positions_in_category)+1, 
-                            "category": category, 
-                            "open_position": count
-                        }
-                    )
+                open_positions_in_category = [
+                    {"id": str(index + 1), "category": category, "open_position": count}
+                    for index, (category, count) in enumerate(category_counts.items())
+                ]
 
                 return response.create_response(
                     open_positions_in_category,
