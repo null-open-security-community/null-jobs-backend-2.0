@@ -12,6 +12,14 @@ from apps.jobs.views import (
 # app name for namespace
 app_name = "apps.jobs"
 
+# Jobs App Public APIs
+public_apis_jobs = [
+    "/contact-us/create_contact_message/",
+    "/jobs/public_jobs/",
+    "/jobs/get_jobs_categories/",
+    "/jobs/get_jobs/"
+]
+
 # create a router
 router = routers.DefaultRouter()
 router.register(r"jobs", JobViewSets)

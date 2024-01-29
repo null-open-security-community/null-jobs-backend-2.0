@@ -13,7 +13,7 @@ def create_response(
     if 200 <= status_code <= 308:
         response = {"data": response_message}
     elif status_code >= 400:
-        response = {"message": {"error": response_message}}
+        response = {"error": {"message": response_message}}
     return Response(response, status=status_code, content_type=content_type)
 
 ACCESS_TOKEN = "AccessToken"
