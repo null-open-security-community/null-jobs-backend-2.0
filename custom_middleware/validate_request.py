@@ -4,6 +4,7 @@ This file contains class based view to define middleware.
 
 from typing import Any
 
+from os import getenv
 import jwt
 from rest_framework import status
 from rest_framework.renderers import JSONRenderer
@@ -103,8 +104,9 @@ class ValidateRequest:
             
             payload = jwt.decode(
                 authorization_token[1],
+                getenv("DJANGO_SECRET_KEY"),
                 algorithms=["HS256"],
-                options={"verify_signature": False},
+                options={"verify_signature": True},
             )
             if values.USER_ID in payload and validationClass.is_valid_uuid(
                 payload[values.USER_ID]
@@ -112,7 +114,7 @@ class ValidateRequest:
                 request.user_id = payload[values.USER_ID]
             else:
                 raise Exception
-        except (jwt.DecodeError, Exception):
+        except (jwt.DecodeError, Exception, jwt.exceptions.InvalidSignatureError):
             return (1, "Invalid Authorization Token")
 
         return (0, "Exit Successfully")
