@@ -675,7 +675,7 @@ class UserViewSets(viewsets.ModelViewSet):
         """
         API: /api/v1/user/myProfile
         Returns user profile data in the response based on
-        user_id present in the AccessToken
+        user_id present in the Authorization Header
         """
 
         try:
@@ -1063,7 +1063,7 @@ class ContactUsViewSet(viewsets.ModelViewSet):
 
     # queryset = ContactMessage.objects.all()
     serializer_class = ContactUsSerializer
-    http_method_names = ["post"]
+    http_method_names = ["post", "get"]
 
     def get_queryset(self):
         return ContactMessage.objects.all()
@@ -1090,10 +1090,10 @@ class ContactUsViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         if request.method == "GET":
-            if UserTypeCheck.is_user_employer:
-                return Response(
-                    {"Access forbidden for non-moderator user"},
-                    status=status.HTTP_403_FORBIDDEN,
+            if not Moderator().has_permission(request):
+                return response.create_response(
+                    "Access forbidden for non-moderator user",
+                    status.HTTP_403_FORBIDDEN,
                 )
             else:
                 return super().list(request, *args, **kwargs)

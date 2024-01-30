@@ -4,6 +4,7 @@ This file contains class based view to define middleware.
 
 from typing import Any
 
+from os import getenv
 import jwt
 from rest_framework import status
 from rest_framework.renderers import JSONRenderer
@@ -12,6 +13,8 @@ from apps.jobs.constants import response, values
 from apps.jobs.utils.validators import validationClass
 from apps.accounts.models import User as user_auth
 
+from apps.accounts.urls import public_apis_accounts
+from apps.jobs.urls import public_apis_jobs
 
 class ValidateRequest:
     """
@@ -25,20 +28,10 @@ class ValidateRequest:
         self.get_response = get_response
         self.response_obj = response
         self.excluded_paths = [
-            "/register/", 
-            "/api/docs/",
-            "/login/",
-            "/google/login/",
-            "/jobs/public_jobs/",
-            "/google/login/callback/",
-            "/forget-password/",
-            "/forget-password/verify/",
-            "/token/refresh/",
-            "/token/verify/",
-            "/otp/verify/",
-            "/restricted/",
-            "/jobs/get_jobs_categories/"
+            "/api/docs/"
         ]
+        self.excluded_paths.extend(public_apis_accounts)
+        self.excluded_paths.extend(public_apis_jobs)
 
     def __call__(self, request, *args: Any, **kwds: Any) -> Any:
         """Called once per request"""
@@ -69,8 +62,8 @@ class ValidateRequest:
         3. HTTP Method
         4. X-Request-ID
         5. Content-Length
-        6. AccessToken
-        7. user_id in AccessToken exists or not
+        6. Authorization Header
+        7. Existence of user_id in token value of Authorization Header
 
         Return type: [exit_status, message]
         """
@@ -87,33 +80,42 @@ class ValidateRequest:
 
     def check_and_decode_access_token(self, request) -> tuple:
         """method to perform the following things
-        1. check 'AccessToken' in request headers
-        2. decode the 'AccessToken' and add a new key to the request
+        1. check 'Authorization: Bearer tokenValue' in request headers
+        2. decode the 'tokenValue' and add a key named "userId" to the request
         """
 
         # check for excluded paths
         if request.path in self.excluded_paths:
-            return (0, "Rejecting AccessToken check")
+            return (0, "Rejecting Authorization Token check")
 
-        if not (request.headers and "AccessToken" in request.headers):
-            return (1, "AccessToken is not present")
+        if not (request.headers and "Authorization" in request.headers):
+            return (1, "Missing Token, User not available")
 
-        # decode the access token and add the user_id to the request
+        # decode the Authorization token value and add the user_id to the request
         # as a separate key
+
+        keywords = ["Bearer"]
+
         try:
+            # get the authorization token value, format - ["Bearer", "tokenValue"]
+            authorization_token = request.headers["Authorization"].split(" ")
+            if len(authorization_token) != 2 or authorization_token[0] not in keywords:
+                raise Exception
+            
             payload = jwt.decode(
-                request.headers["AccessToken"],
+                authorization_token[1],
+                getenv("DJANGO_SECRET_KEY"),
                 algorithms=["HS256"],
-                options={"verify_signature": False},
+                options={"verify_signature": True},
             )
             if values.USER_ID in payload and validationClass.is_valid_uuid(
                 payload[values.USER_ID]
             ):
                 request.user_id = payload[values.USER_ID]
             else:
-                return (1, "Invalid AccessToken")
-        except (jwt.DecodeError, Exception):
-            return (1, "Invalid AccessToken")
+                raise Exception
+        except (jwt.DecodeError, Exception, jwt.exceptions.InvalidSignatureError):
+            return (1, "Invalid Authorization Token")
 
         return (0, "Exit Successfully")
 
