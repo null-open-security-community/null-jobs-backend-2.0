@@ -605,10 +605,13 @@ class UserViewSets(viewsets.ModelViewSet):
         try:
             if request.user.user_type.lower() == "employer" and not request.user.is_moderator:
                 user_data = user_object.filter(user_type="Job Seeker")
-            elif (
-                request.user.user_type.lower() == "job seeker" 
-                and not request.user.is_moderator) or request.user.is_moderator:
+            elif request.user.is_moderator:
                 user_data = user_object.all()
+            elif request.user.user_type.lower() == "job seeker":
+                return response.create_response(
+                    [],
+                    status.HTTP_200_OK
+                )
             else:
                 raise Exception
 
@@ -890,19 +893,26 @@ class UserViewSets(viewsets.ModelViewSet):
         experience = data.get("experience", None)
         address = data.get("address", None)
 
-        if not request.user.is_moderator:
-            queryset = User.objects.filter(user_type="Job Seeker")
+        if request.user.user_type.lower() == "employer" and not request.user.is_moderator:
+            self.queryset = User.objects.filter(user_type="Job Seeker")
+        elif request.user.is_moderator:
+            self.queryset = self.get_queryset()
+        else:
+            return response.create_response(
+                "You are not authorized!!",
+                status.HTTP_401_UNAUTHORIZED
+            )
 
         if qualification:
-            queryset = queryset.filter(qualification__icontains=qualification)
+            self.queryset = self.queryset.filter(qualification__icontains=qualification)
 
         if experience is not None:
-            queryset = queryset.filter(experience=experience)
+            self.queryset = self.queryset.filter(experience=experience)
 
         if address:
-            queryset = queryset.filter(address__icontains=address)
+            self.queryset = self.queryset.filter(address__icontains=address)
 
-        serialized_data = UserSerializer(queryset, many=True)
+        serialized_data = UserSerializer(self.queryset, many=True)
         return Response(serialized_data.data, status=status.HTTP_200_OK)
 
 class CompanyViewSets(viewsets.ModelViewSet):
