@@ -605,9 +605,9 @@ class UserViewSets(viewsets.ModelViewSet):
         try:
             if request.user.user_type.lower() == "employer" and not request.user.is_moderator:
                 user_data = user_object.filter(user_type="Job Seeker")
-            elif request.user.user_type.lower() == "job seeker" and not request.user.is_moderator:
-                user_data = user_object.all()
-            elif request.user.is_moderator:
+            elif (
+                request.user.user_type.lower() == "job seeker" 
+                and not request.user.is_moderator) or request.user.is_moderator:
                 user_data = user_object.all()
             else:
                 raise Exception
