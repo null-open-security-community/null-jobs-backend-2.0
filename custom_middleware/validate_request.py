@@ -119,10 +119,6 @@ class ValidateRequest:
 
         return (0, "Exit Successfully")
 
-    def verify_jwt(self, jwt_token):
-        #TODO
-        pass
-
     def process_response(self, response):
         pass
 
