@@ -589,6 +589,40 @@ class UserViewSets(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
+    def list(self, request, *args, **kwargs):
+        """
+        API: /users/
+        Overriding list method to return user response based
+        on user_type
+        if user_type is "Employer", return Job seeker's profiles
+        if user_type is "Job Seeker", return all profiles
+        if user_type is "Moderator", return all profiles
+        """
+
+        user_object = User.objects
+        user_data = None
+
+        try:
+            if request.user.user_type.lower() == "employer" and not request.user.is_moderator:
+                user_data = user_object.filter(user_type="Job Seeker")
+            elif request.user.user_type.lower() == "job seeker" and not request.user.is_moderator:
+                user_data = user_object.all()
+            elif request.user.is_moderator:
+                user_data = user_object.all()
+            else:
+                raise Exception
+
+            serialized_user_data = UserSerializer(user_data, many=True)
+            return response.create_response(
+                serialized_user_data.data,
+                status.HTTP_200_OK
+            )
+        except Exception:
+            return response.create_response(
+                response.SOMETHING_WENT_WRONG,
+                status.HTTP_400_BAD_REQUEST
+            )
+
     def update(self, request, *args, **kwargs):
         """
         Overriding the update method (used in PUT request),
@@ -856,7 +890,8 @@ class UserViewSets(viewsets.ModelViewSet):
         experience = data.get("experience", None)
         address = data.get("address", None)
 
-        queryset = User.objects.all()
+        if not request.user.is_moderator:
+            queryset = User.objects.filter(user_type="Job Seeker")
 
         if qualification:
             queryset = queryset.filter(qualification__icontains=qualification)
