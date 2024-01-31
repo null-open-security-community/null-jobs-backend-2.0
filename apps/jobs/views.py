@@ -603,11 +603,11 @@ class UserViewSets(viewsets.ModelViewSet):
         user_data = None
 
         try:
-            if request.user.user_type.lower() == "employer" and not request.user.is_moderator:
-                user_data = user_object.filter(user_type="Job Seeker")
+            if request.user.user_type.lower() == values.EMPLOYER.lower() and not request.user.is_moderator:
+                user_data = user_object.filter(user_type=values.JOB_SEEKER)
             elif request.user.is_moderator:
                 user_data = user_object.all()
-            elif request.user.user_type.lower() == "job seeker":
+            elif request.user.user_type.lower() == values.JOB_SEEKER.lower():
                 return response.create_response(
                     [],
                     status.HTTP_200_OK
@@ -893,8 +893,8 @@ class UserViewSets(viewsets.ModelViewSet):
         experience = data.get("experience", None)
         address = data.get("address", None)
 
-        if request.user.user_type.lower() == "employer" and not request.user.is_moderator:
-            self.queryset = User.objects.filter(user_type="Job Seeker")
+        if request.user.user_type.lower() == values.EMPLOYER.lower() and not request.user.is_moderator:
+            self.queryset = User.objects.filter(user_type=values.JOB_SEEKER)
         elif request.user.is_moderator:
             self.queryset = self.get_queryset()
         else:
