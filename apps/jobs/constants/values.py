@@ -36,3 +36,7 @@ COVER_LETTER_DOCUMENT_TYPE = "cover_letter"
 
 ITEMS_PER_PAGE = 5
 PAST_3_WEEK_DATETIME_DAYS18 = 18
+
+EMPLOYER = "Employer"
+JOB_SEEKER = "Job Seeker"
+MODERATOR = "Moderator"

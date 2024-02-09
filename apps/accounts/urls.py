@@ -19,6 +19,20 @@ from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
 
 from apps.accounts.views import *
 
+# Accounts App Public APIs
+public_apis_accounts = [
+    "/register/",
+    "/login/",
+    "/google/login/",
+    "/google/login/callback/",
+    "/forget-password/",
+    "/forget-password/verify/",
+    "/token/refresh/",
+    "/token/verify/",
+    "/otp/verify/",
+    "/restricted/"
+]
+
 urlpatterns = [
     # Generate Access Token using Refresh Token
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),

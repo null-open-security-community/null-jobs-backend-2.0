@@ -630,6 +630,43 @@ class UserViewSets(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
+    def list(self, request, *args, **kwargs):
+        """
+        API: /users/
+        Overriding list method to return user response based
+        on user_type
+        if user_type is "Employer", return Job seeker's profiles
+        if user_type is "Job Seeker", return all profiles
+        if user_type is "Moderator", return all profiles
+        """
+
+        user_object = User.objects
+        user_data = None
+
+        try:
+            if request.user.user_type.lower() == values.EMPLOYER.lower() and not request.user.is_moderator:
+                user_data = user_object.filter(user_type=values.JOB_SEEKER)
+            elif request.user.is_moderator:
+                user_data = user_object.all()
+            elif request.user.user_type.lower() == values.JOB_SEEKER.lower():
+                return response.create_response(
+                    [],
+                    status.HTTP_200_OK
+                )
+            else:
+                raise Exception
+
+            serialized_user_data = UserSerializer(user_data, many=True)
+            return response.create_response(
+                serialized_user_data.data,
+                status.HTTP_200_OK
+            )
+        except Exception:
+            return response.create_response(
+                response.SOMETHING_WENT_WRONG,
+                status.HTTP_400_BAD_REQUEST
+            )
+
     def update(self, request, *args, **kwargs):
         """
         Overriding the update method (used in PUT request),
@@ -716,7 +753,7 @@ class UserViewSets(viewsets.ModelViewSet):
         """
         API: /api/v1/user/myProfile
         Returns user profile data in the response based on
-        user_id present in the AccessToken
+        user_id present in the Authorization Header
         """
 
         try:
@@ -898,18 +935,26 @@ class UserViewSets(viewsets.ModelViewSet):
         experience = data.get("experience", None)
         address = data.get("address", None)
 
-        queryset = User.objects.all()
+        if request.user.user_type.lower() == values.EMPLOYER.lower() and not request.user.is_moderator:
+            self.queryset = User.objects.filter(user_type=values.JOB_SEEKER)
+        elif request.user.is_moderator:
+            self.queryset = self.get_queryset()
+        else:
+            return response.create_response(
+                "You are not authorized!!",
+                status.HTTP_401_UNAUTHORIZED
+            )
 
         if qualification:
-            queryset = queryset.filter(qualification__icontains=qualification)
+            self.queryset = self.queryset.filter(qualification__icontains=qualification)
 
         if experience is not None:
-            queryset = queryset.filter(experience=experience)
+            self.queryset = self.queryset.filter(experience=experience)
 
         if address:
-            queryset = queryset.filter(address__icontains=address)
+            self.queryset = self.queryset.filter(address__icontains=address)
 
-        serialized_data = UserSerializer(queryset, many=True)
+        serialized_data = UserSerializer(self.queryset, many=True)
         return Response(serialized_data.data, status=status.HTTP_200_OK)
 
 
@@ -1110,7 +1155,7 @@ class ContactUsViewSet(viewsets.ModelViewSet):
 
     # queryset = ContactMessage.objects.all()
     serializer_class = ContactUsSerializer
-    http_method_names = ["post"]
+    http_method_names = ["post", "get"]
 
     def get_queryset(self):
         return ContactMessage.objects.all()
@@ -1137,10 +1182,10 @@ class ContactUsViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         if request.method == "GET":
-            if UserTypeCheck.is_user_employer:
-                return Response(
-                    {"Access forbidden for non-moderator user"},
-                    status=status.HTTP_403_FORBIDDEN,
+            if not Moderator().has_permission(request):
+                return response.create_response(
+                    "Access forbidden for non-moderator user",
+                    status.HTTP_403_FORBIDDEN,
                 )
             else:
                 return super().list(request, *args, **kwargs)
