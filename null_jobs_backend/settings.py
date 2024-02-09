@@ -187,10 +187,10 @@ from datetime import timedelta
 DISABLE_TOKEN_EXPIRATION = False
 ENABLE_AUTHENTICATION = True
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(days=3)
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=3)
     if DISABLE_TOKEN_EXPIRATION
     else timedelta(days=365),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=10)
+    "REFRESH_TOKEN_LIFETIME": timedelta(minutes=5)
     if DISABLE_TOKEN_EXPIRATION
     else timedelta(days=365),
     "ROTATE_REFRESH_TOKENS": False,
