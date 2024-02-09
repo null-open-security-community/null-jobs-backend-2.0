@@ -9,6 +9,7 @@ import django.core.exceptions
 from django.forms import ValidationError
 from django.http import FileResponse, JsonResponse
 from django.db.utils import IntegrityError
+from django.db.models import Q
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.utils import datetime_safe, timezone
 from django_filters.rest_framework import DjangoFilterBackend
@@ -572,6 +573,38 @@ class JobViewSets(viewsets.ModelViewSet):
             return response.create_response(
                 response.SOMETHING_WENT_WRONG, status.HTTP_400_BAD_REQUEST
             )
+
+    @action(detail=False, methods=["get"])
+    def search_jobs(self, request):
+        """
+        API: /api/v1/jobs/search_jobs
+        This method allows searching for jobs based on various parameters.
+        Parameters:
+        - job_title
+        - category
+        - location
+        ... (add more parameters as needed)
+        """
+
+        # job_title = request.query_params.get("job_title", "")
+        category = request.query_params.get("category", "")
+        location = request.query_params.get("location", "")
+
+        search_query = Q()
+
+        # if job_title:
+        #     search_query &= Q(job_role__icontains=job_title)
+
+        if category:
+            search_query &= Q(category__icontains=category)
+
+        if location:
+            search_query &= Q(location__icontains=location)
+
+        jobs_data = Job.objects.filter(search_query, is_created=True, is_deleted=False)
+
+        serialized_jobs_data = JobSerializer(jobs_data, many=True)
+        return Response(serialized_jobs_data.data, status=status.HTTP_200_OK)
 
 
 class UserViewSets(viewsets.ModelViewSet):
