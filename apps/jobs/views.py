@@ -6,6 +6,7 @@ from typing import Any
 
 from django.db.models import Count
 import django.core.exceptions
+from django.db.models import Q
 from django.forms import ValidationError
 from django.http import FileResponse, JsonResponse
 from django.db.utils import IntegrityError
@@ -572,6 +573,47 @@ class JobViewSets(viewsets.ModelViewSet):
             return response.create_response(
                 response.SOMETHING_WENT_WRONG, status.HTTP_400_BAD_REQUEST
             )
+
+    @action(detail=False, methods=["get"])
+    def search_jobs(self, request):
+        """
+        API: /api/v1/jobs/search_jobs
+        This method allows searching for jobs based on various parameters.
+        Parameters:
+        - job_title
+        - category
+        - location
+        ... (add more parameters as needed)
+        """
+
+        # Extract search parameters from the query parameters
+        # job_title = request.query_params.get("job_title", "")
+        category = request.query_params.get("category", "")
+        location = request.query_params.get("location", "")
+
+        # Create a Q object to build the complex query
+        search_query = Q()
+
+        # if job_title:
+        #     search_query &= Q(job_role__icontains=job_title)
+
+        if category:
+            search_query &= Q(category__icontains=category)
+
+        if location:
+            search_query &= Q(location__icontains=location)
+
+        # You can add more fields to search as needed
+
+        # Apply the filters to the queryset
+        jobs_data = Job.objects.filter(search_query, is_created=True, is_deleted=False)
+
+        # Serialize the filtered job data
+        serialized_jobs_data = JobSerializer(jobs_data, many=True)
+
+        # You can add additional processing or response formatting as needed
+
+        return Response(serialized_jobs_data.data, status=status.HTTP_200_OK)
 
 
 class UserViewSets(viewsets.ModelViewSet):
