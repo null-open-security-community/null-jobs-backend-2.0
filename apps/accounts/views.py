@@ -50,7 +50,7 @@ class TokenUtility:
     def generate_dummy_jwt_token(Cpayload):
         # creating custom payload with 5 minutes expiration time
         custom_payload = {
-            "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=5)
+            "exp": datetime.datetime.utcnow() + settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME']
         }
         custom_payload.update(Cpayload)
         # Create a new AccessToken with the custom payload
