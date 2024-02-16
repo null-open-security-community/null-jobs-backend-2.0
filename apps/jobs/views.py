@@ -241,16 +241,16 @@ class JobViewSets(viewsets.ModelViewSet):
         """Apply job functionality implementation"""
 
         job_id = pk
-        user_id = request.data[values.USER_ID]
+        user_id = request.user_id
 
         # validate, if both of them exists or not
-        response_message = validationClass.validate_id(
-            job_id, "job-id", Job
-        ) and validationClass.validate_id(user_id, "user-id", User)
-        if not response_message["status"]:
-            return response.create_response(
-                response_message["error"], status.HTTP_400_BAD_REQUEST
-            )
+        validate_ids = ((job_id, "job-id", Job), (user_id, "user-id", User))
+        for id_tuple in validate_ids:
+            response_message = validationClass.validate_id(*id_tuple)
+            if not response_message["status"]:
+                return response.create_response(
+                    response_message["error"], status.HTTP_400_BAD_REQUEST
+                )
 
         # Check whether the user has applied for the job before
         apply_job_status = Applicants.objects.filter(
@@ -279,7 +279,7 @@ class JobViewSets(viewsets.ModelViewSet):
         # employer-id always exists in the db, without this job can't be created
         job_data = Job.objects.filter(job_id=job_id)
         if job_data.exists():
-            employer_id = job_data.first()[values.EMPLOYER_ID]
+            employer_id = job_data.first().employer_id
         else:
             return response.create_response(
                 f"Given job_id \'{job_id}\' does not exist",
@@ -306,21 +306,27 @@ class JobViewSets(viewsets.ModelViewSet):
         """This method updates the status of user application"""
 
         # check for status_id
-        if "status" not in request.data or not request.data["status"]:
-            return response.create_response(
-                "status-id not present or invalid",
-                status.HTTP_400_BAD_REQUEST,
-            )
+        for key in ["status", "user_id"]:
+            if not (isinstance(request.data.get(key, None), str) and len(request.data.get(key)) > 0):
+                return response.create_response(
+                    f"{key} not present or invalid",
+                    status.HTTP_400_BAD_REQUEST,
+                )
 
-        # check if job_id is valid & present in db or not
-        response_message = validationClass.validate_id(pk, "job-id", Job)
-        if not response_message["status"]:
-            return response.create_response(
-                response_message["error"], status.HTTP_400_BAD_REQUEST
-            )
+        # get user_id and employer_id
+        user_id = request.data.get("user_id")
+        employer_id = request.user_id
+
+        # check if job_id and user_id is valid & present in db or not
+        validate_ids = ((pk, "job-id", Job), (user_id, "user-id", User))
+        for id_tuple in validate_ids:
+            response_message = validationClass.validate_id(*id_tuple)
+            if not response_message["status"]:
+                return response.create_response(
+                    response_message["error"], status.HTTP_400_BAD_REQUEST
+                )
 
         # check if the given employer_id has posted the job (given by job-id)
-        employer_id = request.data[values.EMPLOYER_ID]
         job_employer_id = (
             Job.objects.filter(job_id=pk)
             .values(values.EMPLOYER_ID)
@@ -332,12 +338,27 @@ class JobViewSets(viewsets.ModelViewSet):
                 status.HTTP_406_NOT_ACCEPTABLE,
             )
 
+        # check if the user_id has applied for the job or not
+        applicant_data = Applicants.objects.filter(user_id=user_id, job_id=pk)
+        if not applicant_data.exists():
+            return response.create_response(
+                f"Given user {user_id} has not applied to job {pk}",
+                status.HTTP_400_BAD_REQUEST
+            )
+        
         # Update the status of current application
         try:
-            Applicants.objects.filter(employer_id=employer_id).update(
-                status=request.data["status"]
+            application_status = request.data["status"].lower()
+            is_status_valid = any(status_tuple[0] == application_status for status_tuple in values.STATUS_CHOICES)
+            if not is_status_valid:
+                return response.create_response(
+                    "Invalid status provided",
+                    status.HTTP_406_NOT_ACCEPTABLE
+                )
+            applicant_data.filter(job_id=pk, user_id=user_id).update(
+                status=application_status
             )
-        except Exception as err:
+        except Exception:
             return response.create_response(
                 response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
             )
