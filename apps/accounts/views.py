@@ -381,13 +381,13 @@ class CallbackHandleView(APIView):
 
     def get(self, request):
         access_token = request.query_params.get("access_token")
-        
+
         if access_token is None:
             return Response(
                 {"error": "Invaid request."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-            
+
         # Use the access token to retrieve user information from Google
         user_info_response = requests.get(
             f"https://www.googleapis.com/oauth2/v2/userinfo?access_token={access_token}"
@@ -413,7 +413,7 @@ class CallbackHandleView(APIView):
                     "last_verified_identity": datetime.datetime.now(),
                 },
             )
-            
+
             user_instance = user_profile.objects.get_or_create(
                 email=email,
                 defaults={
@@ -421,7 +421,7 @@ class CallbackHandleView(APIView):
                     "name": user.name,
                     "email": user.email,
                     "user_type": "Job Seeker",
-                }
+                },
             )
 
             if not created:
@@ -438,7 +438,6 @@ class CallbackHandleView(APIView):
                 {"msg": "There was an error authenticating the user"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-
 
 
 class RestrictedPage(APIView):

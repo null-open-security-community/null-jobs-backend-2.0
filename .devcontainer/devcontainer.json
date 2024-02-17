@@ -1,6 +1,6 @@
 {
     "name": "Python 3.8 with Django and MySQL",
-    "dockerComposeFile": "docker-compose.yml",
+    "dockerComposeFile": "../docker-compose.yml",
     "service": "app",
     "workspaceFolder": "/workspace",
     "customizations": {

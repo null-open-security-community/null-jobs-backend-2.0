@@ -2,19 +2,19 @@
 This file contains class based view to define middleware.
 """
 
+from os import getenv
 from typing import Any
 
-from os import getenv
 import jwt
 from rest_framework import status
 from rest_framework.renderers import JSONRenderer
 
-from apps.jobs.constants import response, values
-from apps.jobs.utils.validators import validationClass
 from apps.accounts.models import User as user_auth
-
 from apps.accounts.urls import public_apis_accounts
+from apps.jobs.constants import response, values
 from apps.jobs.urls import public_apis_jobs
+from apps.jobs.utils.validators import validationClass
+
 
 class ValidateRequest:
     """
@@ -27,9 +27,7 @@ class ValidateRequest:
 
         self.get_response = get_response
         self.response_obj = response
-        self.excluded_paths = [
-            "/api/docs/"
-        ]
+        self.excluded_paths = ["/api/docs/"]
         self.excluded_paths.extend(public_apis_accounts)
         self.excluded_paths.extend(public_apis_jobs)
 
@@ -67,15 +65,15 @@ class ValidateRequest:
 
         Return type: [exit_status, message]
         """
-        
+
         response_tuple = self.check_and_decode_access_token(request)
         if response_tuple[0]:
             return response_tuple
-        
+
         response_tuple = self.check_user_exists(request)
         if response_tuple[0]:
             return response_tuple
-        
+
         return (0, "Exit Successfully")
 
     def check_and_decode_access_token(self, request) -> tuple:
@@ -85,6 +83,7 @@ class ValidateRequest:
         """
 
         # check for excluded paths
+        print(request.path)
         if request.path in self.excluded_paths:
             return (0, "Rejecting Authorization Token check")
 
@@ -101,7 +100,7 @@ class ValidateRequest:
             authorization_token = request.headers["Authorization"].split(" ")
             if len(authorization_token) != 2 or authorization_token[0] not in keywords:
                 raise Exception
-            
+
             payload = jwt.decode(
                 authorization_token[1],
                 getenv("DJANGO_SECRET_KEY"),
@@ -127,7 +126,7 @@ class ValidateRequest:
         check if user_id exists in the db or not
         database table for ref: tbl_user_auth
 
-        Expected Extra arguments: 
+        Expected Extra arguments:
         1. request.path
         """
 
@@ -136,7 +135,7 @@ class ValidateRequest:
 
         try:
             user_id = request.user_id
-            response = validationClass().validate_id(user_id, 'id', user_auth)
+            response = validationClass().validate_id(user_id, "id", user_auth)
             if not response["status"]:
                 return (1, "User does not exist")
             return (0, "Exit Successfully")

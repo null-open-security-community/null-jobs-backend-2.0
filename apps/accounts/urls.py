@@ -30,7 +30,7 @@ public_apis_accounts = [
     "/token/refresh/",
     "/token/verify/",
     "/otp/verify/",
-    "/restricted/"
+    "/restricted/",
 ]
 
 urlpatterns = [

@@ -38,7 +38,7 @@ class validationClass:
 
         if model_class.objects.filter(pk=uuid).count() < 1:
             return {"error": f"This {idtype} doesn't exist", "status": False}
-        
+
         return {"success": f"id {uuid} exists", "status": True}
 
     def image_validation(self, image_file):

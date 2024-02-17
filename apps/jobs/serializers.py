@@ -11,7 +11,7 @@ from re import findall
 
 from rest_framework import serializers
 
-from apps.jobs.models import Applicants, Company, Job, User, ContactMessage
+from apps.jobs.models import Applicants, Company, ContactMessage, Job, User
 
 # read_only=True allows the field to only present in the output
 # however at the time of crud opertions, it won't be present.
@@ -86,12 +86,12 @@ class CompanySerializer(serializers.ModelSerializer):
         social_profiles_value = data.get("social_profiles", "")
         try:
             if instance.social_profiles:
-                found_url_patterns = findall("((https?:\/\/)?[\w\.\/?=]+)", social_profiles_value)
+                found_url_patterns = findall(
+                    "((https?:\/\/)?[\w\.\/?=]+)", social_profiles_value
+                )
                 instance.social_profiles = [url[0] for url in found_url_patterns]
 
-            data.update({
-                "social_profiles": instance.social_profiles
-            })
+            data.update({"social_profiles": instance.social_profiles})
 
         except Exception as err:
             # We can also raise an exception here but this time, I am returning
@@ -101,6 +101,7 @@ class CompanySerializer(serializers.ModelSerializer):
             }
 
         return data
+
 
 class UserSerializer(serializers.ModelSerializer):
     """User object serializer class"""
