@@ -24,8 +24,8 @@ class Company(models.Model):
     company_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )  # uuid1 uses network address for random number, so it's better to use uuid4
-    is_created = models.BooleanField(default=True, null=True)
-    is_deleted = models.BooleanField(default=False, null=True)
+    is_created = models.BooleanField(default=True, null=True, editable=False)
+    is_deleted = models.BooleanField(default=False, null=True, editable=False)
     team_members = models.PositiveIntegerField(default=False, null=True)
     social_profiles = models.URLField(default=None, null=True)
     founded_year = models.PositiveIntegerField(default=False, null=False)
@@ -68,8 +68,8 @@ class Job(models.Model):
     category = models.CharField(max_length=20, default=None, null=True)
     is_active = models.BooleanField(default=None, null=False)
 
-    is_created = models.BooleanField(default=True, null=True)
-    is_deleted = models.BooleanField(default=False, null=True)
+    is_created = models.BooleanField(default=True, null=True, editable=False)
+    is_deleted = models.BooleanField(default=False, null=True, editable=False)
 
     # These fields will be displayed as a part of "description" field
     job_responsibilities = models.TextField(
@@ -115,7 +115,7 @@ class User(models.Model):
     company = models.ForeignKey(
         Company, on_delete=models.CASCADE, null=True, default=None
     )
-    user_type = models.CharField(max_length=15, default=None, null=False)
+    user_type = models.CharField(max_length=15, default=None, null=False, editable=False)
     experience = models.CharField(default=0, null=True, max_length=3)
     qualification = models.TextField(max_length=500, default=None, null=True)
     gender = models.CharField(choices=GENDER, max_length=6, default=None, null=True)
@@ -161,7 +161,7 @@ class Applicants(models.Model):
     resume = models.FileField(upload_to="resume/", null=True, blank=True)
     cover_letter = models.FileField(upload_to="cover_letters/", null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
-    is_deleted = models.BooleanField(default=False, null=True)
+    is_deleted = models.BooleanField(default=False, null=True, editable=False)
     is_active = models.BooleanField(default=True, null=True)
     employer_id = models.UUIDField(null=False, editable=False, default=None)
 

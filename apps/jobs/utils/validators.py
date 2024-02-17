@@ -135,6 +135,9 @@ class validationClass:
         present in the given data (format: dictionary)
         """
 
+        # Remove sensitive fields from the data
+        validationClass.remove_sensitive_fields(data) 
+
         def validate_email(email):
             """
             Validate email format.
@@ -173,9 +176,20 @@ class validationClass:
                     if not re.match(r'^[a-zA-Z0-9 .,\'"-]*$', field_value):
                         raise ValidationError(
                             {"error": f"Invalid {field_name} format."}
-                        )
+                        )   
 
             except ValidationError as err:
                 raise ValidationError(
                     f"Given {field_name} doesn't contain a valid value\n\nReason: {err.__str__()}"
                 )
+
+    @staticmethod
+    def remove_sensitive_fields(data: dict) -> None:
+        """
+        This method removes the sensitive fields which are not
+        intended for normal users to update. Especially where we
+        are performing update using large number of fields.
+        """
+
+        removable_fields = ("user_type", "is_created", "is_deleted")
+        [data.pop(field, None) for field in removable_fields]
