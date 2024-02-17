@@ -190,9 +190,9 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=365)
     if DISABLE_TOKEN_EXPIRATION
     else timedelta(minutes=3),
-    "REFRESH_TOKEN_LIFETIME": timedelta(minutes=365)
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=365)
     if DISABLE_TOKEN_EXPIRATION
-    else timedelta(days=5),
+    else timedelta(minutes=7),
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": False,
     "CHECK_REVOKE_TOKEN": True,

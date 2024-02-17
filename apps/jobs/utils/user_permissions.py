@@ -35,9 +35,7 @@ class UserTypeCheck(permissions.BasePermission):
         # Add the user_id to the JWT Later
         employer_id = request.user_id
 
-        if not employer_id or not validationClass.is_valid_uuid(
-            request.data[values.EMPLOYER_ID]
-        ):
+        if not employer_id or not validationClass.is_valid_uuid(employer_id):
             return False
 
         if (
