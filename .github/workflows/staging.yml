@@ -11,7 +11,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
@@ -21,17 +21,17 @@ jobs:
           docker build . -t null_jobs_backend:latest
 
       - name: Save Docker image as tar
-        run: docker save null_jobs_backend:latest > .tar
+        if: success()
+        run: docker save null_jobs_backend:latest > null_job_backend_latest.tar
 
       - name: Transfer Docker image to server
-        uses: appleboy/scp-action@master
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USERNAME }}
-
           key: ${{ secrets.SERVER_SSH_KEY }}
-          source: null_jobs_backend_latest.tar
-          target: /tmp/null_jobs_backend_latest.tar
+          source: null_job_backend_latest.tar
+          target: /tmp/null_job_backend_latest.tar
 
       - name: SSH into server and deploy
         uses: appleboy/ssh-action@master
@@ -40,9 +40,11 @@ jobs:
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            sudo docker load -i /tmp/null_jobs_backend_latest.tar
-            sudo docker stop null_jobs_backend || true
-            sudo docker rm null_jobs_backend || true
-            sudo docker run -d --name null_jobs_backend -p 8080:8080 null_jobs_backend:latest
-
+            docker load -i /tmp/null_job_backend_latest.tar/null_job_backend_latest.tar
+            docker stop null_jobs_backend || true
+            docker rm null_jobs_backend || true
+            docker run -d --network null_jobs --env-file /home/dev@null/projects/nulljobs/backend/.env null_jobs_backend:latest python manage.py migrate
+            docker run -d --name null_jobs_backend --network null_jobs --restart always --env-file /home/dev@null/projects/nulljobs/backend/.env null_jobs_backend:latest python manage.py runserver 0.0.0.0:8000
+            rm -r /tmp/null_job_backend_latest.tar
+            
         
