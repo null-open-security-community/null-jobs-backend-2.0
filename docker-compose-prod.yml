@@ -62,6 +62,4 @@ services:
 
 volumes:
   mysql_data:
-  caddy_data: 
-
-
+  caddy_data:

@@ -17,7 +17,7 @@ public_apis_jobs = [
     "/contact-us/create_contact_message/",
     "/jobs/public_jobs/",
     "/jobs/get_jobs_categories/",
-    "/jobs/get_jobs/"
+    "/jobs/get_jobs/",
 ]
 
 # create a router

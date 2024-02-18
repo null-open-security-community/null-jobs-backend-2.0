@@ -2,3 +2,6 @@ db.sqlite3
 .env
 *.pyc
 .idea
+
+apps/accounts/migrations/*
+apps/jobs/migrations/*

@@ -1,15 +1,15 @@
-from datetime import timedelta
 import os
 import uuid
+from datetime import timedelta
 from re import search
 from typing import Any
 
-from django.db.models import Count
 import django.core.exceptions
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.db.models import Count
+from django.db.utils import IntegrityError
 from django.forms import ValidationError
 from django.http import FileResponse, JsonResponse
-from django.db.utils import IntegrityError
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.utils import datetime_safe, timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
@@ -34,6 +34,7 @@ from .utils.user_permissions import UserTypeCheck
 # Create your views here.
 # the ModelViewSet provides basic crud methods like create, update etc.
 
+
 class JobViewSets(viewsets.ModelViewSet):
     """
     Job object viewsets
@@ -55,7 +56,7 @@ class JobViewSets(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["job_role", "location", "is_active"]
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=["get"])
     def public_jobs(self, request):
         """
         API: /public_jobs
@@ -65,10 +66,9 @@ class JobViewSets(viewsets.ModelViewSet):
         jobs_data = self.queryset.filter(is_created=True, is_deleted=False)
         serialized_jobs_data = JobSerializer(jobs_data, many=True)
         return response.create_response(
-            serialized_jobs_data.data[0:2],
-            status.HTTP_200_OK
+            serialized_jobs_data.data[0:2], status.HTTP_200_OK
         )
-    
+
     def list(self, request):
         """
         Overrided the default list action provided by
@@ -148,16 +148,16 @@ class JobViewSets(viewsets.ModelViewSet):
         if not job_id or not validationClass.is_valid_uuid(job_id):
             return response.create_response(
                 "Invalid or missing 'job_id' query parameter in the URL",
-                status.HTTP_400_BAD_REQUEST
+                status.HTTP_400_BAD_REQUEST,
             )
-        
+
         try:
             job_data = Job.objects.filter(job_id=job_id)
         except Job.DoesNotExist:
             return response.create_response(
                 f"Job with job_id '{job_id}' does not exist", status.HTTP_404_NOT_FOUND
             )
-        
+
         serialized_job_data = self.serializer_class(job_data, many=True)
         if serialized_job_data:
             serialized_job_data = JobViewSets.get_number_of_applicants(
@@ -199,7 +199,9 @@ class JobViewSets(viewsets.ModelViewSet):
             jobs_belong_to_company = Job.objects.filter(
                 company_id=company.get("company_id")
             )
-            active_jobs = sum(1 for job in jobs_belong_to_company if job.is_active and job.is_created)
+            active_jobs = sum(
+                1 for job in jobs_belong_to_company if job.is_active and job.is_created
+            )
             company.update({"Active Jobs": active_jobs})
 
         return serialized_company_data
@@ -282,8 +284,7 @@ class JobViewSets(viewsets.ModelViewSet):
             employer_id = job_data.first().employer_id
         else:
             return response.create_response(
-                f"Given job_id \'{job_id}\' does not exist",
-                status.HTTP_404_NOT_FOUND
+                f"Given job_id '{job_id}' does not exist", status.HTTP_404_NOT_FOUND
             )
 
         # Prepare the overall dictionary to save into the database
@@ -460,15 +461,16 @@ class JobViewSets(viewsets.ModelViewSet):
                 )
         else:
             return response.create_response(
-                "Job id is not valid",
-                status.HTTP_400_BAD_REQUEST
+                "Job id is not valid", status.HTTP_400_BAD_REQUEST
             )
         # if user is employer don't remove the job from the db table
         # else, set is_created=False and is_deleted=True
         if UserTypeCheck.is_user_employer(request.user_id):
             try:
                 updated_job_data = Job.objects.filter(job_id=pk)
-                updated_job_data.update(is_created=False, is_deleted=True, is_active=False)
+                updated_job_data.update(
+                    is_created=False, is_deleted=True, is_active=False
+                )
                 serialized_updated_job_data = JobSerializer(updated_job_data, many=True)
                 return response.create_response(
                     serialized_updated_job_data.data, status.HTTP_200_OK
@@ -556,43 +558,40 @@ class JobViewSets(viewsets.ModelViewSet):
         return response.create_response(
             serialized_filtered_jobs_data, status.HTTP_200_OK
         )
-    
-    @action(detail=False, methods=['get'])
+
+    @action(detail=False, methods=["get"])
     def get_jobs_categories(self, request):
         """
         API: /get_jobs_categories
         Return open positions present in specific job category
         """
-        
+
         try:
             job_data = self.queryset.filter(is_created=True, is_deleted=False)
-            
+
             if job_data.exists():
                 category_counts = {}
 
                 for job in job_data:
                     category = job.category.lower().strip()
                     category_counts[category] = category_counts.get(category, 0) + 1
-                
+
                 open_positions_in_category = [
                     {"id": str(index + 1), "category": category, "open_position": count}
                     for index, (category, count) in enumerate(category_counts.items())
                 ]
 
                 return response.create_response(
-                    open_positions_in_category,
-                    status.HTTP_200_OK
+                    open_positions_in_category, status.HTTP_200_OK
                 )
 
             return response.create_response(
-                "No jobs are present right now",
-                status.HTTP_200_OK
+                "No jobs are present right now", status.HTTP_200_OK
             )
 
         except Exception:
             return response.create_response(
-                response.SOMETHING_WENT_WRONG,
-                status.HTTP_400_BAD_REQUEST
+                response.SOMETHING_WENT_WRONG, status.HTTP_400_BAD_REQUEST
             )
 
 
@@ -624,27 +623,25 @@ class UserViewSets(viewsets.ModelViewSet):
         user_data = None
 
         try:
-            if request.user.user_type.lower() == values.EMPLOYER.lower() and not request.user.is_moderator:
+            if (
+                request.user.user_type.lower() == values.EMPLOYER.lower()
+                and not request.user.is_moderator
+            ):
                 user_data = user_object.filter(user_type=values.JOB_SEEKER)
             elif request.user.is_moderator:
                 user_data = user_object.all()
             elif request.user.user_type.lower() == values.JOB_SEEKER.lower():
-                return response.create_response(
-                    [],
-                    status.HTTP_200_OK
-                )
+                return response.create_response([], status.HTTP_200_OK)
             else:
                 raise Exception
 
             serialized_user_data = UserSerializer(user_data, many=True)
             return response.create_response(
-                serialized_user_data.data,
-                status.HTTP_200_OK
+                serialized_user_data.data, status.HTTP_200_OK
             )
         except Exception:
             return response.create_response(
-                response.SOMETHING_WENT_WRONG,
-                status.HTTP_400_BAD_REQUEST
+                response.SOMETHING_WENT_WRONG, status.HTTP_400_BAD_REQUEST
             )
 
     def update(self, request, *args, **kwargs):
@@ -761,7 +758,9 @@ class UserViewSets(viewsets.ModelViewSet):
             user_id = request.user_id
             jobs_data = None
             # get the applications submmited by this user
-            applications = Applicants.objects.filter(user_id=user_id).values(values.JOB_ID)
+            applications = Applicants.objects.filter(user_id=user_id).values(
+                values.JOB_ID
+            )
             if applications.exists():
                 # get the job_ids
                 applications_count = applications.count()
@@ -785,8 +784,7 @@ class UserViewSets(viewsets.ModelViewSet):
                 )
         except Exception:
             return response.create_response(
-                response.SOMETHING_WENT_WRONG, 
-                status.HTTP_404_NOT_FOUND
+                response.SOMETHING_WENT_WRONG, status.HTTP_404_NOT_FOUND
             )
 
     @action(detail=False, methods=["delete"])
@@ -902,7 +900,7 @@ class UserViewSets(viewsets.ModelViewSet):
 
         # Serve the file using Django FileResponse
         return FileResponse(open(file_path, "rb"), as_attachment=True)
-    
+
     @action(detail=False, methods=["post"])
     def retrieve_users(self, request):
         """
@@ -914,14 +912,16 @@ class UserViewSets(viewsets.ModelViewSet):
         experience = data.get("experience", None)
         address = data.get("address", None)
 
-        if request.user.user_type.lower() == values.EMPLOYER.lower() and not request.user.is_moderator:
+        if (
+            request.user.user_type.lower() == values.EMPLOYER.lower()
+            and not request.user.is_moderator
+        ):
             self.queryset = User.objects.filter(user_type=values.JOB_SEEKER)
         elif request.user.is_moderator:
             self.queryset = self.get_queryset()
         else:
             return response.create_response(
-                "You are not authorized!!",
-                status.HTTP_401_UNAUTHORIZED
+                "You are not authorized!!", status.HTTP_401_UNAUTHORIZED
             )
 
         if qualification:
@@ -935,6 +935,7 @@ class UserViewSets(viewsets.ModelViewSet):
 
         serialized_data = UserSerializer(self.queryset, many=True)
         return Response(serialized_data.data, status=status.HTTP_200_OK)
+
 
 class CompanyViewSets(viewsets.ModelViewSet):
     """
@@ -962,7 +963,6 @@ class CompanyViewSets(viewsets.ModelViewSet):
         """
 
         try:
-
             company_data = self.queryset.filter(is_created=True, is_deleted=False)
             serialized_company_data = self.serializer_class(
                 company_data, many=True, context={"request": request}
@@ -995,7 +995,9 @@ class CompanyViewSets(viewsets.ModelViewSet):
 
         try:
             # filter based on pk
-            company_data = Company.objects.filter(company_id=pk, is_created=True, is_deleted=False)
+            company_data = Company.objects.filter(
+                company_id=pk, is_created=True, is_deleted=False
+            )
             serialized_company_data = self.serializer_class(company_data, many=True)
             if serialized_company_data:
                 serialized_company_data = JobViewSets.get_active_jobs_count(
@@ -1090,7 +1092,9 @@ class CompanyViewSets(viewsets.ModelViewSet):
             # get jobs data by company_id from database
             # .values() returns the QuerySet
             # jobData = Job.objects.filter(company=companyId).values()
-            job_data = Job.objects.filter(company_id=company_id, is_created=True, is_deleted=False)
+            job_data = Job.objects.filter(
+                company_id=company_id, is_created=True, is_deleted=False
+            )
             company_data.update({"Jobs": job_data.values()})
 
         return response.create_response(
@@ -1193,11 +1197,13 @@ class ModeratorViewSet(viewsets.ViewSet):
 
         if self._type == "job":
             return response.create_response(
-                self.list_pending_objects(request, Job, JobSerializer), status.HTTP_200_OK
+                self.list_pending_objects(request, Job, JobSerializer),
+                status.HTTP_200_OK,
             )
         elif self._type == "company":
             return response.create_response(
-                self.list_pending_objects(request, Company, CompanySerializer), status.HTTP_200_OK
+                self.list_pending_objects(request, Company, CompanySerializer),
+                status.HTTP_200_OK,
             )
 
     @action(detail=False, methods=["post"], permission_classes=[Moderator])
@@ -1216,7 +1222,8 @@ class ModeratorViewSet(viewsets.ViewSet):
             )
         elif self._type == "company":
             return response.create_response(
-                self.approve_pending_objects(request, Company, "company"), status.HTTP_200_OK
+                self.approve_pending_objects(request, Company, "company"),
+                status.HTTP_200_OK,
             )
 
     @action(detail=False, methods=["post"], permission_classes=[Moderator])
@@ -1236,7 +1243,8 @@ class ModeratorViewSet(viewsets.ViewSet):
             )
         elif self._type == "company":
             return response.create_response(
-                self.remove_pending_objects(request, Company, "company"), status.HTTP_200_OK
+                self.remove_pending_objects(request, Company, "company"),
+                status.HTTP_200_OK,
             )
 
     def validate_request_data(self, request):
@@ -1252,7 +1260,7 @@ class ModeratorViewSet(viewsets.ViewSet):
             return response.create_response(
                 "wrong 'type' value specified", status.HTTP_404_NOT_FOUND
             )
-        
+
         self._type = type
 
     def list_pending_objects(self, request, model, serializer):
@@ -1284,14 +1292,16 @@ class ModeratorViewSet(viewsets.ViewSet):
         if object_id := request.data.get(object_id, None):
             try:
                 # check if the given object_id belongs to the object_type
-                object_data = model.objects.filter(**{object_type:object_id}).values("is_created")
+                object_data = model.objects.filter(**{object_type: object_id}).values(
+                    "is_created"
+                )
                 if object_data and not object_data[0]["is_created"]:
                     object_data.update(is_created=True, is_deleted=False)
                     return f"{object_type} with id {object_id} has been approved successfully!!"
                 return f"No pending {object_type} associated with the given {object_id} exist"
             except Exception:
                 return response.SOMETHING_WENT_WRONG
-        return f"\'{object_id}\' not provided"
+        return f"'{object_id}' not provided"
 
     def remove_pending_objects(self, request, model, object_type):
         """
@@ -1304,12 +1314,12 @@ class ModeratorViewSet(viewsets.ViewSet):
             object_id = "job_id"
         elif object_type == "company":
             object_id = "company_id"
-        
+
         # check if the request body contains job_id
         if object_id := request.data.get(object_id, None):
             try:
                 # check if the given job_id belongs to the job object
-                object_data = model.objects.filter(**{object_type:object_id})
+                object_data = model.objects.filter(**{object_type: object_id})
                 if object_data and object_data[0].is_deleted:
                     object_data.delete()
                     return f"{object_type} with id {object_id} has been deleted successfully!!"
