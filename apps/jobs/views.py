@@ -206,8 +206,8 @@ class JobViewSets(viewsets.ModelViewSet):
 
         return serialized_company_data
 
-    @action(detail=False, methods=["get"])
-    def users(self, request):
+    @action(detail=False, methods=["post"])
+    def users(self, request, pk=None):
         """
         API Path: /api/v1/jobs/users?status=job_status
         to find out how many users have applied for
@@ -225,19 +225,28 @@ class JobViewSets(viewsets.ModelViewSet):
         
         try:
             # Retrieve the value of "status" query param
-            applicant_status = request.query_params.get("status", '')
-            applicants_data:None = None
-            
-            if applicant_status and not any(applicant_status == i[0] for i in values.STATUS_CHOICES):
-                    return response.create_response(
-                        "Invalid value provided to \'status\' query parameter",
-                        status.HTTP_400_BAD_REQUEST
-                    )
-            
+            applicant_status = request.data.get("status", None)
+            job_id = request.data.get("job_id", None)
             applicants_data = Applicants.objects.filter(employer_id=employer_id)
-            if applicant_status:
-                    applicants_data = applicants_data.filter(status=applicant_status)
-
+            
+            # check if the job_id filter is present and contains a job posted by the employer_id
+            if job_id and not validationClass.is_valid_uuid(job_id):
+                return response.create_response(
+                    "Invalid value provided to \'job_id\' field",
+                    status.HTTP_400_BAD_REQUEST
+                )
+            elif job_id:
+                applicants_data = applicants_data.filter(job_id=job_id)
+            
+            # check if status filter is present and has a valid value provided by the user
+            if applicant_status and not any(applicant_status == i[0] for i in values.STATUS_CHOICES):
+                return response.create_response(
+                    "Invalid value provided to \'status\' field",
+                    status.HTTP_400_BAD_REQUEST
+                )
+            elif applicant_status:
+                applicants_data = applicants_data.filter(status=applicant_status)
+            
             serialized_data = ApplicantsSerializer(
                 applicants_data, many=True, context={"request": request}
             )
