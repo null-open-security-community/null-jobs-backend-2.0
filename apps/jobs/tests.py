@@ -4,10 +4,10 @@ from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
-
-from apps.jobs.models import User
-
+from django.urls import reverse
+from apps.jobs.views import JobViewSets
 from .models import Company, Job
+from apps.accounts.models import User
 
 # Create your tests here.
 
@@ -27,46 +27,78 @@ class JobViewSetsTestCase(TestCase):
         self.company = Company.objects.create(**self.company_data)
 
         # job_data struct
-        self.job_data = {
-            "job_role": "Data Scientist",
-            "company": self.company,
-            "description": "Join our innovative team as a Data Scientist.",
-            "location": "New York, NY",
-            "post_date": "2024-02-15",
-            "posted": True,
-            "experience": 3,
-            "job_type": "part time",
-            "salary": 75000.00,
-            "qualifications": "Master's degree in Data Science or related field",
-            "vacency_position": 2,
-            "industry": "Data Science",
-            "category": "Analytics",
-            "is_active": True,
-            "job_responsibilities": "Analyze and interpret complex data sets.",
-            "skills_required": "Python, R, Machine Learning",
-            "education_or_certifications": "Master's degree in Data Science or related field.",
-            "employer_id": uuid.uuid4(),
-        }
+        self.job1 = Job.objects.create(
+            job_role="Test Job 1",
+            company=self.company,
+            description="Test Description 1",
+            location="Test Location 1",
+            post_date="2024-02-15",
+            posted=True,
+            experience=3,
+            job_type="Part-time",
+            salary=75000.00,
+            qualifications="Bachelor's degree in Test",
+            vacency_position=2,
+            industry="Test Industry",
+            category="Test Category",
+            is_active=True,
+            job_responsibilities="Test Responsibilities 1",
+            skills_required="Test Skills 1",
+            education_or_certifications="Bachelor's degree in Test",
+            employer_id=uuid.uuid4(),
+        )
+        self.job2 = Job.objects.create(
+            job_role="Test Job 2",
+            company=self.company,
+            description="Test Description 2",
+            location="Test Location 2",
+            post_date="2024-02-16",
+            posted=True,
+            experience=4,
+            job_type="Full-time",
+            salary=90000.00,
+            qualifications="Master's degree in Test",
+            vacency_position=3,
+            industry="Another Industry",
+            category="Another Category",
+            is_active=True,
+            job_responsibilities="Test Responsibilities 2",
+            skills_required="Test Skills 2",
+            education_or_certifications="Master's degree in Test",
+            employer_id=uuid.uuid4(),
+        )
+        self.user = User.objects.create_user(
+            name="testuser",
+            password="testpassword",
+            email="testemail",
+            user_type="Job Seeker",
+            # is_active=True,
+        )
+        self.user.job = self.job1
+        self.user.save()
 
-        self.job = Job.objects.create(**self.job_data)
-
-        # job url
         self.job_url = "/jobs/"
-
-        # Create an instance of the APIClient and set the Authorization header
         self.client = APIClient()
-        # dummy token
-        self.access_token = ""
-        self.client.credentials(HTTP_ACCESSTOKEN=self.access_token)
+        self.access_token = AccessToken.for_user(self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.access_token}")
 
-    def test_list_jobs(self):
-        # Test the list action with no filters
-        response = self.client.get(self.job_url)
-        # self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # self.assertEqual(len(response.data), 1)  # Assuming there is one job in the database
+    # def test_list_jobs(self):
+    #     url = self.job_url
+    #     response = self.client.get(url)
+    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_filter_jobs(self):
-        # Test the list action with filters
-        response = self.client.get(self.job_url, {"location": "Mumbai"})
-        # self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # self.assertEqual(len(response.data), 1)  # Assuming one job matches the filter
+    def test_public_jobs(self):
+        url = "/jobs/public_jobs/"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_public_jobs_empty(self):
+        # Create jobs with is_created=False
+        self.job1.is_created = False
+        self.job1.save()
+        self.job2.is_created = False
+        self.job2.save()
+        url = "/jobs/public_jobs/"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 0)
