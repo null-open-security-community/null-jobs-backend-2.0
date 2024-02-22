@@ -209,7 +209,7 @@ class JobViewSets(viewsets.ModelViewSet):
     @action(detail=False, methods=["post"])
     def users(self, request, pk=None):
         """
-        API Path: /api/v1/jobs/users?status=job_status
+        API Path: /api/v1/jobs/users/
         to find out how many users have applied for
         this jobs posted by employer.
         """
