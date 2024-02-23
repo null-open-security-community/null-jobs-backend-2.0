@@ -5,8 +5,9 @@ from rest_framework import status
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
 from django.urls import reverse
+from apps.jobs.serializers import *
 from apps.jobs.views import JobViewSets
-from .models import Company, Job
+from apps.jobs.models import Company, Job, User, Applicants
 from apps.accounts.models import User
 
 # Create your tests here.
@@ -73,14 +74,12 @@ class JobViewSetsTestCase(TestCase):
             email="testemail",
             user_type="Job Seeker",
         )
-        # self.user.job = self.job1
-        # self.user.job = self.job2
-        self.user.save()
-        self.job_url = "/jobs/"
-        self.client = APIClient()
         self.access_token = AccessToken.for_user(self.user)
+        self.client = APIClient()
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.access_token}")
         self.client.force_authenticate(user=self.user)
+        self.user.save()
+        self.job_url = "/jobs/"
 
     # def test_list_jobs(self):
     #     url = self.job_url
@@ -104,3 +103,9 @@ class JobViewSetsTestCase(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data["data"]), 0)
+
+    def test_apply(self):
+        job_id = str(self.job1.job_id)
+        response = self.client.post(f"/jobs/{job_id}/apply")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn("You have successfully applied for this job", str(response.data))
