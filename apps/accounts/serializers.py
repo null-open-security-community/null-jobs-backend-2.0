@@ -30,8 +30,15 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validate_data):
-        # print(validate_data)
+        print(validate_data)
         return User.objects.create_user(**validate_data)
+
+
+
+class UserRegistrationResponseSerializer(serializers.Serializer):
+    msg = serializers.CharField()
+    url = serializers.CharField()
+    token = serializers.CharField()
 
 
 class OTPVerificationCheckSerializer(serializers.Serializer):
@@ -69,12 +76,21 @@ class UserLoginSerializer(serializers.ModelSerializer):
         model = User
         fields = ["email", "password"]
 
+class TokenSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+    access = serializers.CharField()
+
+class UserLoginResponseSerializer(serializers.Serializer):
+    token = TokenSerializer()
+    msg = serializers.CharField()
+    verify = serializers.BooleanField()
+
 
 # Serializer for showing User profile
-class UserProfileSerializer(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "email", "name"]
+        fields = ["id", "email", "name", "is_verified", "is_profile_completed", "is_active"]
 
 
 # Serializer for sending the otp to user's email to verify their request of reset password

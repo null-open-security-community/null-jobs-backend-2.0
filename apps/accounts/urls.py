@@ -1,37 +1,24 @@
-from django.urls import include, path
-from rest_framework import routers
+from django.urls import path
 
-from . import views
+from apps.accounts.views import (
+    UserRegistrationView,
+    OTPVerificationCheckView,
+    UserLoginView,
+    UserProfileView,
+    UserLogOutView,
+    SendPasswordResetOTPView,
+    ResetPasswordOtpVerifyView,
+    UserPasswordResetView,
+    UserChangePasswordOTPView,
+    UserChangePasswordView,
+    GoogleHandle, CallbackHandleView
+)
 
 app_name = "apps.accounts"
 
-# router = routers.DefaultRouter()
-# router.register("", views.SampleViewSet, basename="sample")
-
-# # Additionally, we include login URLs for the browsable API.
-# urlpatterns = [
-#     path('accounts/', include(router.urls))
-# ]
-
-
-from django.urls import include, path
 from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
 
-from apps.accounts.views import *
 
-# Accounts App Public APIs
-public_apis_accounts = [
-    "/register/",
-    "/login/",
-    "/google/login/",
-    "/google/login/callback/",
-    "/forget-password/",
-    "/forget-password/verify/",
-    "/token/refresh/",
-    "/token/verify/",
-    "/otp/verify/",
-    "/restricted/",
-]
 
 urlpatterns = [
     # Generate Access Token using Refresh Token
@@ -42,7 +29,6 @@ urlpatterns = [
     path("login/", UserLoginView.as_view(), name="login"),
     path("profile/", UserProfileView.as_view(), name="profile"),
     path("logout/", UserLogOutView.as_view(), name="logout"),
-    path("restricted/", RestrictedPage.as_view(), name="restricted"),
     path(
         "forget-password/",
         SendPasswordResetOTPView.as_view(),
@@ -64,10 +50,8 @@ urlpatterns = [
         UserChangePasswordOTPView.as_view(),
         name="changepassword_otp_verify",
     ),
-    # this comes in play when we want token from the code provided by callback. hit this url and send code in body it will return the
-    # path('auth/google/', GoogleLogin.as_view(), name='google_login'),
-    # needed for google auth
+
+    # google oauth endpoints
     path("google/login/", GoogleHandle.as_view(), name="google"),
-    path("google/login/callback/", CallbackHandleView.as_view(), name="callback"),
-    # path("google/additional-details/", AdditionalUserInfoView.as_view(), name='additonal'),
+    path("google/login/callback/", CallbackHandleView.as_view(), name="callback")
 ]

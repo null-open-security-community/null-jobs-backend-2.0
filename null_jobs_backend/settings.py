@@ -17,6 +17,9 @@ from dotenv import load_dotenv
 # Load variables from .env
 load_dotenv()
 
+# DRY RUN
+DRY_RUN = os.environ.get("DRY_RUN", "") == "True"
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -36,24 +39,35 @@ CORS_ORIGIN_ALLOW_ALL = True
 # Application definition
 
 INSTALLED_APPS = [
+    # django default applications
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "django.contrib.sites",  # needed for oauth very importatnt
-    "dj_rest_auth",  # use for google authentication
+    "django.contrib.sites",
+
+    # cors 
     "corsheaders",
+
+    # rest framework applications
     "rest_framework",
     "rest_framework.authtoken",
     "rest_framework_simplejwt",
-    "rest_framework_simplejwt.token_blacklist",  # used to blacklist the refresh token
-    "drf_yasg",
+    "rest_framework_simplejwt.token_blacklist",
+
+    # swagger app
+    "drf_spectacular",
+
+    # business view applications
     "apps.accounts",
     "apps.jobs",
+    "apps.applicants",
+    "apps.userprofile",
+
+    # extras for views filtering
     "django_filters",
-    "custom_middleware",
 ]
 
 MIDDLEWARE = [
@@ -64,8 +78,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "custom_middleware.validate_request.ValidateRequest",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware"
 ]
 
 ROOT_URLCONF = "null_jobs_backend.urls"
@@ -134,15 +147,6 @@ GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
 GOOGLE_SECRET_KEY = os.environ.get("GOOGLE_OAUTH_SECRET")
 GOOGLE_REDIRECT_URI = os.environ.get("GOOGLE_REDIRECT_URI")
 
-# dj-rest-auth setting
-JWT_AUTH_SECURE = True
-REST_USE_JWT = True
-JWT_AUTH_COOKIE = "access_token"
-JWT_AUTH_REFRESH_COOKIE = "refresh-token"
-
-
-USE_JWT = True
-
 EMAIL_HOST = os.getenv("EMAIL_HOST")
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
@@ -153,10 +157,10 @@ EMAIL_USE_TLS = True
 
 # JWT Configuration
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-        "dj_rest_auth.jwt_auth.JWTCookieAuthentication",  # dj-rest-auth for jwt
-    ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication'
+    ]
 }
 
 # Internationalization
@@ -184,15 +188,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 from datetime import timedelta
 
 # Custom setting for controlling token expiration
-DISABLE_TOKEN_EXPIRATION = False
+DISABLE_TOKEN_EXPIRATION = True if DEBUG else False
 ENABLE_AUTHENTICATION = True
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(days=365)
-    if DISABLE_TOKEN_EXPIRATION
-    else timedelta(minutes=3),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=365)
-    if DISABLE_TOKEN_EXPIRATION
-    else timedelta(minutes=7),
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=365) if DISABLE_TOKEN_EXPIRATION else timedelta(minutes=3),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=365) if DISABLE_TOKEN_EXPIRATION else timedelta(minutes=7),
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": False,
     "CHECK_REVOKE_TOKEN": True,
@@ -205,10 +205,6 @@ SIMPLE_JWT = {
     "TOKEN_TYPE_CLAIM": "token_type",
     "TOKEN_USER_CLASS": "rest_framework_simplejwt.models.TokenUser",
     "JTI_CLAIM": "jti",
-    # TODO: we have to add the signing key via github secrets
-    # 'ALGORITHM': 'HS256',  # Use the HMAC SHA-256 algorithm
-    # 'SIGNING_KEY':  os.environ.get('JWT_SECRET_KEY'),  # Replace with your actual signing key
-    # 'VERIFYING_KEY': None,  # Set to None if using a symmetric key (HS256)
 }
 
 # needed for reset password
@@ -216,10 +212,8 @@ PASSWORD_RESET_TIMEOUT = 900  # 900 sec=15 min
 
 # cors policy error configuration ( connection with frontend)
 CORS_ALLOWED_ORIGINS = [
-    # "https://example.com",
-    # "https://sub.example.com",
     "http://localhost:3000",
-    "http://127.0.0.1:3000",  # 3000 port is here for react app
+    "http://127.0.0.1:3000", 
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
@@ -248,7 +242,18 @@ AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
 ]
 
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'null jobs API',
+    'DESCRIPTION': 'This documentation contains all the APIs for the null jobs backend project',
+    'VERSION': '1.0.0',
+    "COMPONENT_SPLIT_REQUEST": True
+}
+
+
 # GOOGLE AUTH
 SITE_ID = 2
-MEDIA_URL = "/media/"
+MEDIA_URL = "media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
+# Set DATA_UPLOAD_MAX_NUMBER_FIELDS to a custom value
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 3000
