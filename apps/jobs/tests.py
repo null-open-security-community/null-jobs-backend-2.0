@@ -72,15 +72,15 @@ class JobViewSetsTestCase(TestCase):
             password="testpassword",
             email="testemail",
             user_type="Job Seeker",
-            # is_active=True,
         )
-        self.user.job = self.job1
+        # self.user.job = self.job1
+        # self.user.job = self.job2
         self.user.save()
-
         self.job_url = "/jobs/"
         self.client = APIClient()
         self.access_token = AccessToken.for_user(self.user)
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.access_token}")
+        self.client.force_authenticate(user=self.user)
 
     # def test_list_jobs(self):
     #     url = self.job_url
@@ -93,7 +93,9 @@ class JobViewSetsTestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_public_jobs_empty(self):
-        # Create jobs with is_created=False
+        print("Before setting is_created to False:")
+        # print("job1.is_created:", self.job1.is_created)
+        # print("job2.is_created:", self.job2.is_created)
         self.job1.is_created = False
         self.job1.save()
         self.job2.is_created = False
@@ -101,4 +103,4 @@ class JobViewSetsTestCase(TestCase):
         url = "/jobs/public_jobs/"
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 0)
+        self.assertEqual(len(response.data["data"]), 0)
