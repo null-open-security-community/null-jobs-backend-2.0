@@ -7,6 +7,7 @@ STATUS_CHOICES = (
     ("accepted", "Accepted"),
     ("rejected", "Rejected"),
     ("on-hold", "On-Hold"),
+    ("applied", "Applied")
 )
 
 GENDER = (("male", "Male"), ("female", "Female"), ("other", "Other"))
