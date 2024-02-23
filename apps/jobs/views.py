@@ -206,37 +206,56 @@ class JobViewSets(viewsets.ModelViewSet):
 
         return serialized_company_data
 
-    @action(detail=True, methods=["get"])
+    @action(detail=False, methods=["post"])
     def users(self, request, pk=None):
         """
-        API Path: /api/v1/jobs/{pk}/users
+        API Path: /api/v1/jobs/users/
         to find out how many users have applied for
-        this job using job_id.
+        this jobs posted by employer.
         """
 
-        # check if pk's value is a valid UUID
-        checkUUID = validationClass.is_valid_uuid(pk)
-        if not checkUUID:
-            return response.create_response(
-                f"value {pk} isn't a correct id", status.HTTP_404_NOT_FOUND
-            )
+        # check if the user_id belongs to employer or not
+        employer_id = request.user_id
 
-        # get the specific job or return 404 if not found
+        if not UserTypeCheck.is_user_employer(employer_id):
+            return response.create_response(
+                f"{response.PERMISSION_DENIED} You don't have permissions to access this endpoint",
+                status.HTTP_401_UNAUTHORIZED,
+            )
+        
         try:
-            jobdata = Job.objects.get(pk=pk)
-        except Exception:
-            return response.create_response(
-                "Job doesn't exist", status.HTTP_404_NOT_FOUND
-            )
-        else:
-            job_id = jobdata.job_id
-
-            # get all the users object
-            user_data = Applicants.objects.filter(job_id=job_id)
+            # Retrieve the value of "status" query param
+            applicant_status = request.data.get("status", None)
+            job_id = request.data.get("job_id", None)
+            applicants_data = Applicants.objects.filter(employer_id=employer_id)
+            
+            # check if the job_id filter is present and contains a job posted by the employer_id
+            if job_id and not validationClass.is_valid_uuid(job_id):
+                return response.create_response(
+                    "Invalid value provided to \'job_id\' field",
+                    status.HTTP_400_BAD_REQUEST
+                )
+            elif job_id:
+                applicants_data = applicants_data.filter(job_id=job_id)
+            
+            # check if status filter is present and has a valid value provided by the user
+            if applicant_status and not any(applicant_status == i[0] for i in values.STATUS_CHOICES):
+                return response.create_response(
+                    "Invalid value provided to \'status\' field",
+                    status.HTTP_400_BAD_REQUEST
+                )
+            elif applicant_status:
+                applicants_data = applicants_data.filter(status=applicant_status)
+            
             serialized_data = ApplicantsSerializer(
-                user_data, many=True, context={"request": request}
+                applicants_data, many=True, context={"request": request}
             )
             return response.create_response(serialized_data.data, status.HTTP_200_OK)
+        except Exception:
+            return response.create_response(
+                response.SOMETHING_WENT_WRONG,
+                status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     @action(detail=True, methods=["post"])
     def apply(self, request, pk=None):
@@ -594,6 +613,23 @@ class JobViewSets(viewsets.ModelViewSet):
                 response.SOMETHING_WENT_WRONG, status.HTTP_400_BAD_REQUEST
             )
 
+    @action(detail=False, methods=["get"])
+    def get_trending_keywords(self, request):
+        """
+        API: /get_trending_keywords
+        This API returns a list of trending keywords
+        """
+
+        try:
+            return response.create_response(
+                {"trending_keywords": values.trending_keywords},
+                status.HTTP_200_OK
+            )
+        except Exception:
+            return response.create_response(
+                response.SOMETHING_WENT_WRONG,
+                status.HTTP_400_BAD_REQUEST
+            )
 
 class UserViewSets(viewsets.ModelViewSet):
     """

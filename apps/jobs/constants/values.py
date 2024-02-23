@@ -7,6 +7,7 @@ STATUS_CHOICES = (
     ("accepted", "Accepted"),
     ("rejected", "Rejected"),
     ("on-hold", "On-Hold"),
+    ("applied", "Applied")
 )
 
 GENDER = (("male", "Male"), ("female", "Female"), ("other", "Other"))
@@ -20,6 +21,23 @@ JOB_TYPE = (
     ("contract", "CONTRACT"),
     ("internship", "INTERNSHIP"),
 )
+
+trending_keywords = [
+    "Research",
+    "Web Security",
+    "VA/PT",
+    "Management",
+    "Quality Assurance",
+    "Development",
+    "Consulting",
+    "Risk Assessment/Auditing",
+    "Mobile Pentesting",
+    "Security Engineer",
+    "Software Developer",
+    "Software Engineer",
+    "Malware Analyst",
+    "SOC Analyst"
+]
 
 EMPLOYER_ID = "employer_id"
 USER_ID = "user_id"
