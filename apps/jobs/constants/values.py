@@ -22,6 +22,23 @@ JOB_TYPE = (
     ("internship", "INTERNSHIP"),
 )
 
+trending_keywords = [
+    "Research",
+    "Web Security",
+    "VA/PT",
+    "Management",
+    "Quality Assurance",
+    "Development",
+    "Consulting",
+    "Risk Assessment/Auditing",
+    "Mobile Pentesting",
+    "Security Engineer",
+    "Software Developer",
+    "Software Engineer",
+    "Malware Analyst",
+    "SOC Analyst"
+]
+
 EMPLOYER_ID = "employer_id"
 USER_ID = "user_id"
 JOB_ID = "job_id"

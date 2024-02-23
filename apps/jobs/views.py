@@ -613,6 +613,23 @@ class JobViewSets(viewsets.ModelViewSet):
                 response.SOMETHING_WENT_WRONG, status.HTTP_400_BAD_REQUEST
             )
 
+    @action(detail=False, methods=["get"])
+    def get_trending_keywords(self, request):
+        """
+        API: /get_trending_keywords
+        This API returns a list of trending keywords
+        """
+
+        try:
+            return response.create_response(
+                {"trending_keywords": values.trending_keywords},
+                status.HTTP_200_OK
+            )
+        except Exception:
+            return response.create_response(
+                response.SOMETHING_WENT_WRONG,
+                status.HTTP_400_BAD_REQUEST
+            )
 
 class UserViewSets(viewsets.ModelViewSet):
     """

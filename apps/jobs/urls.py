@@ -19,7 +19,8 @@ public_apis_jobs = [
     "/jobs/get_jobs_categories/",
     "/jobs/get_jobs/",
     "/jobs/featured_jobs/",
-    "/jobs/get_posted_jobs/"
+    "/jobs/get_posted_jobs/",
+    "/jobs/get_trending_keywords/"
 ]
 
 # create a router
