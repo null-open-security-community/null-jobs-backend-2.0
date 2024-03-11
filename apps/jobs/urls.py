@@ -5,7 +5,6 @@ from apps.jobs.views import (
     CompanyViewSets,
     ContactUsViewSet,
     JobViewSets,
-    ModeratorViewSet,
     UserViewSets,
 )
 

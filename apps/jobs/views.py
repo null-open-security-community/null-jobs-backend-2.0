@@ -134,6 +134,15 @@ class JobViewSets(viewsets.ModelViewSet):
         # Add employer_id to the request.data
         request.data["employer_id"] = employer_id
 
+        # Get company_id that belongs to the employer_id
+        user_data = User.objects.filter(user_id=employer_id).first()
+        company_details = user_data.company
+        if not company_details:
+            return response.create_response(
+                "Invalid or Missing Company Details",
+                status.HTTP_404_NOT_FOUND
+            )
+        request.data["company"] = company_details.company_id
         return super().create(request, *args, **kwargs)
 
     @action(detail=False, methods=["get"], url_path="details")
@@ -413,7 +422,7 @@ class JobViewSets(viewsets.ModelViewSet):
         # `-` with column name indicates to return the result in DESC order
         try:
             jobs_data = Job.objects.filter(
-                created_at__gt=past_3_weeks_datetime, is_active=True
+                created_at__gt=past_3_weeks_datetime, is_active=True, is_created=True, is_deleted=False
             ).order_by("-created_at")
 
             jobs_posted_within_3_weeks = JobSerializer(jobs_data, many=True)
@@ -488,24 +497,22 @@ class JobViewSets(viewsets.ModelViewSet):
             return response.create_response(
                 "Job id is not valid", status.HTTP_400_BAD_REQUEST
             )
+        
         # if user is employer don't remove the job from the db table
         # else, set is_created=False and is_deleted=True
-        if UserTypeCheck.is_user_employer(request.user_id):
-            try:
-                updated_job_data = Job.objects.filter(job_id=pk)
-                updated_job_data.update(
-                    is_created=False, is_deleted=True, is_active=False
-                )
-                serialized_updated_job_data = JobSerializer(updated_job_data, many=True)
-                return response.create_response(
-                    serialized_updated_job_data.data, status.HTTP_200_OK
-                )
-            except Exception:
-                return response.create_response(
-                    response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
-
-        return super().destroy(request, *args, **kwargs)
+        try:
+            updated_job_data = Job.objects.filter(job_id=pk)
+            updated_job_data.update(
+                is_created=False, is_deleted=True, is_active=False
+            )
+            serialized_updated_job_data = JobSerializer(updated_job_data, many=True)
+            return response.create_response(
+                serialized_updated_job_data.data, status.HTTP_200_OK
+            )
+        except Exception:
+            return response.create_response(
+                response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     @action(detail=False, methods=["get"])
     def get_posted_jobs(self, request):
@@ -515,7 +522,7 @@ class JobViewSets(viewsets.ModelViewSet):
         """
 
         # Get only posted jobs
-        posted_jobs_data = Job.objects.filter(posted=True)
+        posted_jobs_data = Job.objects.filter(posted=True, is_created=True, is_deleted=False)
         page_number = request.GET.get("page", 1)  # used paginator for queryset
         paginator = Paginator(
             posted_jobs_data, values.ITEMS_PER_PAGE
@@ -566,7 +573,7 @@ class JobViewSets(viewsets.ModelViewSet):
             )  # Filter jobs with experience greater than or equal to specified value
 
         # Get the filtered jobs
-        filtered_jobs_data = Job.objects.filter(**filters, is_active=True)
+        filtered_jobs_data = Job.objects.filter(**filters, is_active=True, is_created=True, is_deleted=False)
 
         # If no jobs match the filters, return a specific response
         if not filtered_jobs_data.exists():
@@ -1225,161 +1232,3 @@ class ContactUsViewSet(viewsets.ModelViewSet):
                 return super().list(request, *args, **kwargs)
         else:
             return super().list(request, *args, **kwargs)
-
-
-class ModeratorViewSet(viewsets.ViewSet):
-    """
-    API: /api/v1/moderator-actions/
-    Functions:
-        1. list pending items (jobs or companies)
-        2. approve pending items (jobs or companies)
-        3. reject pending items (jobs or companies)
-    """
-
-    def __init__(self, **kwargs: Any) -> None:
-        self.objects = ["company", "job"]
-        super().__init__(**kwargs)
-        self._type = ""
-
-    @action(detail=False, methods=["post"], permission_classes=[Moderator])
-    def list_pending_items(self, request):
-        """
-        API: /list_pending_items/
-        Method to list unapproved jobs and companies
-        """
-
-        if response_value := self.validate_request_data(request):
-            return response_value
-
-        if self._type == "job":
-            return response.create_response(
-                self.list_pending_objects(request, Job, JobSerializer),
-                status.HTTP_200_OK,
-            )
-        elif self._type == "company":
-            return response.create_response(
-                self.list_pending_objects(request, Company, CompanySerializer),
-                status.HTTP_200_OK,
-            )
-
-    @action(detail=False, methods=["post"], permission_classes=[Moderator])
-    def approve_pending_items(self, request):
-        """
-        API: /approve_pending_items/
-        Method to set is_created=True for given object
-        """
-
-        if response_value := self.validate_request_data(request):
-            return response_value
-
-        if self._type == "job":
-            return response.create_response(
-                self.approve_pending_objects(request, Job, "job"), status.HTTP_200_OK
-            )
-        elif self._type == "company":
-            return response.create_response(
-                self.approve_pending_objects(request, Company, "company"),
-                status.HTTP_200_OK,
-            )
-
-    @action(detail=False, methods=["post"], permission_classes=[Moderator])
-    def delete_pending_items(self, request):
-        """
-        API: /delete_pending_items/
-        Method to remove records for the specific objects from
-        the database
-        """
-
-        if response_value := self.validate_request_data(request):
-            return response_value
-
-        if self._type == "job":
-            return response.create_response(
-                self.remove_pending_objects(request, Job, "job"), status.HTTP_200_OK
-            )
-        elif self._type == "company":
-            return response.create_response(
-                self.remove_pending_objects(request, Company, "company"),
-                status.HTTP_200_OK,
-            )
-
-    def validate_request_data(self, request):
-        """Method to perform checks on request.data"""
-
-        if not request.data.get("type", None):
-            return response.create_response(
-                "'type' not provided", status.HTTP_400_BAD_REQUEST
-            )
-
-        type = request.data.get("type").lower()
-        if type not in self.objects:
-            return response.create_response(
-                "wrong 'type' value specified", status.HTTP_404_NOT_FOUND
-            )
-
-        self._type = type
-
-    def list_pending_objects(self, request, model, serializer):
-        """
-        Method to list all the items that are yet to be approved
-        objects: Job and Company
-        """
-
-        try:
-            pending_objects = model.objects.filter(is_created=False)
-            pending_objects = serializer(pending_objects, many=True)
-            return pending_objects.data
-        except Exception:
-            return response.SOMETHING_WENT_WRONG
-
-    def approve_pending_objects(self, request, model, object_type):
-        """
-        Endpoint where a moderator can approve pending jobs
-        created by employer
-        """
-
-        # check if the request body contains object_id
-        object_id = object_type.lower()
-        if object_type == "job":
-            object_id = "job_id"
-        elif object_type == "company":
-            object_id = "company_id"
-
-        if object_id := request.data.get(object_id, None):
-            try:
-                # check if the given object_id belongs to the object_type
-                object_data = model.objects.filter(**{object_type: object_id}).values(
-                    "is_created"
-                )
-                if object_data and not object_data[0]["is_created"]:
-                    object_data.update(is_created=True, is_deleted=False)
-                    return f"{object_type} with id {object_id} has been approved successfully!!"
-                return f"No pending {object_type} associated with the given {object_id} exist"
-            except Exception:
-                return response.SOMETHING_WENT_WRONG
-        return f"'{object_id}' not provided"
-
-    def remove_pending_objects(self, request, model, object_type):
-        """
-        Endpoint where a moderator can delete jobs deleted by employer
-        This removes the jobs details from db as well.
-        """
-
-        object_type = object_type.lower()
-        if object_type == "job":
-            object_id = "job_id"
-        elif object_type == "company":
-            object_id = "company_id"
-
-        # check if the request body contains job_id
-        if object_id := request.data.get(object_id, None):
-            try:
-                # check if the given job_id belongs to the job object
-                object_data = model.objects.filter(**{object_type: object_id})
-                if object_data and object_data[0].is_deleted:
-                    object_data.delete()
-                    return f"{object_type} with id {object_id} has been deleted successfully!!"
-                return f"No pending {object_type} associated with the given {object_id} exist"
-            except Exception:
-                return response.SOMETHING_WENT_WRONG
-        return f"'{object_id}' not provided"
