@@ -24,7 +24,7 @@ class Company(models.Model):
     company_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )  # uuid1 uses network address for random number, so it's better to use uuid4
-    is_created = models.BooleanField(default=True, null=True, editable=False)
+    is_created = models.BooleanField(default=False, null=True, editable=False)
     is_deleted = models.BooleanField(default=False, null=True, editable=False)
     team_members = models.PositiveIntegerField(default=False, null=True)
     social_profiles = models.URLField(default=None, null=True)
@@ -61,14 +61,14 @@ class Job(models.Model):
     updated_at = models.DateTimeField(auto_now=True)  # update timestamp on every save()
     employer_id = models.UUIDField(null=False, editable=True, default=None)
     job_type = models.CharField(max_length=80, choices=JOB_TYPE, null=False)
-    salary = models.DecimalField(max_digits=9, decimal_places=2)
+    salary = models.DecimalField(max_digits=9, decimal_places=2, default=None, null=True)
     qualifications = models.CharField(max_length=60, default=None, null=True)
     vacency_position = models.IntegerField(default=None, null=False)
     industry = models.CharField(max_length=50, default=None, null=False)
     category = models.CharField(max_length=20, default=None, null=True)
     is_active = models.BooleanField(default=None, null=False)
 
-    is_created = models.BooleanField(default=True, null=True, editable=False)
+    is_created = models.BooleanField(default=False, null=True, editable=False)
     is_deleted = models.BooleanField(default=False, null=True, editable=False)
 
     # These fields will be displayed as a part of "description" field
