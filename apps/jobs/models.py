@@ -1,10 +1,11 @@
 import uuid
 
 from django.db import models
-
+import json
 from apps.accounts.models import User as UserAuth
 from apps.jobs.constants import values
 from apps.jobs.constants.values import GENDER, HIRING_STATUS, JOB_TYPE, STATUS_CHOICES
+from django.contrib.postgres.fields import JSONField
 
 
 class Company(models.Model):
@@ -115,13 +116,15 @@ class User(models.Model):
     company = models.ForeignKey(
         Company, on_delete=models.CASCADE, null=True, default=None
     )
-    user_type = models.CharField(max_length=15, default=None, null=False, editable=False)
+    user_type = models.CharField(
+        max_length=15, default=None, null=False, editable=False
+    )
     experience = models.CharField(default=0, null=True, max_length=3)
     qualification = models.TextField(max_length=500, default=None, null=True)
     gender = models.CharField(choices=GENDER, max_length=6, default=None, null=True)
     age = models.PositiveIntegerField(default=None, null=True)
     education = models.TextField(max_length=500, default=None, null=True)
-    professional_skills = models.TextField(max_length=500, default=None, null=True)
+    professional_skills = models.JSONField(max_length=500, default=None, null=True)
     hiring_status = models.CharField(
         max_length=15, choices=HIRING_STATUS, default="Not Applied Yet", null=True
     )
@@ -131,6 +134,24 @@ class User(models.Model):
     phone = models.CharField(max_length=12, default=None, null=True)
     website = models.URLField(default=None, null=True)
     social_handles = models.URLField(default=None, null=True)
+
+    def add_professional_skill(self, skill_name, last_used, year_of_experience):
+        # Check if professional_skills already exits
+        if self.professional_skills is None:
+            self.professional_skills = []
+
+        # New Skills additions.
+        self.professional_skills.append(
+            {
+                "skill_name": skill_name,
+                "last_used": last_used,
+                "year_of_experience": year_of_experience,
+            }
+        )
+        self.save()
+
+    def get_professional_skills(self):
+        return self.professional_skills
 
     def __str__(self):
         return self.name

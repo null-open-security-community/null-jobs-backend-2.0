@@ -222,39 +222,40 @@ class JobViewSets(viewsets.ModelViewSet):
                 f"{response.PERMISSION_DENIED} You don't have permissions to access this endpoint",
                 status.HTTP_401_UNAUTHORIZED,
             )
-        
+
         try:
             # Retrieve the value of "status" query param
             applicant_status = request.data.get("status", None)
             job_id = request.data.get("job_id", None)
             applicants_data = Applicants.objects.filter(employer_id=employer_id)
-            
+
             # check if the job_id filter is present and contains a job posted by the employer_id
             if job_id and not validationClass.is_valid_uuid(job_id):
                 return response.create_response(
-                    "Invalid value provided to \'job_id\' field",
-                    status.HTTP_400_BAD_REQUEST
+                    "Invalid value provided to 'job_id' field",
+                    status.HTTP_400_BAD_REQUEST,
                 )
             elif job_id:
                 applicants_data = applicants_data.filter(job_id=job_id)
-            
+
             # check if status filter is present and has a valid value provided by the user
-            if applicant_status and not any(applicant_status == i[0] for i in values.STATUS_CHOICES):
+            if applicant_status and not any(
+                applicant_status == i[0] for i in values.STATUS_CHOICES
+            ):
                 return response.create_response(
-                    "Invalid value provided to \'status\' field",
-                    status.HTTP_400_BAD_REQUEST
+                    "Invalid value provided to 'status' field",
+                    status.HTTP_400_BAD_REQUEST,
                 )
             elif applicant_status:
                 applicants_data = applicants_data.filter(status=applicant_status)
-            
+
             serialized_data = ApplicantsSerializer(
                 applicants_data, many=True, context={"request": request}
             )
             return response.create_response(serialized_data.data, status.HTTP_200_OK)
         except Exception:
             return response.create_response(
-                response.SOMETHING_WENT_WRONG,
-                status.HTTP_500_INTERNAL_SERVER_ERROR
+                response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
     @action(detail=True, methods=["post"])
@@ -327,7 +328,10 @@ class JobViewSets(viewsets.ModelViewSet):
 
         # check for status_id
         for key in ["status", "user_id"]:
-            if not (isinstance(request.data.get(key, None), str) and len(request.data.get(key)) > 0):
+            if not (
+                isinstance(request.data.get(key, None), str)
+                and len(request.data.get(key)) > 0
+            ):
                 return response.create_response(
                     f"{key} not present or invalid",
                     status.HTTP_400_BAD_REQUEST,
@@ -363,17 +367,19 @@ class JobViewSets(viewsets.ModelViewSet):
         if not applicant_data.exists():
             return response.create_response(
                 f"Given user {user_id} has not applied to job {pk}",
-                status.HTTP_400_BAD_REQUEST
+                status.HTTP_400_BAD_REQUEST,
             )
-        
+
         # Update the status of current application
         try:
             application_status = request.data["status"].lower()
-            is_status_valid = any(status_tuple[0] == application_status for status_tuple in values.STATUS_CHOICES)
+            is_status_valid = any(
+                status_tuple[0] == application_status
+                for status_tuple in values.STATUS_CHOICES
+            )
             if not is_status_valid:
                 return response.create_response(
-                    "Invalid status provided",
-                    status.HTTP_406_NOT_ACCEPTABLE
+                    "Invalid status provided", status.HTTP_406_NOT_ACCEPTABLE
                 )
             applicant_data.filter(job_id=pk, user_id=user_id).update(
                 status=application_status
@@ -622,14 +628,13 @@ class JobViewSets(viewsets.ModelViewSet):
 
         try:
             return response.create_response(
-                {"trending_keywords": values.trending_keywords},
-                status.HTTP_200_OK
+                {"trending_keywords": values.trending_keywords}, status.HTTP_200_OK
             )
         except Exception:
             return response.create_response(
-                response.SOMETHING_WENT_WRONG,
-                status.HTTP_400_BAD_REQUEST
+                response.SOMETHING_WENT_WRONG, status.HTTP_400_BAD_REQUEST
             )
+
 
 class UserViewSets(viewsets.ModelViewSet):
     """
@@ -725,6 +730,12 @@ class UserViewSets(viewsets.ModelViewSet):
 
         # get data from the request
         user_data = request.data
+        user_instance = User.objects.get(user_id=user_id)
+        professional_skills_data = request.data.get("professional_skills", None)
+        if professional_skills_data is not None:
+            # Assuming professional_skills_data is a list of dictionaries
+            user_instance.professional_skills = professional_skills_data
+            user_instance.save()
 
         # validate some data first
         try:
@@ -947,6 +958,7 @@ class UserViewSets(viewsets.ModelViewSet):
         qualification = data.get("qualification", None)
         experience = data.get("experience", None)
         address = data.get("address", None)
+        professional_skills_data = data.get("professional_skills", None)
 
         if (
             request.user.user_type.lower() == values.EMPLOYER.lower()
@@ -968,6 +980,14 @@ class UserViewSets(viewsets.ModelViewSet):
 
         if address:
             self.queryset = self.queryset.filter(address__icontains=address)
+
+        if professional_skills_data:
+            # Assuming professional_skills_data is a list of dictionaries
+            for skill_data in professional_skills_data:
+                # Assuming skill_data is a dictionary with keys 'skill_name', 'last_used', 'year_of_experience'
+                self.queryset = self.queryset.filter(
+                    professional_skills__contains=[skill_data]
+                )
 
         serialized_data = UserSerializer(self.queryset, many=True)
         return Response(serialized_data.data, status=status.HTTP_200_OK)
