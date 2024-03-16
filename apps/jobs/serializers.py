@@ -11,7 +11,7 @@ from re import findall
 
 from rest_framework import serializers
 
-from apps.jobs.models import Applicants, Company, ContactMessage, Job, User
+from apps.jobs.models import Applicants, Company, ContactMessage, Job, User, FavoriteProfiles
 
 # read_only=True allows the field to only present in the output
 # however at the time of crud opertions, it won't be present.
@@ -175,3 +175,11 @@ class ContactUsSerializer(serializers.ModelSerializer):
             except UnicodeEncodeError:
                 raise serializers.ValidationError("Message must be valid UTF-8 text.")
             return value
+
+
+class FavoriteProfilesSerializer(serializers.ModelSerializer):
+    """FavoriteProfiles object serializer class"""
+
+    class Meta:
+        model = FavoriteProfiles
+        fields = "__all__"

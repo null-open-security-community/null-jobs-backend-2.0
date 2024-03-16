@@ -6,6 +6,7 @@ from apps.jobs.views import (
     ContactUsViewSet,
     JobViewSets,
     UserViewSets,
+    FavoriteProfilesViewsets
 )
 
 # app name for namespace
@@ -28,5 +29,6 @@ router.register(r"jobs", JobViewSets)
 router.register(r"user", UserViewSets)
 router.register(r"company", CompanyViewSets)
 router.register(r"contact-us", ContactUsViewSet, basename="contact-us")
+router.register(r"favorite_profiles", FavoriteProfilesViewsets, basename="favorite_profiles")
 
 urlpatterns = [path("", include(router.urls), name="Default")]

@@ -182,3 +182,17 @@ class ContactMessage(models.Model):
 
     def __str__(self):
         return self.full_name
+
+class FavoriteProfiles(models.Model):
+    """
+    This model represents list of favorite profiles
+    belong to specific employer
+    """
+
+    class Meta:
+        db_table = "tbl_favorite_profiles"
+
+    employer = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
+    favorite_profile = models.UUIDField(null=False, editable=False, default=None)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
