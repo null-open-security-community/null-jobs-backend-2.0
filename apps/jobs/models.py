@@ -106,25 +106,22 @@ class User(models.Model):
     name = models.CharField(max_length=30, null=False)
     address = models.TextField(max_length=100, null=True, default=None)
     about = models.TextField(max_length=100, default=None, null=True)
-    job = models.ForeignKey(Job, on_delete=models.CASCADE, null=True, default=None)
     resume = models.FileField(upload_to=media_upload_path, null=True, default=None)
     profile_picture = models.FileField(
         upload_to=media_upload_path, null=True, default=None
     )
     cover_letter = models.FileField(upload_to=media_upload_path, null=True)
-    company = models.ForeignKey(
-        Company, on_delete=models.CASCADE, null=True, default=None
-    )
     user_type = models.CharField(max_length=15, default=None, null=False, editable=False)
     experience = models.CharField(default=0, null=True, max_length=3)
-    qualification = models.TextField(max_length=500, default=None, null=True)
     gender = models.CharField(choices=GENDER, max_length=6, default=None, null=True)
     age = models.PositiveIntegerField(default=None, null=True)
-    education = models.TextField(max_length=500, default=None, null=True)
-    professional_skills = models.TextField(max_length=500, default=None, null=True)
+    education = models.JSONField(default=dict, null=False)
+    professional_skills = models.JSONField(default=dict, null=False)
     hiring_status = models.CharField(
         max_length=15, choices=HIRING_STATUS, default="Not Applied Yet", null=True
     )
+    profession = models.TextField(max_length=100, default=None, null=False, blank=False)
+    work_experience = models.JSONField(default=dict, null=False)
 
     # These fields will be displayed as a part of "Contact" field
     email = models.CharField(max_length=30, null=False)
@@ -182,3 +179,17 @@ class ContactMessage(models.Model):
 
     def __str__(self):
         return self.full_name
+
+class FavoriteProfiles(models.Model):
+    """
+    This model represents list of favorite profiles
+    belong to specific employer
+    """
+
+    class Meta:
+        db_table = "tbl_favorite_profiles"
+
+    employer = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
+    favorite_profile = models.UUIDField(null=False, editable=False, default=None)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)

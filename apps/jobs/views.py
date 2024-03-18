@@ -19,13 +19,14 @@ from rest_framework.response import Response
 from apps.accounts.models import User as user_auth
 from apps.accounts.views import Moderator
 from apps.jobs.constants import response, values
-from apps.jobs.models import Applicants, Company, ContactMessage, Job, User
+from apps.jobs.models import Applicants, Company, ContactMessage, Job, User, FavoriteProfiles
 from apps.jobs.serializers import (
     ApplicantsSerializer,
     CompanySerializer,
     ContactUsSerializer,
     JobSerializer,
     UserSerializer,
+    FavoriteProfilesSerializer
 )
 from apps.jobs.utils.validators import validationClass
 
@@ -679,6 +680,9 @@ class UserViewSets(viewsets.ModelViewSet):
                 raise Exception
 
             serialized_user_data = UserSerializer(user_data, many=True)
+            for user_data in serialized_user_data.data:
+                is_favorite_profile = FavoriteProfiles.objects.filter(employer_id=request.user_id, favorite_profile=user_data.get("user_id"))
+                user_data.update({"favorite_profile": is_favorite_profile.exists()})
             return response.create_response(
                 serialized_user_data.data, status.HTTP_200_OK
             )
@@ -1212,3 +1216,90 @@ class ContactUsViewSet(viewsets.ModelViewSet):
                 return super().list(request, *args, **kwargs)
         else:
             return super().list(request, *args, **kwargs)
+        
+
+class FavoriteProfilesViewsets(viewsets.ModelViewSet):
+    """
+    API: /api/v1/favorite_profiles/
+    Methods: GET, POST
+    Operations:
+    1. List favorite profiles of an employer
+    2. Add a specific profile to your favorite profile list
+
+    Note: Only an user with user_type == "employer" can hit this
+    API, for a job seeker, this would return in 400-404 response
+    status code. 
+    """
+
+    queryset = FavoriteProfiles.objects.all()
+    serializer_class = FavoriteProfilesSerializer
+
+    def list(self, request, *args, **kwargs):
+        """Return list of favorite profiles"""
+
+        # Check if the user_id belongs to the employer
+        if not UserTypeCheck.is_user_employer(request.user_id):
+            return response.create_response(
+                "You are not allowed to perform this operation",
+                status.HTTP_401_UNAUTHORIZED
+            )
+
+        try:
+            favorite_profiles_data = self.queryset.filter(employer_id=request.user_id)
+            serializer_data = self.serializer_class(favorite_profiles_data, many=True)
+            return response.create_response(
+                serializer_data.data,
+                status.HTTP_200_OK
+            )
+        except Exception:
+            return response.create_response(
+                "Something Went Wrong",
+                status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=False, methods=['post'])
+    def add_candidate(self, request):
+        """
+        API: /add_candidate
+        Adds a candidate to the list of favorite_profiles of employer
+        """
+
+        # Check if the user_id belongs to the employer
+        if not UserTypeCheck.is_user_employer(request.user_id):
+            return response.create_response(
+                "You are not allowed to perform this operation",
+                status.HTTP_401_UNAUTHORIZED
+            )
+
+        # check if candidate_id contains a valid uuid
+        candidate_id = request.data.get("candidate_id", None)
+        if not (candidate_id and validationClass.is_valid_uuid(candidate_id)):
+            return response.create_response(
+                "Invalid or Missing \'candidate_id\' key in the request",
+                status.HTTP_400_BAD_REQUEST
+            )
+
+        # check if candidate_id belongs to a Job_Seeker
+        if not User.objects.filter(user_id=candidate_id).exists():
+            return response.create_response(
+                "Given \'candidate_id\' does not belong to any user profile",
+                status.HTTP_404_NOT_FOUND
+            )
+
+        # If all the above checks are passed, add the candidate_id to employer's favorite_profiles
+        data = {
+            "employer_id": request.user_id,
+            "favorite_profile": candidate_id
+        }
+
+        try:
+            FavoriteProfiles.objects.update_or_create(**data)
+            return response.create_response(
+                f"Candidate id \'{candidate_id}\' successfully added to your favorite profiles",
+                status.HTTP_200_OK
+            )
+        except (ValidationError, IntegrityError, Exception):
+            return response.create_response(
+                "Something Went Wrong",
+                status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
