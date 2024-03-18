@@ -122,21 +122,22 @@ class UserSerializer(serializers.ModelSerializer):
         if data:
             # Extract the URLs from social handles
             try:
+                instance.social_handles = data.pop("social_handles", "")
                 if instance.social_handles:
                     found_url_patterns = findall(
-                        "((https?:\/\/)?[\w\.\/?=]+)", data.pop("social_handles", "")
+                        "((https?:\/\/)?[\w\.\/?=]+)", instance.social_handles
                     )
                     if found_url_patterns:
                         instance.social_handles = [url[0] for url in found_url_patterns]
 
                 data.update(
                     {
-                        "Contact": {
-                            "Address": data.pop("address", None),
-                            "Phone": data.pop("phone", None),
-                            "Website": data.pop("website", None),
-                            "Email": data.pop("email", None),
-                            "Social Handles": instance.social_handles,
+                        "contact": {
+                            "address": data.pop("address", None),
+                            "phhone": data.pop("phone", None),
+                            "website": data.pop("website", None),
+                            "email": data.pop("email", None),
+                            "social_handles": instance.social_handles,
                         }
                     }
                 )
