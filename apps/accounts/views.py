@@ -14,6 +14,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
+from drf_spectacular.utils import extend_schema
 
 from apps.accounts.models import *
 from apps.accounts.renderers import UserRenderer
@@ -119,6 +120,7 @@ def generate_guest_token(user, purpose):
 class UserRegistrationView(APIView):
     renderer_classes = [UserRenderer]
 
+    @extend_schema(request=UserRegistrationSerializer, tags=["auth"])
     def post(self, request, format=None):
         serializer = UserRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -159,6 +161,7 @@ class UserRegistrationView(APIView):
 class OTPVerificationCheckView(APIView):
     renderer_classes = [UserRenderer]
 
+    @extend_schema(request=OTPVerificationCheckSerializer, tags=["auth"])
     def post(self, request, format=None):
         dummy_token = request.query_params.get("token")
         try:
@@ -189,6 +192,11 @@ class OTPVerificationCheckView(APIView):
 class UserLoginView(APIView):
     renderer_classes = [UserRenderer]
 
+    @extend_schema(
+        request=UserLoginSerializer,
+        responses={200: UserLoginResponseSerializer},
+        tags=["auth"]
+    )
     def post(self, request, format=None):
         serializer = UserLoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -220,6 +228,7 @@ class UserProfileView(APIView):
     renderer_classes = [UserRenderer]
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(responses={200: UserProfileSerializer}, tags=["auth"])
     def get(self, request, format=None):
         serializer = UserProfileSerializer(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -230,28 +239,20 @@ class UserLogOutView(APIView):
     renderer_classes = [UserRenderer]
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(tags=["auth"])
     def post(self, request, format=None):
-        # breakpoint()
         try:
-            # token = request.META['HTTP_AUTHORIZATION'].split(' ')[1]
-            # print(token)
-            # access_token = AccessToken(token)
-            # access_token.set_exp(lifetime=datetime.timedelta(minutes=1))
-            # print(access_token)
-            # breakpoint()
             refresh_token = request.data["refresh_token"]
             token_obj = RefreshToken(refresh_token)
             token_obj.blacklist()
             return Response(
-                {
-                    "msg": "LogOut Successfully",
-                    # "token":access_token,
-                },
+                {"msg": "LogOut Successfully"},
                 status=status.HTTP_200_OK,
             )
         except Exception as e:
             return Response(
-                {"errors": {"msg": str(e)}}, status=status.HTTP_400_BAD_REQUEST
+                {"errors": {"msg": str(e)}}, 
+                status=status.HTTP_400_BAD_REQUEST
             )
 
 
@@ -259,6 +260,10 @@ class UserLogOutView(APIView):
 class SendPasswordResetOTPView(APIView):
     renderer_classes = [UserRenderer]
 
+    @extend_schema(
+        request=SendPasswordResetOTPSerializer,
+        tags=["auth"]
+    )
     def post(self, request, format=None):
         serializer = SendPasswordResetOTPSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -277,6 +282,7 @@ class SendPasswordResetOTPView(APIView):
 class ResetPasswordOtpVerifyView(APIView):
     renderer_classes = [UserRenderer]
 
+    @extend_schema(tags=["auth"])
     def post(self, request, format=None):
         dummy_token = request.query_params.get("token")
         try:
@@ -305,6 +311,10 @@ class ResetPasswordOtpVerifyView(APIView):
 class UserPasswordResetView(APIView):
     renderer_classes = [UserRenderer]
 
+    @extend_schema(
+        request=UserPasswordResetSerializer,
+        tags=["auth"]
+    )
     def post(self, request, format=None):
         uid = request.query_params.get("uid")
         token = request.query_params.get("token")
@@ -326,6 +336,10 @@ class UserChangePasswordView(APIView):
     renderer_classes = [UserRenderer]
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        request=UserChangePasswordSerializer,
+        tags=["auth"]
+    )
     def post(self, request, format=None):
         serializer = UserChangePasswordSerializer(
             data=request.data, context={"user": request.user}
@@ -341,6 +355,10 @@ class UserChangePasswordOTPView(APIView):
     renderer_classes = [UserRenderer]
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        request=UserChangePasswordOTPSerializer,
+        tags=["auth"]
+    )
     def post(self, request, format=None):
         serializer = UserChangePasswordOTPSerializer(
             data=request.data, context={"user": request.user}
@@ -440,14 +458,6 @@ class CallbackHandleView(APIView):
                 {"msg": "There was an error authenticating the user"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-
-
-class RestrictedPage(APIView):
-    renderer_classes = [UserRenderer]
-    permission_classes = [IsAuthenticated] if settings.ENABLE_AUTHENTICATION else []
-
-    def get(self, request, format=None):
-        return Response({"msg": "I am a restricted page"}, status=status.HTTP_200_OK)
 
 
 class Moderator(BasePermission):

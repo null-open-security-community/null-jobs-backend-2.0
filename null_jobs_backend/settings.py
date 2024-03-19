@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # DRY RUN
-DRY_RUN = os.environ.get("DRY_RUN") == "True"
+DRY_RUN = os.environ.get("DRY_RUN", "") == "True"
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -52,7 +52,7 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",  # used to blacklist the refresh token
-    "drf_yasg",
+    "drf_spectacular",
     "apps.accounts",
     "apps.jobs",
     "django_filters",
@@ -156,10 +156,7 @@ EMAIL_USE_TLS = True
 
 # JWT Configuration
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-        "dj_rest_auth.jwt_auth.JWTCookieAuthentication",  # dj-rest-auth for jwt
-    ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema'
 }
 
 # Internationalization
@@ -250,6 +247,24 @@ AUTHENTICATION_BACKENDS = [
     # Needed to login by username in Django admin, regardless of `allauth`
     "django.contrib.auth.backends.ModelBackend",
 ]
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'null jobs API',
+    'DESCRIPTION': 'This documentation contains all the APIs for the null jobs backend project',
+    'VERSION': '1.0.0',
+    "APPEND_COMPONENTS": {
+        "securitySchemes": {
+            "BearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "in": "header",
+                "name": "Authorization"
+            }
+        }
+    },
+    'SECURITY': [{"BearerAuth": [], }]
+}
+
 
 # GOOGLE AUTH
 SITE_ID = 2
