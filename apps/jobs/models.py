@@ -120,7 +120,7 @@ class User(models.Model):
     hiring_status = models.CharField(
         max_length=15, choices=HIRING_STATUS, default="Not Applied Yet", null=True
     )
-    profession = models.TextField(max_length=100, default=None, null=False, blank=False)
+    profession = models.TextField(max_length=100, default=None, null=True)
     work_experience = models.JSONField(default=dict, null=False)
 
     # These fields will be displayed as a part of "Contact" field
@@ -140,6 +140,7 @@ class User(models.Model):
 
         if override_uuid and values.USER_ID in override_uuid:
             self.user_id = override_uuid[values.USER_ID]
+
         super(User, self).save(*args, **kwargs)
 
 

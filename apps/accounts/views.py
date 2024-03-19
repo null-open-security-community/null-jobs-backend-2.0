@@ -110,7 +110,8 @@ def generate_guest_token(user, purpose):
         This otp is valid only for 5 minutes.
         """
     data = {"subject": subject, "body": body, "to_email": user.email}
-    Util.send_email(data)
+    if not settings.DRY_RUN:
+        Util.send_email(data)
     return token
 
 
@@ -139,7 +140,8 @@ class UserRegistrationView(APIView):
         try:
             user_instance = user_profile(**dummy_data)
             user_instance.custom_save(override_uuid={"uuid": dummy_data["user_id"]})
-        except Exception:
+        except Exception as e:
+            print(e)
             return Response(
                 {"msg": "Something went wrong"}, status=status.HTTP_400_BAD_REQUEST
             )

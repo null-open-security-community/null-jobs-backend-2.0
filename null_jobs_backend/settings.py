@@ -17,6 +17,9 @@ from dotenv import load_dotenv
 # Load variables from .env
 load_dotenv()
 
+# DRY RUN
+DRY_RUN = os.environ.get("DRY_RUN") == "True"
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 

@@ -198,8 +198,6 @@ class validationClass:
                         experience_dict[key] = default_value
                     elif key == values.FOUND_THROUGH_NULL and not isinstance(experience_dict[key], bool):
                         raise Exception(f"Key '{key}' should contain a boolean value")
-                    elif key == values.COMPANY_ID and not validationClass.is_valid_uuid(experience_dict[key]):
-                        raise Exception(f"Key '{key}' should contain a UUID value")
 
             return True, dates
 

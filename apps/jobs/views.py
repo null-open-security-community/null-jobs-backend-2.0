@@ -15,6 +15,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from drf_yasg.utils import swagger_auto_schema
 
 from apps.accounts.models import User as user_auth
 from apps.accounts.views import Moderator
@@ -613,7 +614,7 @@ class JobViewSets(viewsets.ModelViewSet):
                 )
 
             return response.create_response(
-                "No jobs are present right now", status.HTTP_200_OK
+                [], status.HTTP_200_OK
             )
 
         except Exception:
@@ -686,7 +687,8 @@ class UserViewSets(viewsets.ModelViewSet):
             return response.create_response(
                 serialized_user_data.data, status.HTTP_200_OK
             )
-        except Exception:
+        except Exception as e:
+            print(e)
             return response.create_response(
                 response.SOMETHING_WENT_WRONG, status.HTTP_400_BAD_REQUEST
             )

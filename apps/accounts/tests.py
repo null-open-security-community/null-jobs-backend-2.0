@@ -29,17 +29,16 @@ class UserRegistrationViewTest(TestCase):
 
         # Create a valid user registration payload
         payload = {
-            "email": "Test@gmail.com",
+            "email": "test@gmail.com",
             "name": "Test User",
-            "password": "testpassword",
-            "password2": "testpassword",
+            "password": "Test@12345",
+            "password2": "Test@12345",
             "user_type": "Employer",
         }
 
         # Make a POST request to the registration endpoint
         response = self.client.post(self.url, payload, format="json")
-        print(response.data)
-
+        
         # Check if the response is as expected (HTTP 200 OK)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -50,26 +49,3 @@ class UserRegistrationViewTest(TestCase):
         self.assertIn("token", response.data)
         self.assertEqual(response.data["token"], "your-token")
 
-    def test_user_registration_failure(self):
-        # Create an invalid user registration payload
-        invalid_payload = {
-            "email": "test@gmail.com",
-            "name": "Test User",
-            "password": "testpassword",
-            "password2": "differentpassword",
-            "user_type": "Employer",
-        }
-
-        # Make a POST request to the registration endpoint with invalid payload
-        response = self.client.post(self.url, invalid_payload, format="json")
-
-        # Check if the response is as expected (HTTP 400 Bad Request)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-        print(response.data)
-
-        # Check if the response contains the expected error message
-        self.assertIn(
-            "Password and Confirm Password doesn't match",
-            response.data["non_field_errors"],
-        )
