@@ -14,7 +14,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 from apps.accounts.models import *
 from apps.accounts.renderers import UserRenderer
@@ -99,6 +99,11 @@ def generate_guest_token(user, purpose):
         user.otp_secret = secret
         user.save()
 
+    # in case of dry run the otps are a part of logs
+    # instead of the emails
+    if settings.DRY_RUN:
+        print(otp)
+
     # Send Email
     if purpose == "verify":
         subject = "Verify your account"
@@ -120,7 +125,11 @@ def generate_guest_token(user, purpose):
 class UserRegistrationView(APIView):
     renderer_classes = [UserRenderer]
 
-    @extend_schema(request=UserRegistrationSerializer, tags=["auth"])
+    @extend_schema(
+        request=UserRegistrationSerializer, 
+        responses={200: UserRegistrationResponseSerializer},
+        tags=["auth"], auth=[]
+    )
     def post(self, request, format=None):
         serializer = UserRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -145,7 +154,8 @@ class UserRegistrationView(APIView):
         except Exception as e:
             print(e)
             return Response(
-                {"msg": "Something went wrong"}, status=status.HTTP_400_BAD_REQUEST
+                {"msg": "Something went wrong"}, 
+                status=status.HTTP_400_BAD_REQUEST
             )
 
         return Response(
@@ -161,19 +171,29 @@ class UserRegistrationView(APIView):
 class OTPVerificationCheckView(APIView):
     renderer_classes = [UserRenderer]
 
-    @extend_schema(request=OTPVerificationCheckSerializer, tags=["auth"])
+    @extend_schema(
+        request=OTPVerificationCheckSerializer, 
+        tags=["auth"], auth=[],
+        parameters=[OpenApiParameter(
+            name='token',
+            type=str, required=True, 
+            description='Verification token created while registration.'
+        )]
+    )
     def post(self, request, format=None):
         dummy_token = request.query_params.get("token")
+
         try:
             payload = TokenUtility.verify_and_get_payload(dummy_token)
-            # print(payload)
         except InvalidToken as e:
             return Response(
-                {"errors": {"token": str(e)}}, status=status.HTTP_401_UNAUTHORIZED
+                {"errors": {"token": str(e)}}, 
+                status=status.HTTP_401_UNAUTHORIZED
             )
         except TokenError as e:
             return Response(
-                {"errors": {"token": str(e)}}, status=status.HTTP_400_BAD_REQUEST
+                {"errors": {"token": str(e)}}, 
+                status=status.HTTP_400_BAD_REQUEST
             )
 
         serializer = OTPVerificationCheckSerializer(
@@ -182,6 +202,7 @@ class OTPVerificationCheckView(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
         token = TokenUtility.get_tokens_for_user(user)
+        
         return Response(
             {"msg": "OTP Verified Successfully!", "token": token},
             status=status.HTTP_201_CREATED,
@@ -195,7 +216,7 @@ class UserLoginView(APIView):
     @extend_schema(
         request=UserLoginSerializer,
         responses={200: UserLoginResponseSerializer},
-        tags=["auth"]
+        tags=["auth"], auth=[]
     )
     def post(self, request, format=None):
         serializer = UserLoginSerializer(data=request.data)
