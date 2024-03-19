@@ -27,7 +27,7 @@ class ValidateRequest:
 
         self.get_response = get_response
         self.response_obj = response
-        self.excluded_paths = ["/api/docs/"]
+        self.excluded_paths = ["/api/docs/", "/api/schema/", "/api/redoc/"]
         self.excluded_paths.extend(public_apis_accounts)
         self.excluded_paths.extend(public_apis_jobs)
 

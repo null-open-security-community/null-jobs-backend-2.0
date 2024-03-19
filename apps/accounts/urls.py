@@ -30,7 +30,6 @@ public_apis_accounts = [
     "/token/refresh/",
     "/token/verify/",
     "/otp/verify/",
-    "/restricted/",
 ]
 
 urlpatterns = [
@@ -42,7 +41,6 @@ urlpatterns = [
     path("login/", UserLoginView.as_view(), name="login"),
     path("profile/", UserProfileView.as_view(), name="profile"),
     path("logout/", UserLogOutView.as_view(), name="logout"),
-    path("restricted/", RestrictedPage.as_view(), name="restricted"),
     path(
         "forget-password/",
         SendPasswordResetOTPView.as_view(),

@@ -69,6 +69,15 @@ class UserLoginSerializer(serializers.ModelSerializer):
         model = User
         fields = ["email", "password"]
 
+class TokenSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+    access = serializers.CharField()
+
+class UserLoginResponseSerializer(serializers.Serializer):
+    token = TokenSerializer()
+    msg = serializers.CharField()
+    verify = serializers.BooleanField()
+
 
 # Serializer for showing User profile
 class UserProfileSerializer(serializers.ModelSerializer):
