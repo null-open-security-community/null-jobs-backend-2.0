@@ -15,7 +15,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from drf_yasg.utils import swagger_auto_schema
+from rest_framework.exceptions import MethodNotAllowed
+from drf_spectacular.utils import extend_schema
 
 from apps.accounts.models import User as user_auth
 from apps.accounts.views import Moderator
@@ -639,6 +640,7 @@ class JobViewSets(viewsets.ModelViewSet):
                 response.SOMETHING_WENT_WRONG,
                 status.HTTP_400_BAD_REQUEST
             )
+        
 
 class UserViewSets(viewsets.ModelViewSet):
     """
@@ -654,6 +656,10 @@ class UserViewSets(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
+    @extend_schema(exclude=True)
+    def create(self, request, *args, **kwargs):
+        raise MethodNotAllowed("POST")
+
     def list(self, request, *args, **kwargs):
         """
         API: /users/
@@ -668,6 +674,7 @@ class UserViewSets(viewsets.ModelViewSet):
         user_data = None
 
         try:
+            print(request.user)
             if (
                 request.user.user_type.lower() == values.EMPLOYER.lower()
                 and not request.user.is_moderator

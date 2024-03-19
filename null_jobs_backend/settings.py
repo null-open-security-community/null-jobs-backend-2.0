@@ -45,13 +45,12 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "django.contrib.sites",  # needed for oauth very importatnt
-    "dj_rest_auth",  # use for google authentication
+    "django.contrib.sites",
     "corsheaders",
     "rest_framework",
     "rest_framework.authtoken",
     "rest_framework_simplejwt",
-    "rest_framework_simplejwt.token_blacklist",  # used to blacklist the refresh token
+    "rest_framework_simplejwt.token_blacklist",
     "drf_spectacular",
     "apps.accounts",
     "apps.jobs",
@@ -137,15 +136,6 @@ GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
 GOOGLE_SECRET_KEY = os.environ.get("GOOGLE_OAUTH_SECRET")
 GOOGLE_REDIRECT_URI = os.environ.get("GOOGLE_REDIRECT_URI")
 
-# dj-rest-auth setting
-JWT_AUTH_SECURE = True
-REST_USE_JWT = True
-JWT_AUTH_COOKIE = "access_token"
-JWT_AUTH_REFRESH_COOKIE = "refresh-token"
-
-
-USE_JWT = True
-
 EMAIL_HOST = os.getenv("EMAIL_HOST")
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
@@ -156,7 +146,10 @@ EMAIL_USE_TLS = True
 
 # JWT Configuration
 REST_FRAMEWORK = {
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema'
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication'
+    ]
 }
 
 # Internationalization
@@ -184,15 +177,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 from datetime import timedelta
 
 # Custom setting for controlling token expiration
-DISABLE_TOKEN_EXPIRATION = False
+DISABLE_TOKEN_EXPIRATION = True if DEBUG else False
 ENABLE_AUTHENTICATION = True
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(days=365)
-    if DISABLE_TOKEN_EXPIRATION
-    else timedelta(minutes=3),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=365)
-    if DISABLE_TOKEN_EXPIRATION
-    else timedelta(minutes=7),
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=365) if DISABLE_TOKEN_EXPIRATION else timedelta(minutes=3),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=365) if DISABLE_TOKEN_EXPIRATION else timedelta(minutes=7),
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": False,
     "CHECK_REVOKE_TOKEN": True,
@@ -205,10 +194,6 @@ SIMPLE_JWT = {
     "TOKEN_TYPE_CLAIM": "token_type",
     "TOKEN_USER_CLASS": "rest_framework_simplejwt.models.TokenUser",
     "JTI_CLAIM": "jti",
-    # TODO: we have to add the signing key via github secrets
-    # 'ALGORITHM': 'HS256',  # Use the HMAC SHA-256 algorithm
-    # 'SIGNING_KEY':  os.environ.get('JWT_SECRET_KEY'),  # Replace with your actual signing key
-    # 'VERIFYING_KEY': None,  # Set to None if using a symmetric key (HS256)
 }
 
 # needed for reset password
@@ -216,10 +201,8 @@ PASSWORD_RESET_TIMEOUT = 900  # 900 sec=15 min
 
 # cors policy error configuration ( connection with frontend)
 CORS_ALLOWED_ORIGINS = [
-    # "https://example.com",
-    # "https://sub.example.com",
     "http://localhost:3000",
-    "http://127.0.0.1:3000",  # 3000 port is here for react app
+    "http://127.0.0.1:3000", 
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
@@ -251,18 +234,7 @@ AUTHENTICATION_BACKENDS = [
 SPECTACULAR_SETTINGS = {
     'TITLE': 'null jobs API',
     'DESCRIPTION': 'This documentation contains all the APIs for the null jobs backend project',
-    'VERSION': '1.0.0',
-    "APPEND_COMPONENTS": {
-        "securitySchemes": {
-            "BearerAuth": {
-                "type": "http",
-                "scheme": "bearer",
-                "in": "header",
-                "name": "Authorization"
-            }
-        }
-    },
-    'SECURITY': [{"BearerAuth": [], }]
+    'VERSION': '1.0.0'
 }
 
 
