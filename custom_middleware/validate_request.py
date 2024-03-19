@@ -83,7 +83,6 @@ class ValidateRequest:
         """
 
         # check for excluded paths
-        print(request.path)
         if request.path in self.excluded_paths:
             return (0, "Rejecting Authorization Token check")
 
