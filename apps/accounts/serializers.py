@@ -34,6 +34,13 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return User.objects.create_user(**validate_data)
 
 
+
+class UserRegistrationResponseSerializer(serializers.Serializer):
+    msg = serializers.CharField()
+    url = serializers.CharField()
+    token = serializers.CharField()
+
+
 class OTPVerificationCheckSerializer(serializers.Serializer):
     # email = serializers.EmailField(max_length=255)
     otp = serializers.CharField(max_length=6, style={"input_type": "text"})
