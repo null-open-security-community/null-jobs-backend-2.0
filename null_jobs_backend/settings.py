@@ -39,6 +39,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 # Application definition
 
 INSTALLED_APPS = [
+    # django default applications
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -46,16 +47,27 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.sites",
+
+    # cors 
     "corsheaders",
+
+    # rest framework applications
     "rest_framework",
     "rest_framework.authtoken",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
+
+    # swagger app
     "drf_spectacular",
+
+    # business view applications
     "apps.accounts",
     "apps.jobs",
+    "apps.applicants",
+    "apps.userprofile",
+
+    # extras for views filtering
     "django_filters",
-    "custom_middleware",
 ]
 
 MIDDLEWARE = [
@@ -66,8 +78,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "custom_middleware.validate_request.ValidateRequest",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware"
 ]
 
 ROOT_URLCONF = "null_jobs_backend.urls"
@@ -234,7 +245,8 @@ AUTHENTICATION_BACKENDS = [
 SPECTACULAR_SETTINGS = {
     'TITLE': 'null jobs API',
     'DESCRIPTION': 'This documentation contains all the APIs for the null jobs backend project',
-    'VERSION': '1.0.0'
+    'VERSION': '1.0.0',
+    "COMPONENT_SPLIT_REQUEST": True
 }
 
 
@@ -242,3 +254,6 @@ SPECTACULAR_SETTINGS = {
 SITE_ID = 2
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
+# Set DATA_UPLOAD_MAX_NUMBER_FIELDS to a custom value
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 3000
