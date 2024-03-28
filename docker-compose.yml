@@ -1,27 +1,17 @@
 version: '3.9'
 
 services:
-  webserver:
-    image: caddy:2.7.4-alpine
-    ports:
-      - 80:80
-      - 443:443
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-    restart: unless-stopped
-
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    command: bash run.sh
+    command: tail -f /dev/null
     image: null-jobs-backend
     ports:
       - "8000:8000"
+    restart: unless-stopped
     volumes:
       - .:/workspace
-    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
