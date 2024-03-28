@@ -27,6 +27,12 @@ jobs:
         pip install -r requirements.txt
     - name: Run Tests
       run: |
-        python manage.py makemigrations --settings=null_jobs_backend.test_settings
-        python manage.py migrate --settings=null_jobs_backend.test_settings
+        python manage.py makemigrations --settings=null_jobs_backend.test_settings accounts
+        python manage.py makemigrations --settings=null_jobs_backend.test_settings userprofile
+        python manage.py makemigrations --settings=null_jobs_backend.test_settings jobs
+        python manage.py makemigrations --settings=null_jobs_backend.test_settings applicants
+        python manage.py migrate --settings=null_jobs_backend.test_settings accounts
+        python manage.py migrate --settings=null_jobs_backend.test_settings userprofile
+        python manage.py migrate --settings=null_jobs_backend.test_settings jobs
+        python manage.py migrate --settings=null_jobs_backend.test_settings applicants
         python manage.py test --settings=null_jobs_backend.test_settings
