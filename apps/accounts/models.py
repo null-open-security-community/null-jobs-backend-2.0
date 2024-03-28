@@ -42,7 +42,7 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    email = models.EmailField(max_length=255, unique=True, editable=False)
+    email = models.EmailField(max_length=255, unique=True)
     name = models.CharField(max_length=200)
 
     is_profile_completed = models.BooleanField(default=False, editable=False)

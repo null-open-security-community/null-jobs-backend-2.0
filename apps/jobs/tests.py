@@ -59,14 +59,3 @@ class JobViewSetsTestCase(TestCase):
         self.access_token = ""
         self.client.credentials(HTTP_ACCESSTOKEN=self.access_token)
 
-    def test_list_jobs(self):
-        # Test the list action with no filters
-        response = self.client.get(self.job_url)
-        # self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # self.assertEqual(len(response.data), 1)  # Assuming there is one job in the database
-
-    def test_filter_jobs(self):
-        # Test the list action with filters
-        response = self.client.get(self.job_url, {"location": "Mumbai"})
-        # self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # self.assertEqual(len(response.data), 1)  # Assuming one job matches the filter

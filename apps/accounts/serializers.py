@@ -30,7 +30,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validate_data):
-        # print(validate_data)
+        print(validate_data)
         return User.objects.create_user(**validate_data)
 
 
