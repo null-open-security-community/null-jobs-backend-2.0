@@ -1,24 +1,11 @@
-"""
-This file contains serializers for Job, company and user object
-and an implementation of uuid id hex value.
-
-Note: the argumment `read_only=True` allows the field to only present
-in the output. However at the time of crud opertions, it won't be present.
-"""
-
-import uuid
 from re import findall
-
 from rest_framework import serializers
 
-from apps.jobs.models import Applicants, Company, ContactMessage, Job, User
-
-# read_only=True allows the field to only present in the output
-# however at the time of crud opertions, it won't be present.
-
+from apps.jobs.models import Company, ContactMessage, Job
 
 class JobSerializer(serializers.ModelSerializer):
     """Job object serializer class"""
+    total_applicants = serializers.IntegerField(read_only=True)
 
     class Meta:
         """
@@ -31,6 +18,7 @@ class JobSerializer(serializers.ModelSerializer):
 
         model = Job
         fields = "__all__"
+        read_only_fields = ["employer_id", "company"]
 
     def to_representation(self, instance):
         """
@@ -48,12 +36,12 @@ class JobSerializer(serializers.ModelSerializer):
                 data.update(
                     {
                         "description": {
-                            "About": data.pop("description", None),
-                            "Job Responsibilities": data.pop(
+                            "about": data.pop("about", None),
+                            "job_responsibilities": data.pop(
                                 "job_responsibilities", None
                             ),
-                            "Skills Required": data.pop("skills_required", None),
-                            "Educations/Certifications": data.pop(
+                            "skills_required": data.pop("skills_required", None),
+                            "education_or_certifications": data.pop(
                                 "education_or_certifications", None
                             ),
                         }
@@ -103,64 +91,6 @@ class CompanySerializer(serializers.ModelSerializer):
         return data
 
 
-class UserSerializer(serializers.ModelSerializer):
-    """User object serializer class"""
-
-    class Meta:
-        model = User
-        fields = "__all__"
-
-    def to_representation(self, instance):
-        """
-        Here, this method is used to combine some fields into one, and exclude
-        those fields. Also, we are handling one case to represent social_handles
-        as a list of strings
-        """
-
-        data = super().to_representation(instance)
-
-        if data:
-            # Extract the URLs from social handles
-            try:
-                if instance.social_handles:
-                    found_url_patterns = findall(
-                        "((https?:\/\/)?[\w\.\/?=]+)", data.pop("social_handles", "")
-                    )
-                    if found_url_patterns:
-                        instance.social_handles = [url[0] for url in found_url_patterns]
-
-                data.update(
-                    {
-                        "Contact": {
-                            "Address": data.pop("address", None),
-                            "Phone": data.pop("phone", None),
-                            "Website": data.pop("website", None),
-                            "Email": data.pop("email", None),
-                            "Social Handles": instance.social_handles,
-                        }
-                    }
-                )
-
-            except Exception as err:
-                # We can also raise an exception here but this time, I am returning
-                # error message in the data
-                data = {
-                    "error": {
-                        "message": f"Something Went Wrong\n\nReason: {err.__str__()}"
-                    }
-                }
-
-        return data
-
-
-class ApplicantsSerializer(serializers.ModelSerializer):
-    """Applicants object serializer class"""
-
-    class Meta:
-        model = Applicants
-        fields = "__all__"
-
-
 class ContactUsSerializer(serializers.ModelSerializer):
     """Contact us object serializer class"""
 
@@ -175,3 +105,4 @@ class ContactUsSerializer(serializers.ModelSerializer):
             except UnicodeEncodeError:
                 raise serializers.ValidationError("Message must be valid UTF-8 text.")
             return value
+        

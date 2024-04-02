@@ -58,3 +58,15 @@ PAST_3_WEEK_DATETIME_DAYS18 = 18
 EMPLOYER = "Employer"
 JOB_SEEKER = "Job Seeker"
 MODERATOR = "Moderator"
+
+# keys required for work_experience field in User Model
+FROM = "from"
+TILL = "till"
+DESIGNATION = "designation"
+COMPANY_NAME = "company_name"
+DESCRIPTION = "description"
+FOUND_THROUGH_NULL = "found_through_null"
+COMPANY_ID = "company_id"
+
+WORK_EXPERIENCE_REQUIRED_FIELDS = (FROM, TILL, DESIGNATION, COMPANY_NAME)
+WORK_EXPERIENCE_OPTIONAL_FIELDS = {DESCRIPTION: None, FOUND_THROUGH_NULL: False, COMPANY_ID: "N/A"}

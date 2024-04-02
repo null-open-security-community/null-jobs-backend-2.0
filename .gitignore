@@ -5,3 +5,6 @@ db.sqlite3
 
 apps/accounts/migrations/*
 apps/jobs/migrations/*
+apps/userprofile/migrations/*
+apps/applicants/migrations/*
+media
