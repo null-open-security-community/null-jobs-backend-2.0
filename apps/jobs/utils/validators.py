@@ -1,5 +1,6 @@
 import re
 import uuid
+from datetime import datetime
 
 from django.core.exceptions import ValidationError
 from django.core.validators import (
@@ -8,7 +9,7 @@ from django.core.validators import (
     MinValueValidator,
     URLValidator,
 )
-from datetime import datetime
+
 from apps.jobs.constants import values
 
 
@@ -138,7 +139,7 @@ class validationClass:
         """
 
         # Remove sensitive fields from the data
-        validationClass.remove_sensitive_fields(data) 
+        validationClass.remove_sensitive_fields(data)
 
         def validate_email(email):
             """
@@ -151,10 +152,10 @@ class validationClass:
                 raise ValidationError(
                     f"Invalid email value provided\n\nReason: {err.__str__()}"
                 )
-            
+
         def validate_work_experience(work_experience: dict):
             """Validate the fields present in work_experience
-            Structure: 
+            Structure:
             {
                 "work_experience": [
                     {},
@@ -165,20 +166,27 @@ class validationClass:
 
             if not isinstance(work_experience, dict):
                 raise Exception("Invalid data provided")
-            
+
             experience_list = work_experience.get("experience", [])
             dates = []
-            
+
             for experience_dict in experience_list:
                 if not isinstance(experience_dict, dict):
-                    raise Exception(f"Provided data {experience_dict} is not in JSON format")
-                
+                    raise Exception(
+                        f"Provided data {experience_dict} is not in JSON format"
+                    )
+
                 experience_dict_copy = experience_dict.copy()
                 for key, value in experience_dict_copy.items():
-                    if key not in values.WORK_EXPERIENCE_REQUIRED_FIELDS and key not in values.WORK_EXPERIENCE_OPTIONAL_FIELDS:
+                    if (
+                        key not in values.WORK_EXPERIENCE_REQUIRED_FIELDS
+                        and key not in values.WORK_EXPERIENCE_OPTIONAL_FIELDS
+                    ):
                         raise Exception(f"Invalid key '{key}' provided")
 
-                    if key == values.FROM or (key == values.TILL and value != "present"):
+                    if key == values.FROM or (
+                        key == values.TILL and value != "present"
+                    ):
                         try:
                             date_value = datetime.strptime(value, "%d/%m/%Y")
                             dates.append(date_value)
@@ -188,15 +196,23 @@ class validationClass:
                         date_value = datetime.now()
                         dates.append(date_value)
 
-                    elif key in [values.COMPANY_NAME, values.DESIGNATION] and isinstance(value, str):
+                    elif key in [
+                        values.COMPANY_NAME,
+                        values.DESIGNATION,
+                    ] and isinstance(value, str):
                         if not re.match(r"^[a-zA-Z0-9&\s\-.,\'()]{1,100}$", value):
                             raise Exception(f"Invalid value provided to '{key}'")
-                    
+
                 # Handle optional fields default data
-                for key, default_value in values.WORK_EXPERIENCE_OPTIONAL_FIELDS.items():
+                for (
+                    key,
+                    default_value,
+                ) in values.WORK_EXPERIENCE_OPTIONAL_FIELDS.items():
                     if key not in experience_dict:
                         experience_dict[key] = default_value
-                    elif key == values.FOUND_THROUGH_NULL and not isinstance(experience_dict[key], bool):
+                    elif key == values.FOUND_THROUGH_NULL and not isinstance(
+                        experience_dict[key], bool
+                    ):
                         raise Exception(f"Key '{key}' should contain a boolean value")
 
             return True, dates
@@ -216,7 +232,7 @@ class validationClass:
                     if not re.match(r'^[a-zA-Z0-9 .,\'"-]*$', field_value):
                         raise ValidationError(
                             {"error": f"Invalid {field_name} format."}
-                        ) 
+                        )
                 elif field_name == "work_experience":
                     # Here we will calculate the total experience in the field and then
                     # add the key called 'experience' in the data
@@ -224,13 +240,16 @@ class validationClass:
                     if isinstance(value[1], list):
                         total_experience = 0
                         for i in range(0, len(value[1]), 2):
-                            from_date, till_date = value[1][i:i+2]
+                            from_date, till_date = value[1][i : i + 2]
                             difference = till_date.year - from_date.year
 
-                            if till_date.month < from_date.month or (till_date.month == from_date.month and till_date.day < from_date.day):
+                            if till_date.month < from_date.month or (
+                                till_date.month == from_date.month
+                                and till_date.day < from_date.day
+                            ):
                                 difference -= 1
                             total_experience += difference
-                    
+
                         data.update({"experience": total_experience})
 
             except ValidationError as err:

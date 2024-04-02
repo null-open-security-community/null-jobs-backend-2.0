@@ -47,25 +47,20 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.sites",
-
-    # cors 
+    # cors
     "corsheaders",
-
     # rest framework applications
     "rest_framework",
     "rest_framework.authtoken",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
-
     # swagger app
     "drf_spectacular",
-
     # business view applications
     "apps.accounts",
     "apps.jobs",
     "apps.applicants",
     "apps.userprofile",
-
     # extras for views filtering
     "django_filters",
 ]
@@ -78,7 +73,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
-    "django.middleware.clickjacking.XFrameOptionsMiddleware"
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
 ROOT_URLCONF = "null_jobs_backend.urls"
@@ -157,10 +152,10 @@ EMAIL_USE_TLS = True
 
 # JWT Configuration
 REST_FRAMEWORK = {
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication'
-    ]
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication"
+    ],
 }
 
 # Internationalization
@@ -191,8 +186,12 @@ from datetime import timedelta
 DISABLE_TOKEN_EXPIRATION = True if DEBUG else False
 ENABLE_AUTHENTICATION = True
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(days=365) if DISABLE_TOKEN_EXPIRATION else timedelta(minutes=3),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=365) if DISABLE_TOKEN_EXPIRATION else timedelta(minutes=7),
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=365)
+    if DISABLE_TOKEN_EXPIRATION
+    else timedelta(minutes=3),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=365)
+    if DISABLE_TOKEN_EXPIRATION
+    else timedelta(minutes=7),
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": False,
     "CHECK_REVOKE_TOKEN": True,
@@ -213,7 +212,7 @@ PASSWORD_RESET_TIMEOUT = 900  # 900 sec=15 min
 # cors policy error configuration ( connection with frontend)
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
-    "http://127.0.0.1:3000", 
+    "http://127.0.0.1:3000",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
@@ -243,10 +242,10 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'null jobs API',
-    'DESCRIPTION': 'This documentation contains all the APIs for the null jobs backend project',
-    'VERSION': '1.0.0',
-    "COMPONENT_SPLIT_REQUEST": True
+    "TITLE": "null jobs API",
+    "DESCRIPTION": "This documentation contains all the APIs for the null jobs backend project",
+    "VERSION": "1.0.0",
+    "COMPONENT_SPLIT_REQUEST": True,
 }
 
 

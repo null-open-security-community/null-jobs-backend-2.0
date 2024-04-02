@@ -7,7 +7,7 @@ class IsJobSeeker(BasePermission):
 
     def has_permission(self, request, view):
         return request.user.user_type == "Job Seeker"
-    
+
 
 class IsProfileCompleted(BasePermission):
     """Custom permissions that allow only job seekers or employers with complete profile
@@ -15,7 +15,7 @@ class IsProfileCompleted(BasePermission):
 
     def has_permission(self, request, view):
         return request.user.is_profile_completed
-    
+
 
 class IsEmployer(BasePermission):
     """Custom permissions that allow only the employers to access
@@ -36,4 +36,3 @@ class Moderator(BasePermission):
     def has_permission(self, request, view):
         """Method to check if the given user_id belongs to moderator or not"""
         return request.user.is_moderator
-    

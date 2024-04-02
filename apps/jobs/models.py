@@ -14,8 +14,7 @@ class Company(models.Model):
     This class defines the attributes associated with a company, and
     belongs to the company table in the database
     """
-    
-    
+
     def media_upload_path(instance, filename):
         file_path = f"user_{instance.creator.id}/data/company_{filename}"
         return file_path
@@ -23,33 +22,34 @@ class Company(models.Model):
     class Meta:
         db_table = values.DB_TABLE_COMPANY
 
-    company_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False) 
+    company_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     # creator of the compnau is the user who is hiring for it
-    creator = models.ForeignKey(User, on_delete=models.CASCADE, unique=True, editable=False)
+    creator = models.ForeignKey(
+        User, on_delete=models.CASCADE, unique=True, editable=False
+    )
 
     name = models.CharField(max_length=255, null=False)
     picture = models.FileField(null=True, default=None, upload_to=media_upload_path)
     email_id = models.EmailField(null=True, default=None)
     location = models.CharField(max_length=255, null=False)
     contact_no = models.CharField(max_length=255, default=None, null=True)
-    
+
     team_members = models.PositiveIntegerField(default=False, null=True)
     founded_year = models.PositiveIntegerField(default=False, null=False)
-    
+
     address = models.CharField(max_length=255, default=None, null=True)
 
     social_profiles = models.URLField(default=None, null=True)
-    
+
     about = models.TextField(max_length=500, default=False, null=False)
     short_story = models.TextField(max_length=500, default=None, null=True)
     speciality = models.TextField(max_length=500, default=None, null=True)
 
-    # deletion check for the company should not be present as on delete 
+    # deletion check for the company should not be present as on delete
     # of the user auth the company will be deleted as well as there is cascade
     # policy
     is_deleted = models.BooleanField(default=False, null=True, editable=False)
-
 
 
 class Job(models.Model):
@@ -64,14 +64,17 @@ class Job(models.Model):
         db_table = values.DB_TABLE_JOBS
 
     job_id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, 
-        editable=False, null=False
+        primary_key=True, default=uuid.uuid4, editable=False, null=False
     )
 
-    # relations to the user and the company as the jobs are posted by 
+    # relations to the user and the company as the jobs are posted by
     # a particular user and the company is more of a employer profile mapping
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company", editable=False)
-    employer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="employer",  editable=False) # why is this a uuid field and not a relation
+    company = models.ForeignKey(
+        Company, on_delete=models.CASCADE, related_name="company", editable=False
+    )
+    employer = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="employer", editable=False
+    )  # why is this a uuid field and not a relation
 
     job_role = models.CharField(max_length=100, null=False)
     location = models.CharField(max_length=100, default=None)
@@ -80,16 +83,15 @@ class Job(models.Model):
     vacancy_position = models.IntegerField(default=None, null=False)
     industry = models.CharField(max_length=50, default=None, null=False)
     category = models.CharField(max_length=20, default=None, null=True)
-    
 
     # creation and updation dates
     created_at = models.DateTimeField(auto_now_add=True)  # only add the timestamp once
     updated_at = models.DateTimeField(auto_now=True)  # update timestamp on every save()
 
     # flags are un explained here
-    is_active  = models.BooleanField(default=False, null=False, editable=False)
-    is_created = models.BooleanField(default=False, null=True,  editable=False)
-    is_deleted = models.BooleanField(default=False, null=True,  editable=False)
+    is_active = models.BooleanField(default=False, null=False, editable=False)
+    is_created = models.BooleanField(default=False, null=True, editable=False)
+    is_deleted = models.BooleanField(default=False, null=True, editable=False)
 
     # These fields will be displayed as a part of "description" field and the
     # body of the job
@@ -121,4 +123,3 @@ class ContactMessage(models.Model):
 
     def __str__(self):
         return self.full_name
-

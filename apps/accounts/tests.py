@@ -38,7 +38,7 @@ class UserRegistrationViewTest(TestCase):
 
         # Make a POST request to the registration endpoint
         response = self.client.post(self.url, payload, format="json")
-        
+
         # Check if the response is as expected (HTTP 200 OK)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -48,4 +48,3 @@ class UserRegistrationViewTest(TestCase):
         )
         self.assertIn("token", response.data)
         self.assertEqual(response.data["token"], "your-token")
-

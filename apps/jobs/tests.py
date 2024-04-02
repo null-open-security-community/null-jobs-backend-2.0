@@ -58,4 +58,3 @@ class JobViewSetsTestCase(TestCase):
         # dummy token
         self.access_token = ""
         self.client.credentials(HTTP_ACCESSTOKEN=self.access_token)
-

@@ -7,7 +7,7 @@ STATUS_CHOICES = (
     ("accepted", "Accepted"),
     ("rejected", "Rejected"),
     ("on-hold", "On-Hold"),
-    ("applied", "Applied")
+    ("applied", "Applied"),
 )
 
 GENDER = (("male", "Male"), ("female", "Female"), ("other", "Other"))
@@ -36,7 +36,7 @@ trending_keywords = [
     "Software Developer",
     "Software Engineer",
     "Malware Analyst",
-    "SOC Analyst"
+    "SOC Analyst",
 ]
 
 EMPLOYER_ID = "employer_id"
@@ -69,4 +69,8 @@ FOUND_THROUGH_NULL = "found_through_null"
 COMPANY_ID = "company_id"
 
 WORK_EXPERIENCE_REQUIRED_FIELDS = (FROM, TILL, DESIGNATION, COMPANY_NAME)
-WORK_EXPERIENCE_OPTIONAL_FIELDS = {DESCRIPTION: None, FOUND_THROUGH_NULL: False, COMPANY_ID: "N/A"}
+WORK_EXPERIENCE_OPTIONAL_FIELDS = {
+    DESCRIPTION: None,
+    FOUND_THROUGH_NULL: False,
+    COMPANY_ID: "N/A",
+}

@@ -51,5 +51,7 @@ class UserTypeCheck(permissions.BasePermission):
         """Check if the user_id belongs to employer"""
 
         # check if the user_id belongs to any user
-        user_data = User.objects.filter(user_id=user_id, user_type__iexact=values.EMPLOYER)
+        user_data = User.objects.filter(
+            user_id=user_id, user_type__iexact=values.EMPLOYER
+        )
         return True if user_data.exists() else False

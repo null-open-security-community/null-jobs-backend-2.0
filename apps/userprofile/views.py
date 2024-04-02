@@ -1,20 +1,18 @@
-from rest_framework import (
-    viewsets, 
-    permissions, 
-    status, 
-    exceptions,
-    parsers
-)
-from django.db.models import Case, When, Value, BooleanField
-from rest_framework.response import Response
-from rest_framework.decorators import action
+from django.db.models import BooleanField, Case, Value, When
 from drf_spectacular.utils import extend_schema
+from rest_framework import exceptions, parsers, permissions, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts import permissions as custom_permissions
 from apps.accounts.models import User
 from apps.userprofile.models import UserProfile
-from apps.accounts import permissions as custom_permissions
-from apps.userprofile.serializers import UserProfileRequestSerializer, UploadFilesSerializer, UserProfileResponseSerializer
+from apps.userprofile.serializers import (
+    UploadFilesSerializer,
+    UserProfileRequestSerializer,
+    UserProfileResponseSerializer,
+)
 from apps.utils.responses import InternalServerError, Response201Created
 
 
@@ -35,36 +33,35 @@ class UserProfileViewSet(viewsets.ModelViewSet):
 
     @extend_schema(tags=["user profile"], request=UserProfileRequestSerializer)
     def create(self, request, *args, **kwargs):
-        """ A job seeker has a user profile so when a user 
+        """A job seeker has a user profile so when a user
         wants to update a user this has to be accessed only by
         job seeker whose profile it is
         """
         user = request.user
 
-        # check if the user is of valid type only the 
+        # check if the user is of valid type only the
         # job seekers can update their profiles
         if user.user_type == "Employer":
-            raise exceptions.PermissionDenied()  
+            raise exceptions.PermissionDenied()
 
-        serializer = UserProfileRequestSerializer(data = request.data)
-        serializer.is_valid(raise_exception = True)
+        serializer = UserProfileRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
         # updating user name when its not the same as the previous name
         if request.user.name != serializer.get_name():
             print("Updating the name with {}".format(serializer.name))
             # only name can be changed in the auth user itself
-            users_updated = User.objects.filter(
-                id = request.user.id
-            ).update(name = serializer.get_name())
+            users_updated = User.objects.filter(id=request.user.id).update(
+                name=serializer.get_name()
+            )
 
             if not users_updated:
                 raise InternalServerError()
-            
+
         # updating user profile data
         user_profile_data = serializer.data
         user_profile, created = UserProfile.objects.get_or_create(
-            user=user, 
-            defaults=user_profile_data
+            user=user, defaults=user_profile_data
         )
 
         # updating the user profile wiht the rest of the data
@@ -75,10 +72,9 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         user_profile.save()
 
         return Response(
-            UserProfileResponseSerializer(user_profile).data, 
-            status = status.HTTP_201_CREATED
+            UserProfileResponseSerializer(user_profile).data,
+            status=status.HTTP_201_CREATED,
         )
-
 
     @extend_schema(tags=["user profile"])
     def list(self, request):
@@ -87,22 +83,22 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         """
         if request.user.user_type == "Job Seeker":
             raise exceptions.PermissionDenied()
-        
+
         user_profiles = UserProfile.objects.annotate(
             is_favorite=Case(
                 When(favoriteprofiles__employer=request.user, then=Value(True)),
                 default=Value(False),
-                output_field=BooleanField()
+                output_field=BooleanField(),
             )
         )
 
         return Response(
-            UserProfileResponseSerializer(user_profiles, many=True).data, 
-            status = status.HTTP_200_OK
+            UserProfileResponseSerializer(user_profiles, many=True).data,
+            status=status.HTTP_200_OK,
         )
 
     @extend_schema(tags=["user profile"])
-    def retrieve(self, request, pk = None):
+    def retrieve(self, request, pk=None):
         instance = self.get_object()
 
         # TODO: the object should also contain if the profile is shortlisted by the
@@ -120,46 +116,43 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         # this view is for job seekers for their profile
         if request.user.user_type == "Employer":
             raise exceptions.PermissionDenied()
-        
-        user_profile = UserProfile.objects.get(user = request.user)
+
+        user_profile = UserProfile.objects.get(user=request.user)
         print(user_profile.resume)
-        
+
         return Response(
-            UserProfileResponseSerializer(user_profile).data,
-            status = status.HTTP_200_OK
+            UserProfileResponseSerializer(user_profile).data, status=status.HTTP_200_OK
         )
-    
 
     @extend_schema(exclude=True)
     def destroy(self, request, *args, **kwargs):
         raise exceptions.MethodNotAllowed("DELETE")
-    
+
     @extend_schema(tags=["user profile"], exclude=True)
     def update(self, request, *args, **kwargs):
         raise exceptions.MethodNotAllowed("PUT")
-    
-    
+
+
 class UplaodDocumentsView(APIView):
     permission_classes = [permissions.IsAuthenticated, custom_permissions.IsJobSeeker]
     parser_classes = [parsers.MultiPartParser, parsers.FormParser]
 
-    @extend_schema(request = UploadFilesSerializer, tags=["user profile"])
+    @extend_schema(request=UploadFilesSerializer, tags=["user profile"])
     def post(self, request):
         try:
-            user_profile = UserProfile.objects.get(user = request.user)
+            user_profile = UserProfile.objects.get(user=request.user)
         except UserProfile.DoesNotExist:
             raise exceptions.NotFound("The profile for this user is absent")
         except Exception as e:
             print(e)
             raise InternalServerError(str(e))
 
-        
         # set is_profile_completed to done
         if request.data.get("resume") is not None:
             print("here")
-            users_updated = User.objects.filter(
-                id = request.user.id
-            ).update(is_profile_completed = True)
+            users_updated = User.objects.filter(id=request.user.id).update(
+                is_profile_completed=True
+            )
 
             user_profile.resume = request.data.get("resume")
 
@@ -170,7 +163,7 @@ class UplaodDocumentsView(APIView):
             user_profile.profile_picture = request.data.get("profile_picture")
 
         user_profile.save()
-        
+
         print(user_profile.resume)
 
         return Response201Created(request.user.id)
