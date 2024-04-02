@@ -14,7 +14,7 @@ class IsProfileCompleted(BasePermission):
     to access the views"""
 
     def has_permission(self, request, view):
-        return request.user.is_profile_complete
+        return request.user.is_profile_completed
     
 
 class IsEmployer(BasePermission):

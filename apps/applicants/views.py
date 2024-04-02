@@ -30,7 +30,7 @@ class AllApplicantsOfCompany(APIView):
     )
     def get(self, request):
         """List all users that belong to company"""
-        applicants = Applicants.objects.filter(job__employer_id = request.user.id,)
+        applicants = Applicants.objects.filter(job__employer = request.user)
 
         return Response(
             ApplicantModelSerializer(applicants, many=True).data, 
@@ -57,7 +57,7 @@ class ApplyToJob(APIView):
         # fetching job and user profile to create an application
         user_profile = UserProfile.objects.get(user_id = request.user.id)
         try:
-            job = Job.objects.get(serializer.data["job_id"])
+            job = Job.objects.get(job_id = serializer.data["job_id"])
         except Job.DoesNotExist:
             raise exceptions.NotFound()
         

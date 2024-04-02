@@ -14,6 +14,11 @@ class Company(models.Model):
     This class defines the attributes associated with a company, and
     belongs to the company table in the database
     """
+    
+    
+    def media_upload_path(instance, filename):
+        file_path = f"user_{instance.creator.id}/data/company_{filename}"
+        return file_path
 
     class Meta:
         db_table = values.DB_TABLE_COMPANY
@@ -24,11 +29,21 @@ class Company(models.Model):
     creator = models.ForeignKey(User, on_delete=models.CASCADE, unique=True, editable=False)
 
     name = models.CharField(max_length=255, null=False)
+    picture = models.FileField(null=True, default=None, upload_to=media_upload_path)
+    email_id = models.EmailField(null=True, default=None)
     location = models.CharField(max_length=255, null=False)
-    about = models.TextField(max_length=500, default=False, null=False)
+    contact_no = models.CharField(max_length=255, default=None, null=True)
+    
     team_members = models.PositiveIntegerField(default=False, null=True)
-    social_profiles = models.URLField(default=None, null=True)
     founded_year = models.PositiveIntegerField(default=False, null=False)
+    
+    address = models.CharField(max_length=255, default=None, null=True)
+
+    social_profiles = models.URLField(default=None, null=True)
+    
+    about = models.TextField(max_length=500, default=False, null=False)
+    short_story = models.TextField(max_length=500, default=None, null=True)
+    speciality = models.TextField(max_length=500, default=None, null=True)
 
     # deletion check for the company should not be present as on delete 
     # of the user auth the company will be deleted as well as there is cascade

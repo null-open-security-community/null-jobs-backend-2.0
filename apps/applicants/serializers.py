@@ -2,13 +2,22 @@ from rest_framework import serializers
 
 from apps.applicants.models import Applicants
 from apps.applicants import constants
+from apps.jobs.serializers import JobSerializer
+from apps.userprofile.serializers import UserProfileResponseSerializer
 
-
-class ApplicantModelSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Applicants
-        fields = ['id', 'job', 'user', 'status', 'created_at', 'updated_at', 'is_deleted', 'is_active']
-        read_only_fields = ['id', 'created_at', 'updated_at', 'is_deleted', 'is_active']  # Fields that should not be editable
+class ApplicantJobSerializer(serializers.Serializer):
+    job_id = serializers.UUIDField()
+    job_role = serializers.CharField()
+    
+class ApplicantModelSerializer(serializers.Serializer):
+    id = serializers.UUIDField(read_only=True)
+    job = ApplicantJobSerializer()
+    user = UserProfileResponseSerializer()
+    created_at = serializers.DateTimeField()
+    updated_at = serializers.DateTimeField()
+    is_deleted = serializers.BooleanField()
+    is_active = serializers.BooleanField()
+    
 
 
 class ApplyToJobSerializer(serializers.Serializer):

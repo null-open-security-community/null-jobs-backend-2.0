@@ -14,7 +14,7 @@ from rest_framework.views import APIView
 from apps.accounts.models import User
 from apps.userprofile.models import UserProfile
 from apps.accounts import permissions as custom_permissions
-from apps.userprofile.serializers import UserProfileSerializer, UploadFilesSerializer
+from apps.userprofile.serializers import UserProfileRequestSerializer, UploadFilesSerializer, UserProfileResponseSerializer
 from apps.utils.responses import InternalServerError, Response201Created
 
 
@@ -30,10 +30,10 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     """
 
     queryset = UserProfile.objects.all()
-    serializer_class = UserProfileSerializer
+    serializer_class = UserProfileResponseSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    @extend_schema(tags=["user profile"])
+    @extend_schema(tags=["user profile"], request=UserProfileRequestSerializer)
     def create(self, request, *args, **kwargs):
         """ A job seeker has a user profile so when a user 
         wants to update a user this has to be accessed only by
@@ -46,7 +46,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         if user.user_type == "Employer":
             raise exceptions.PermissionDenied()  
 
-        serializer = UserProfileSerializer(data = request.data)
+        serializer = UserProfileRequestSerializer(data = request.data)
         serializer.is_valid(raise_exception = True)
 
         # updating user name when its not the same as the previous name
@@ -75,7 +75,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         user_profile.save()
 
         return Response(
-            UserProfileSerializer(user_profile).data, 
+            UserProfileResponseSerializer(user_profile).data, 
             status = status.HTTP_201_CREATED
         )
 
@@ -97,7 +97,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         )
 
         return Response(
-            UserProfileSerializer(user_profiles, many=True).data, 
+            UserProfileResponseSerializer(user_profiles, many=True).data, 
             status = status.HTTP_200_OK
         )
 
@@ -107,7 +107,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
 
         # TODO: the object should also contain if the profile is shortlisted by the
         # employer fetching the data
-        return Response(UserProfileSerializer(instance).data)
+        return Response(UserProfileResponseSerializer(instance).data)
 
     @extend_schema(tags=["user profile"])
     @action(detail=False, methods=["get"])
@@ -125,7 +125,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         print(user_profile.resume)
         
         return Response(
-            UserProfileSerializer(user_profile).data,
+            UserProfileResponseSerializer(user_profile).data,
             status = status.HTTP_200_OK
         )
     
@@ -141,13 +141,10 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     
 class UplaodDocumentsView(APIView):
     permission_classes = [permissions.IsAuthenticated, custom_permissions.IsJobSeeker]
-    parser_classes = [parsers.MultiPartParser]
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser]
 
     @extend_schema(request = UploadFilesSerializer, tags=["user profile"])
     def post(self, request):
-        serializer = UploadFilesSerializer(data = request.data)
-        serializer.is_valid(raise_exception = True)
-
         try:
             user_profile = UserProfile.objects.get(user = request.user)
         except UserProfile.DoesNotExist:
@@ -155,21 +152,25 @@ class UplaodDocumentsView(APIView):
         except Exception as e:
             print(e)
             raise InternalServerError(str(e))
+
         
         # set is_profile_completed to done
-        if "resume" in serializer.data:
+        if request.data.get("resume") is not None:
+            print("here")
             users_updated = User.objects.filter(
                 id = request.user.id
             ).update(is_profile_completed = True)
 
-            user_profile.resume = serializer.data.get("resume")
+            user_profile.resume = request.data.get("resume")
 
-        if "cover_letter" in  serializer.data:
-            user_profile.cover_letter = serializer.data.get("cover_letter")
+        if request.data.get("cover_letter") is not None:
+            user_profile.cover_letter = request.data.get("cover_letter")
 
-        if "profile_picture" in serializer.data:
-            user_profile.profile_picture = serializer.data.get("profile_picture")
+        if request.data.get("profile_picture") is not None:
+            user_profile.profile_picture = request.data.get("profile_picture")
 
         user_profile.save()
+        
+        print(user_profile.resume)
 
         return Response201Created(request.user.id)

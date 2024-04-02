@@ -1,13 +1,13 @@
 from datetime import timedelta
 
-import django.core.exceptions
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import status, viewsets, exceptions
+from rest_framework import status, viewsets, exceptions, parsers
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db import IntegrityError
 from django.db.models import Count
+from drf_spectacular.utils import extend_schema
 
 from apps.accounts.permissions import Moderator
 from apps.jobs.constants import response, values
@@ -258,6 +258,7 @@ class CompanyViewSets(viewsets.ModelViewSet):
 
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser]
 
     # Basic filters
     filter_backends = [DjangoFilterBackend]
@@ -275,10 +276,6 @@ class CompanyViewSets(viewsets.ModelViewSet):
                 company_data, many=True, context={"request": request}
             )
 
-            # get number of applicants
-            if serialized_company_data:
-                serialized_company_data = JobViewSets.get_active_jobs_count(serialized_company_data)
-
             return response.create_response(
                 serialized_company_data.data, status.HTTP_200_OK
             )
@@ -290,22 +287,15 @@ class CompanyViewSets(viewsets.ModelViewSet):
     def retrieve(self, request, pk=None):
         try:
             # filter based on pk
-            company_data = Company.objects.filter(company_id=pk)
-            serialized_company_data = self.serializer_class(company_data, many=True)
-            if serialized_company_data:
-                serialized_company_data = JobViewSets.get_active_jobs_count(serialized_company_data)
-            
-            # returning the response
-            return response.create_response(
-                serialized_company_data.data, 
-                status.HTTP_200_OK
-            )
-        except Exception:
-            return response.create_response(
-                response.SOMETHING_WENT_WRONG, 
-                status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            company_data = Company.objects.get(company_id=pk)
 
+            # returning the response
+            return Response(self.serializer_class(company_data).data)
+        except Exception as e:
+            print(e)
+            return InternalServerError()
+
+    @extend_schema(exclude=True)
     def update(self, request, *args, **kwargs):
         """
         API: UPDATE /company/{id}
@@ -315,18 +305,20 @@ class CompanyViewSets(viewsets.ModelViewSet):
         """
 
         # check if the user_id present in the request belongs to Employer or Moderator
-        if not (
-            UserTypeCheck.is_user_employer(request.user_id)
-            or Moderator().has_permission(request)
-        ):
-            return response.create_response(
-                response.PERMISSION_DENIED
-                + " You don't have permissions to update company details",
-                status.HTTP_401_UNAUTHORIZED,
-            )
+        # if not (
+        #     UserTypeCheck.is_user_employer(request.user_id)
+        #     or Moderator().has_permission(request)
+        # ):
+        #     return response.create_response(
+        #         response.PERMISSION_DENIED
+        #         + " You don't have permissions to update company details",
+        #         status.HTTP_401_UNAUTHORIZED,
+        #     )
 
-        return super().update(request, *args, **kwargs)
+        # return super().update(request, *args, **kwargs)
+        raise exceptions.MethodNotAllowed()
 
+    @extend_schema(exclude=True)
     def destroy(self, request, pk=None, *args, **kwargs):
         """
         API: DELETE /company/{id}
@@ -336,42 +328,43 @@ class CompanyViewSets(viewsets.ModelViewSet):
         """
 
         # check if the user_id present in the request belongs to Employer or Moderator
-        if not (
-            UserTypeCheck.is_user_employer(request.user_id)
-            or Moderator().has_permission(request)
-        ):
-            return response.create_response(
-                response.PERMISSION_DENIED
-                + " You don't have permissions to delete a company",
-                status.HTTP_401_UNAUTHORIZED,
-            )
+        # if not (
+        #     UserTypeCheck.is_user_employer(request.user_id)
+        #     or Moderator().has_permission(request)
+        # ):
+        #     return response.create_response(
+        #         response.PERMISSION_DENIED
+        #         + " You don't have permissions to delete a company",
+        #         status.HTTP_401_UNAUTHORIZED,
+        #     )
 
-        # check if the job is already deleted or not
-        company_data = Company.objects.filter(
-            company_id=pk, is_created=False, is_deleted=True
-        )
-        if company_data.exists():
-            return response.create_response(
-                "Given company_id does not exist or already deleted",
-                status.HTTP_404_NOT_FOUND,
-            )
+        # # check if the job is already deleted or not
+        # company_data = Company.objects.filter(
+        #     company_id=pk, is_created=False, is_deleted=True
+        # )
+        # if company_data.exists():
+        #     return response.create_response(
+        #         "Given company_id does not exist or already deleted",
+        #         status.HTTP_404_NOT_FOUND,
+        #     )
 
-        # if user is employer don't remove the company from the db table
-        # else, set is_created=False and is_deleted=True
-        if UserTypeCheck.is_user_employer(request.user_id):
-            try:
-                company_data = Company.objects.filter(company_id=pk)
-                company_data.update(is_created=False, is_deleted=True)
-                serialized_company_data = CompanySerializer(company_data, many=True)
-                return response.create_response(
-                    serialized_company_data.data, status.HTTP_200_OK
-                )
-            except Exception:
-                return response.create_response(
-                    response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
+        # # if user is employer don't remove the company from the db table
+        # # else, set is_created=False and is_deleted=True
+        # if UserTypeCheck.is_user_employer(request.user_id):
+        #     try:
+        #         company_data = Company.objects.filter(company_id=pk)
+        #         company_data.update(is_created=False, is_deleted=True)
+        #         serialized_company_data = CompanySerializer(company_data, many=True)
+        #         return response.create_response(
+        #             serialized_company_data.data, status.HTTP_200_OK
+        #         )
+        #     except Exception:
+        #         return response.create_response(
+        #             response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
+        #         )
 
-        return super().destroy(request, *args, **kwargs)
+        # return super().destroy(request, *args, **kwargs)
+        raise exceptions.MethodNotAllowed()
 
     def create(self, request, *args, **kwargs):
         # check if the user is a employer or not 
@@ -381,12 +374,14 @@ class CompanyViewSets(viewsets.ModelViewSet):
 
         # create a company
         try:
-            company = Company(**request.data, creator=request.user)
-            company.save()
-        except IntegrityError as e:
-            raise exceptions.ParseError(
-                detail = "There is already a company linked with the user profile."
+            company, created = Company.objects.get_or_create(
+                creator = request.user, 
+                defaults = request.data
             )
+            if not created:
+                for key, value in request.data.items():
+                    setattr(company, key, value)
+            company.save()
         except Exception as e:
             raise InternalServerError()
 

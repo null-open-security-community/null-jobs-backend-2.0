@@ -28,7 +28,7 @@ class WorkExperienceSerializer(serializers.Serializer):
     company_name = serializers.CharField()
     found_through_null = serializers.BooleanField()
 
-class UserProfileSerializer(serializers.Serializer):
+class UserProfileRequestSerializer(serializers.Serializer):
     id = serializers.UUIDField(read_only=True)
 
     # user table serializer
@@ -43,11 +43,39 @@ class UserProfileSerializer(serializers.Serializer):
     address = serializers.CharField()
     phone = serializers.CharField()
     website = serializers.URLField()
-    social_handles = serializers.URLField(allow_null=True)
+    social_handles = serializers.URLField(allow_null=True, default=None)
 
     # description
     about = serializers.CharField()
-    education = serializers.ListField(child = EducationSerializer(many=True))
+    education = serializers.ListField(child = EducationSerializer())
+    professional_skills = serializers.ListField(child = ProfessionalSkillsSerializer())
+    work_experience = serializers.ListField(child = WorkExperienceSerializer())
+
+    is_favorite = serializers.BooleanField(read_only=True)
+
+    def get_name(self):
+        return self.validated_data.get("name")
+
+class UserProfileResponseSerializer(serializers.Serializer):
+    id = serializers.UUIDField(read_only=True)
+
+    # user table serializer
+    user = UserAuthSerializer(read_only=True)
+    
+    # comps
+    name = serializers.CharField(write_only=True)
+    experience = serializers.CharField()
+    gender = serializers.CharField(allow_null=True)
+    age = serializers.IntegerField(allow_null=True)
+    profession = serializers.CharField()
+    address = serializers.CharField()
+    phone = serializers.CharField()
+    website = serializers.URLField()
+    social_handles = serializers.URLField(allow_null=True, default=None)
+
+    # description
+    about = serializers.CharField()
+    education = serializers.ListField(child = EducationSerializer())
     professional_skills = serializers.ListField(child = ProfessionalSkillsSerializer())
     work_experience = serializers.ListField(child = WorkExperienceSerializer())
 
@@ -61,9 +89,8 @@ class UserProfileSerializer(serializers.Serializer):
     def get_name(self):
         return self.validated_data.get("name")
 
-
 class UploadFilesSerializer(serializers.Serializer):
     # files sections
-    resume = serializers.FileField(allow_null=True, default=None)
-    profile_picture = serializers.ImageField(allow_null=True, default=None)
-    cover_letter = serializers.FileField(allow_null=True, default=None)
+    resume = serializers.FileField(allow_null=True, required=False)
+    profile_picture = serializers.ImageField(allow_null=True, required=False)
+    cover_letter = serializers.FileField(allow_null=True, required=False)
