@@ -8,27 +8,27 @@ import urllib.parse
 import requests
 from django.conf import settings
 from django.contrib.auth import authenticate
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
-from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 from apps.accounts.models import User
 from apps.accounts.renderers import UserRenderer
 from apps.accounts.serializers import (
-    UserSerializer, 
-    UserRegistrationResponseSerializer, 
-    UserRegistrationSerializer, 
-    UserChangePasswordOTPSerializer, 
-    UserChangePasswordSerializer, 
-    UserLoginResponseSerializer, 
-    UserLoginSerializer, 
-    UserPasswordResetSerializer,
     OTPVerificationCheckSerializer,
-    SendPasswordResetOTPSerializer
+    SendPasswordResetOTPSerializer,
+    UserChangePasswordOTPSerializer,
+    UserChangePasswordSerializer,
+    UserLoginResponseSerializer,
+    UserLoginSerializer,
+    UserPasswordResetSerializer,
+    UserRegistrationResponseSerializer,
+    UserRegistrationSerializer,
+    UserSerializer,
 )
 from apps.accounts.utils import *
 from apps.userprofile.models import UserProfile
@@ -61,7 +61,8 @@ class TokenUtility:
     def generate_dummy_jwt_token(Cpayload):
         # creating custom payload with 5 minutes expiration time
         custom_payload = {
-            "exp": datetime.datetime.utcnow() + settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME']
+            "exp": datetime.datetime.utcnow()
+            + settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"]
         }
         custom_payload.update(Cpayload)
         # Create a new AccessToken with the custom payload
@@ -137,15 +138,16 @@ class UserRegistrationView(APIView):
     renderer_classes = [UserRenderer]
 
     @extend_schema(
-        request=UserRegistrationSerializer, 
+        request=UserRegistrationSerializer,
         responses={200: UserRegistrationResponseSerializer},
-        tags=["auth"], auth=[]
+        tags=["auth"],
+        auth=[],
     )
     def post(self, request, format=None):
         # validating and creating the user
         serializer = UserRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        email = serializer.save() # creates the abstract user fields
+        email = serializer.save()  # creates the abstract user fields
 
         # defines user login method as local
         user = User.objects.get(email=email)
@@ -154,11 +156,11 @@ class UserRegistrationView(APIView):
 
         # if the user is of type job seeker then create a user profile
         if user.user_type == "Job Seeker":
-            user_profile = UserProfile(user = user)
+            user_profile = UserProfile(user=user)
             user_profile.save()
 
         token = generate_guest_token(user, "verify")
-        
+
         return Response(
             {
                 "msg": "OTP Sent Successfully. Please Check your Email",
@@ -173,13 +175,17 @@ class OTPVerificationCheckView(APIView):
     renderer_classes = [UserRenderer]
 
     @extend_schema(
-        request=OTPVerificationCheckSerializer, 
-        tags=["auth"], auth=[],
-        parameters=[OpenApiParameter(
-            name='token',
-            type=str, required=True, 
-            description='Verification token created while registration.'
-        )]
+        request=OTPVerificationCheckSerializer,
+        tags=["auth"],
+        auth=[],
+        parameters=[
+            OpenApiParameter(
+                name="token",
+                type=str,
+                required=True,
+                description="Verification token created while registration.",
+            )
+        ],
     )
     def post(self, request, format=None):
         dummy_token = request.query_params.get("token")
@@ -188,13 +194,11 @@ class OTPVerificationCheckView(APIView):
             payload = TokenUtility.verify_and_get_payload(dummy_token)
         except InvalidToken as e:
             return Response(
-                {"errors": {"token": str(e)}}, 
-                status=status.HTTP_401_UNAUTHORIZED
+                {"errors": {"token": str(e)}}, status=status.HTTP_401_UNAUTHORIZED
             )
         except TokenError as e:
             return Response(
-                {"errors": {"token": str(e)}}, 
-                status=status.HTTP_400_BAD_REQUEST
+                {"errors": {"token": str(e)}}, status=status.HTTP_400_BAD_REQUEST
             )
 
         serializer = OTPVerificationCheckSerializer(
@@ -203,7 +207,7 @@ class OTPVerificationCheckView(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
         token = TokenUtility.get_tokens_for_user(user)
-        
+
         return Response(
             {"msg": "OTP Verified Successfully!", "token": token},
             status=status.HTTP_201_CREATED,
@@ -217,7 +221,8 @@ class UserLoginView(APIView):
     @extend_schema(
         request=UserLoginSerializer,
         responses={200: UserLoginResponseSerializer},
-        tags=["auth"], auth=[]
+        tags=["auth"],
+        auth=[],
     )
     def post(self, request, format=None):
         serializer = UserLoginSerializer(data=request.data)
@@ -273,8 +278,7 @@ class UserLogOutView(APIView):
             )
         except Exception as e:
             return Response(
-                {"errors": {"msg": str(e)}}, 
-                status=status.HTTP_400_BAD_REQUEST
+                {"errors": {"msg": str(e)}}, status=status.HTTP_400_BAD_REQUEST
             )
 
 
@@ -282,10 +286,7 @@ class UserLogOutView(APIView):
 class SendPasswordResetOTPView(APIView):
     renderer_classes = [UserRenderer]
 
-    @extend_schema(
-        request=SendPasswordResetOTPSerializer,
-        tags=["auth"]
-    )
+    @extend_schema(request=SendPasswordResetOTPSerializer, tags=["auth"])
     def post(self, request, format=None):
         serializer = SendPasswordResetOTPSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -333,10 +334,7 @@ class ResetPasswordOtpVerifyView(APIView):
 class UserPasswordResetView(APIView):
     renderer_classes = [UserRenderer]
 
-    @extend_schema(
-        request=UserPasswordResetSerializer,
-        tags=["auth"]
-    )
+    @extend_schema(request=UserPasswordResetSerializer, tags=["auth"])
     def post(self, request, format=None):
         uid = request.query_params.get("uid")
         token = request.query_params.get("token")
@@ -358,10 +356,7 @@ class UserChangePasswordView(APIView):
     renderer_classes = [UserRenderer]
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(
-        request=UserChangePasswordSerializer,
-        tags=["auth"]
-    )
+    @extend_schema(request=UserChangePasswordSerializer, tags=["auth"])
     def post(self, request, format=None):
         serializer = UserChangePasswordSerializer(
             data=request.data, context={"user": request.user}
@@ -377,10 +372,7 @@ class UserChangePasswordOTPView(APIView):
     renderer_classes = [UserRenderer]
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(
-        request=UserChangePasswordOTPSerializer,
-        tags=["auth"]
-    )
+    @extend_schema(request=UserChangePasswordOTPSerializer, tags=["auth"])
     def post(self, request, format=None):
         serializer = UserChangePasswordOTPSerializer(
             data=request.data, context={"user": request.user}
@@ -480,4 +472,3 @@ class CallbackHandleView(APIView):
                 {"msg": "There was an error authenticating the user"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-

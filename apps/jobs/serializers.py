@@ -1,10 +1,13 @@
 from re import findall
+
 from rest_framework import serializers
 
 from apps.jobs.models import Company, ContactMessage, Job
 
+
 class JobSerializer(serializers.ModelSerializer):
     """Job object serializer class"""
+
     total_applicants = serializers.IntegerField(read_only=True)
 
     class Meta:
@@ -76,4 +79,3 @@ class ContactUsSerializer(serializers.ModelSerializer):
             except UnicodeEncodeError:
                 raise serializers.ValidationError("Message must be valid UTF-8 text.")
             return value
-        

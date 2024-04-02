@@ -1,4 +1,3 @@
-
 DB_TABLE_USER_PROFILE = "tbl_user_profile"
 
 GENDER = (("male", "Male"), ("female", "Female"), ("other", "Other"))

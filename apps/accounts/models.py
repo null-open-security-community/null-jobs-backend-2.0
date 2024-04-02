@@ -60,9 +60,10 @@ class User(AbstractBaseUser):
     user_type = models.CharField(max_length=12, choices=USER_TYPE, null=False)
 
     # could be google or local
-    last_verified_identity = models.DateTimeField(auto_now=False, auto_now_add=False, null=True)
+    last_verified_identity = models.DateTimeField(
+        auto_now=False, auto_now_add=False, null=True
+    )
     login_method = models.CharField(max_length=50, null=True)
-    
 
     objects = UserManager()
 
@@ -71,4 +72,3 @@ class User(AbstractBaseUser):
 
     class Meta:
         db_table = "tbl_user_auth"
-

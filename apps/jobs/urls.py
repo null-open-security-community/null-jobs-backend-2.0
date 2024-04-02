@@ -1,11 +1,7 @@
 from django.urls import include, path
 from rest_framework import routers
 
-from apps.jobs.views import (
-    CompanyViewSets,
-    ContactUsViewSet,
-    JobViewSets
-)
+from apps.jobs.views import CompanyViewSets, ContactUsViewSet, JobViewSets
 
 # app name for namespace
 app_name = "apps.jobs"

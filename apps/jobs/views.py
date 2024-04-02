@@ -1,25 +1,23 @@
 from datetime import timedelta
 
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import status, viewsets, exceptions, parsers
-from rest_framework.decorators import action
-from rest_framework.response import Response
 from django.db import IntegrityError
 from django.db.models import Count
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
+from rest_framework import exceptions, parsers, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
 from apps.accounts.permissions import Moderator
 from apps.jobs.constants import response, values
-from apps.jobs.models import  Company, ContactMessage, Job
-from apps.jobs.serializers import (
-    CompanySerializer,
-    ContactUsSerializer,
-    JobSerializer
-)
+from apps.jobs.models import Company, ContactMessage, Job
+from apps.jobs.serializers import CompanySerializer, ContactUsSerializer, JobSerializer
 from apps.jobs.utils.validators import validationClass
-from .utils.user_permissions import UserTypeCheck
 from apps.utils.responses import InternalServerError
+
+from .utils.user_permissions import UserTypeCheck
+
 
 class JobViewSets(viewsets.ModelViewSet):
     """
@@ -32,11 +30,11 @@ class JobViewSets(viewsets.ModelViewSet):
         4. create or update job
     """
 
-    queryset = Job.objects.annotate(total_applicants = Count("applicants"))
+    queryset = Job.objects.annotate(total_applicants=Count("applicants"))
     serializer_class = JobSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["job_role", "location", "is_active"]
-    
+
     # @extend_schema(
     #     parameters=[
     #         OpenApiParameter(
@@ -68,7 +66,7 @@ class JobViewSets(viewsets.ModelViewSet):
     #         jobs_data = self.queryset.filter(**filters_dict, is_active=True, is_deleted=False)
     #     except django.core.exceptions.ValidationError as err:
     #         return response.create_response(err.messages, status.HTTP_404_NOT_FOUND)
-        
+
     #     # Use Paginator for the queryset
     #     page_number = request.GET.get("page", 1)
     #     paginator = Paginator(jobs_data, values.ITEMS_PER_PAGE)  # 5 items per page
@@ -98,25 +96,29 @@ class JobViewSets(viewsets.ModelViewSet):
         """Overriding the create method to include permissions"""
 
         # validate if the user is eligible to create a job posting or not
-        if not request.user or not request.user.user_type == "Employer" or not request.user.is_profile_completed:
+        if (
+            not request.user
+            or not request.user.user_type == "Employer"
+            or not request.user.is_profile_completed
+        ):
             return response.create_response(
-                response.PERMISSION_DENIED + " You don't have permissions to create a job",
-                status.HTTP_401_UNAUTHORIZED
+                response.PERMISSION_DENIED
+                + " You don't have permissions to create a job",
+                status.HTTP_401_UNAUTHORIZED,
             )
 
         # fetching user profile to get the company to which
         # they belong to you
-        request.data["company"]  = Company.objects.get(creator = request.user)
+        request.data["company"] = Company.objects.get(creator=request.user)
         request.data["employer"] = request.user
-        
+
         job = Job(**request.data)
         job.save()
 
         return Response(
-            {"msg": "Created", "job_id": job.job_id},
-            status=status.HTTP_201_CREATED
+            {"msg": "Created", "job_id": job.job_id}, status=status.HTTP_201_CREATED
         )
-    
+
     def retrieve(self, request):
         pass
 
@@ -172,14 +174,12 @@ class JobViewSets(viewsets.ModelViewSet):
             return response.create_response(
                 "Job id is not valid", status.HTTP_400_BAD_REQUEST
             )
-        
+
         # if user is employer don't remove the job from the db table
         # else, set is_created=False and is_deleted=True
         try:
             updated_job_data = Job.objects.filter(job_id=pk)
-            updated_job_data.update(
-                is_created=False, is_deleted=True, is_active=False
-            )
+            updated_job_data.update(is_created=False, is_deleted=True, is_active=False)
             serialized_updated_job_data = JobSerializer(updated_job_data, many=True)
             return response.create_response(
                 serialized_updated_job_data.data, status.HTTP_200_OK
@@ -216,9 +216,7 @@ class JobViewSets(viewsets.ModelViewSet):
                     open_positions_in_category, status.HTTP_200_OK
                 )
 
-            return response.create_response(
-                [], status.HTTP_200_OK
-            )
+            return response.create_response([], status.HTTP_200_OK)
 
         except Exception:
             return response.create_response(
@@ -234,13 +232,11 @@ class JobViewSets(viewsets.ModelViewSet):
 
         try:
             return response.create_response(
-                {"trending_keywords": values.trending_keywords},
-                status.HTTP_200_OK
+                {"trending_keywords": values.trending_keywords}, status.HTTP_200_OK
             )
         except Exception:
             return response.create_response(
-                response.SOMETHING_WENT_WRONG,
-                status.HTTP_400_BAD_REQUEST
+                response.SOMETHING_WENT_WRONG, status.HTTP_400_BAD_REQUEST
             )
 
 
@@ -356,19 +352,18 @@ class CompanyViewSets(viewsets.ModelViewSet):
         raise exceptions.MethodNotAllowed()
 
     def create(self, request, *args, **kwargs):
-        # check if the user is a employer or not 
+        # check if the user is a employer or not
         # only employers are allowed to create companies
         if not request.user or not request.user.user_type == "Employer":
             raise exceptions.PermissionDenied()
 
-        serializer = CompanySerializer(data = request.data)
-        serializer.is_valid(raise_exception = True)
-        
+        serializer = CompanySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
         # create a company
         try:
             company, created = Company.objects.get_or_create(
-                creator = request.user, 
-                defaults = serializer.data
+                creator=request.user, defaults=serializer.data
             )
 
             if not created:
@@ -383,25 +378,24 @@ class CompanyViewSets(viewsets.ModelViewSet):
             print(e)
             raise InternalServerError()
 
-
-        # once the user is created 
+        # once the user is created
         # set profile completion so jobs can be created
         user = request.user
         user.is_profile_completed = True
         user.save()
 
-        return Response({
-            "msg": "Created", 
-            "company_id": company.company_id
-        }, status.HTTP_201_CREATED)
+        return Response(
+            {"msg": "Created", "company_id": company.company_id},
+            status.HTTP_201_CREATED,
+        )
 
     @action(detail=False, methods=["get"])
     def me(self, request):
         if not request.user.is_profile_completed:
             raise exceptions.PermissionDenied()
-        
+
         # fetch user profile which has the company associated
-        company = Company.objects.get(creator = request.user)
+        company = Company.objects.get(creator=request.user)
 
         return Response(self.serializer_class(company).data)
 
@@ -454,4 +448,3 @@ class ContactUsViewSet(viewsets.ModelViewSet):
                 return super().list(request, *args, **kwargs)
         else:
             return super().list(request, *args, **kwargs)
-        

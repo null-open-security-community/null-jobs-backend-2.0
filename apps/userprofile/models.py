@@ -1,10 +1,12 @@
 import uuid
+
 from django.db import models
 
-from apps.userprofile import constants
 from apps.accounts.models import User
+from apps.userprofile import constants
 
 # Create your models here.
+
 
 class UserProfile(models.Model):
     """
@@ -24,19 +26,27 @@ class UserProfile(models.Model):
     # why are uuid fields used instead of the realtions in django
     # this should have been user relation to the accounts in the end
     id = id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(User, unique=True, on_delete=models.CASCADE, editable=False)
+    user = models.ForeignKey(
+        User, unique=True, on_delete=models.CASCADE, editable=False
+    )
 
     age = models.PositiveIntegerField(default=None, null=True)
-    gender = models.CharField(choices=constants.GENDER, max_length=6, default=None, null=True)
+    gender = models.CharField(
+        choices=constants.GENDER, max_length=6, default=None, null=True
+    )
     address = models.TextField(max_length=100, null=True, default=None)
     experience = models.CharField(default=0, null=True, max_length=3)
     profession = models.CharField(max_length=100, default=None, null=True)
-    
+
     # files for the profile
     resume = models.FileField(upload_to=media_upload_path, null=True, default=None)
-    profile_picture = models.FileField(upload_to=media_upload_path, null=True, default=None)
-    cover_letter = models.FileField(upload_to=media_upload_path, null=True, default=None)
-    
+    profile_picture = models.FileField(
+        upload_to=media_upload_path, null=True, default=None
+    )
+    cover_letter = models.FileField(
+        upload_to=media_upload_path, null=True, default=None
+    )
+
     # user profile sections
     about = models.TextField(max_length=100, default=None, null=True)
     education = models.JSONField(default=dict, null=True)
@@ -61,6 +71,6 @@ class FavoriteProfiles(models.Model):
     employer = models.ForeignKey(User, on_delete=models.CASCADE)
     favorite_profile = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
 
-    # time stamps 
+    # time stamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
