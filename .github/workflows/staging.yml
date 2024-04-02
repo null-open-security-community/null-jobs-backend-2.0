@@ -8,7 +8,7 @@ on:
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -46,5 +46,3 @@ jobs:
             docker run -d --network null_jobs --env-file /home/dev@null/projects/nulljobs/backend/.env null_jobs_backend:latest python manage.py migrate
             docker run -d --name null_jobs_backend --network null_jobs --restart always --env-file /home/dev@null/projects/nulljobs/backend/.env null_jobs_backend:latest python manage.py runserver 0.0.0.0:8000
             rm -r /tmp/null_job_backend_latest.tar
-            
-        

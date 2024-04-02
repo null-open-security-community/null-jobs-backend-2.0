@@ -1,24 +1,23 @@
 from django.urls import path
 
 from apps.accounts.views import (
-    UserRegistrationView,
+    CallbackHandleView,
+    GoogleHandle,
     OTPVerificationCheckView,
-    UserLoginView,
-    UserProfileView,
-    UserLogOutView,
-    SendPasswordResetOTPView,
     ResetPasswordOtpVerifyView,
-    UserPasswordResetView,
+    SendPasswordResetOTPView,
     UserChangePasswordOTPView,
     UserChangePasswordView,
-    GoogleHandle, CallbackHandleView
+    UserLoginView,
+    UserLogOutView,
+    UserPasswordResetView,
+    UserProfileView,
+    UserRegistrationView,
 )
 
 app_name = "apps.accounts"
 
 from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
-
-
 
 urlpatterns = [
     # Generate Access Token using Refresh Token
@@ -50,8 +49,7 @@ urlpatterns = [
         UserChangePasswordOTPView.as_view(),
         name="changepassword_otp_verify",
     ),
-
     # google oauth endpoints
     path("google/login/", GoogleHandle.as_view(), name="google"),
-    path("google/login/callback/", CallbackHandleView.as_view(), name="callback")
+    path("google/login/callback/", CallbackHandleView.as_view(), name="callback"),
 ]

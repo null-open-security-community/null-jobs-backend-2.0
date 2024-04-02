@@ -34,7 +34,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return User.objects.create_user(**validate_data)
 
 
-
 class UserRegistrationResponseSerializer(serializers.Serializer):
     msg = serializers.CharField()
     url = serializers.CharField()
@@ -76,9 +75,11 @@ class UserLoginSerializer(serializers.ModelSerializer):
         model = User
         fields = ["email", "password"]
 
+
 class TokenSerializer(serializers.Serializer):
     refresh = serializers.CharField()
     access = serializers.CharField()
+
 
 class UserLoginResponseSerializer(serializers.Serializer):
     token = TokenSerializer()
@@ -90,7 +91,14 @@ class UserLoginResponseSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "email", "name", "is_verified", "is_profile_completed", "is_active"]
+        fields = [
+            "id",
+            "email",
+            "name",
+            "is_verified",
+            "is_profile_completed",
+            "is_active",
+        ]
 
 
 # Serializer for sending the otp to user's email to verify their request of reset password
