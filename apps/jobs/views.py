@@ -284,17 +284,6 @@ class CompanyViewSets(viewsets.ModelViewSet):
                 response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-    def retrieve(self, request, pk=None):
-        try:
-            # filter based on pk
-            company_data = Company.objects.get(company_id=pk)
-
-            # returning the response
-            return Response(self.serializer_class(company_data).data)
-        except Exception as e:
-            print(e)
-            return InternalServerError()
-
     @extend_schema(exclude=True)
     def update(self, request, *args, **kwargs):
         """
@@ -372,17 +361,26 @@ class CompanyViewSets(viewsets.ModelViewSet):
         if not request.user or not request.user.user_type == "Employer":
             raise exceptions.PermissionDenied()
 
+        serializer = CompanySerializer(data = request.data)
+        serializer.is_valid(raise_exception = True)
+        
         # create a company
         try:
             company, created = Company.objects.get_or_create(
                 creator = request.user, 
-                defaults = request.data
+                defaults = serializer.data
             )
+
             if not created:
-                for key, value in request.data.items():
+                for key, value in serializer.data.items():
                     setattr(company, key, value)
+
+            if request.data.get("picture") is not None:
+                company.picture = request.data.get("picture")
+
             company.save()
         except Exception as e:
+            print(e)
             raise InternalServerError()
 
 
