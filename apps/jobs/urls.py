@@ -1,7 +1,10 @@
 from django.urls import include, path
 from rest_framework import routers
 
-from apps.jobs.views import CompanyViewSets, ContactUsViewSet, JobViewSets
+from apps.jobs.views import (
+    CompanyViewSets, ContactUsViewSet, 
+    JobViewSets
+)
 
 # app name for namespace
 app_name = "apps.jobs"
@@ -12,4 +15,6 @@ router.register(r"jobs", JobViewSets)
 router.register(r"company", CompanyViewSets)
 router.register(r"contact-us", ContactUsViewSet, basename="contact-us")
 
-urlpatterns = [path("", include(router.urls), name="Default")]
+urlpatterns = [
+    path("", include(router.urls), name="Default"),
+]

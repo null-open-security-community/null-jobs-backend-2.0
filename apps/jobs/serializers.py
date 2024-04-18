@@ -79,3 +79,8 @@ class ContactUsSerializer(serializers.ModelSerializer):
             except UnicodeEncodeError:
                 raise serializers.ValidationError("Message must be valid UTF-8 text.")
             return value
+
+class JobsCountByCategoriesSerializer(serializers.Serializer):
+    category = serializers.CharField()
+    count = serializers.CharField()
+
