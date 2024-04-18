@@ -1,18 +1,16 @@
-from datetime import timedelta
 
-from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-from django.db import IntegrityError
 from django.db.models import Count
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from rest_framework import exceptions, parsers, status, viewsets
+from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from apps.accounts.permissions import Moderator
 from apps.jobs.constants import response, values
 from apps.jobs.models import Company, ContactMessage, Job
-from apps.jobs.serializers import CompanySerializer, ContactUsSerializer, JobSerializer
+from apps.jobs.serializers import CompanySerializer, ContactUsSerializer, JobSerializer, JobsCountByCategoriesSerializer
 from apps.jobs.utils.validators import validationClass
 from apps.utils.responses import InternalServerError
 
@@ -33,64 +31,8 @@ class JobViewSets(viewsets.ModelViewSet):
     queryset = Job.objects.annotate(total_applicants=Count("applicants"))
     serializer_class = JobSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["job_role", "location", "is_active"]
+    filterset_fields = ["job_role", "location", "is_active", "category"]
 
-    # @extend_schema(
-    #     parameters=[
-    #         OpenApiParameter(
-    #             name='page',
-    #             type=int, required=False, default=1,
-    #             description='Page number.'
-    #         )
-    #    ]
-    # )
-    # def list(self, request):
-    #     """
-    #     Overrided the default list action provided by
-    #     the ModelViewSet, in order to contain a new field
-    #     called 'No of applicants' to the serializer data
-    #     """
-
-    #     # check for the query_params (in case of filter)
-    #     filters_dict = {}
-    #     if request.query_params:
-    #         filters = request.query_params
-    #         for filter_name, filter_value in filters.items():
-    #             if filter_name in self.filterset_fields and filter_value:
-    #                 filters_dict[filter_name] = filter_value
-
-    #     # Even if the filters_dict is empty, it returns
-    #     # overall data present in the Job, exception if wrong
-    #     # uuid value is given.
-    #     try:
-    #         jobs_data = self.queryset.filter(**filters_dict, is_active=True, is_deleted=False)
-    #     except django.core.exceptions.ValidationError as err:
-    #         return response.create_response(err.messages, status.HTTP_404_NOT_FOUND)
-
-    #     # Use Paginator for the queryset
-    #     page_number = request.GET.get("page", 1)
-    #     paginator = Paginator(jobs_data, values.ITEMS_PER_PAGE)  # 5 items per page
-
-    #     try:
-    #         jobs_data = paginator.page(page_number)
-    #     except PageNotAnInteger:
-    #         jobs_data = paginator.page(1)
-    #     except EmptyPage:
-    #         return response.create_response([], status.HTTP_200_OK)
-
-    #     serialized_job_data = self.serializer_class(
-    #         jobs_data, many=True, context={"request": request}
-    #     )
-
-    #     # get number of applicants
-    #     if serialized_job_data:
-    #         serialized_job_data = JobViewSets.get_number_of_applicants(
-    #             serialized_job_data
-    #         )
-
-    #     return response.create_response(
-    #         serialized_job_data.data, status.HTTP_200_OK
-    #     )
 
     def create(self, request, *args, **kwargs):
         """Overriding the create method to include permissions"""
@@ -118,9 +60,6 @@ class JobViewSets(viewsets.ModelViewSet):
         return Response(
             {"msg": "Created", "job_id": job.job_id}, status=status.HTTP_201_CREATED
         )
-
-    def retrieve(self, request):
-        pass
 
     def update(self, request, *args, **kwargs):
         """
@@ -189,40 +128,6 @@ class JobViewSets(viewsets.ModelViewSet):
                 response.SOMETHING_WENT_WRONG, status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-    # move the below to misc along with contact us
-    @action(detail=False, methods=["get"])
-    def get_jobs_categories(self, request):
-        """
-        API: /get_jobs_categories
-        Return open positions present in specific job category
-        """
-
-        try:
-            job_data = self.queryset.filter(is_created=True, is_deleted=False)
-
-            if job_data.exists():
-                category_counts = {}
-
-                for job in job_data:
-                    category = job.category.lower().strip()
-                    category_counts[category] = category_counts.get(category, 0) + 1
-
-                open_positions_in_category = [
-                    {"id": str(index + 1), "category": category, "open_position": count}
-                    for index, (category, count) in enumerate(category_counts.items())
-                ]
-
-                return response.create_response(
-                    open_positions_in_category, status.HTTP_200_OK
-                )
-
-            return response.create_response([], status.HTTP_200_OK)
-
-        except Exception:
-            return response.create_response(
-                response.SOMETHING_WENT_WRONG, status.HTTP_400_BAD_REQUEST
-            )
-
     @action(detail=False, methods=["get"])
     def get_trending_keywords(self, request):
         """
@@ -239,7 +144,17 @@ class JobViewSets(viewsets.ModelViewSet):
                 response.SOMETHING_WENT_WRONG, status.HTTP_400_BAD_REQUEST
             )
 
+    @action(detail=False, methods=["get"])
+    @extend_schema(
+        responses={200: JobsCountByCategoriesSerializer(many=True)},
+        tags=["jobs"]
+    )
+    def get_count_by_categories(self, request):
+        category_job_counts = Job.objects.values('category').annotate(count=Count('job_id'))
+        return Response(JobsCountByCategoriesSerializer(category_job_counts, many=True).data)
 
+
+    
 class CompanyViewSets(viewsets.ModelViewSet):
     """
     Company object viewsets
