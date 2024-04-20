@@ -49,7 +49,7 @@ class Company(models.Model):
     # deletion check for the company should not be present as on delete
     # of the user auth the company will be deleted as well as there is cascade
     # policy
-    is_deleted = models.BooleanField(default=False, null=True, editable=False)
+    is_deleted = models.BooleanField(default=False, editable=False)
 
 
 class Job(models.Model):
@@ -92,6 +92,7 @@ class Job(models.Model):
     is_active = models.BooleanField(default=False, null=False, editable=False)
     is_created = models.BooleanField(default=False, null=True, editable=False)
     is_deleted = models.BooleanField(default=False, null=True, editable=False)
+    is_featured = models.BooleanField(default=False, null=True)
 
     # These fields will be displayed as a part of "description" field and the
     # body of the job

@@ -31,7 +31,7 @@ class JobViewSets(viewsets.ModelViewSet):
     queryset = Job.objects.annotate(total_applicants=Count("applicants"))
     serializer_class = JobSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["job_role", "location", "is_active", "category"]
+    filterset_fields = ["job_role", "location", "is_active", "category", "is_featured"]
 
 
     def create(self, request, *args, **kwargs):
@@ -306,7 +306,7 @@ class CompanyViewSets(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def me(self, request):
-        if not request.user.is_profile_completed:
+        if request.user.is_anonymous or not request.user.is_profile_completed:
             raise exceptions.PermissionDenied()
 
         # fetch user profile which has the company associated

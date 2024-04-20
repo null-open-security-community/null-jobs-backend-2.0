@@ -51,7 +51,7 @@ https://support.google.com/cloud/answer/6158849?hl=en
 
 <hr>
 
-## test cases setup:
+## Test cases setup:
 
 lets migrate the db first for testing env
 <br>
@@ -69,3 +69,48 @@ In order to run the test cases over test_db
 ```
 python manage.py test --settings=null_jobs_backend.test_settings
 ```
+
+## Contributors and sponsors
+
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![All Contributors](https://img.shields.io/badge/all_contributors-4-orange.svg?style=flat-square)](#contributors-)
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
+
+Thanks goes to these wonderful people
+([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/hims1911"><img src="https://avatars.githubusercontent.com/u/26831864?v=4?s=100" width="100px;" alt="Himanshu Sharma"/><br /><sub><b>Himanshu Sharma</b></sub></a><br /><a href="https://github.com/null-open-security-community/null-jobs-backend-2.0/commits/main/?author=hims1911" title="Code">💻</a> <a href="https://github.com/null-open-security-community/null-jobs-backend-2.0/commits/main/?author=hims1911" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/YogeshUpdhyay"><img src="https://avatars.githubusercontent.com/u/53992168?v=4?s=100" width="100px;" alt="Yogesh Upadhyay"/><br /><sub><b>Yogesh Upadhyay</b></sub></a><br /><a href="https://github.com/yezz123/authx/issues?q=author%3AYogeshUpdhyay" title="Bug reports">🐛</a><a href="https://github.com/null-open-security-community/null-jobs-backend-2.0/commits/main/?author=YogeshUpdhyay" title="Code">💻</a> <a href="https://github.com/null-open-security-community/null-jobs-backend-2.0/commits/main/?author=YogeshUpdhyay" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Himan10"><img src="https://avatars.githubusercontent.com/u/33115688?v=4?s=100" width="100px;" alt="Himanshu Bhatnagar"/><br /><sub><b>Himanshu Bhatnagar</b></sub></a><br /><a href="https://github.com/null-open-security-community/null-jobs-backend-2.0/commits/main/?author=Himan10" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Parth858"><img src="https://avatars.githubusercontent.com/u/87690475?v=4?s=100" width="100px;" alt="Parth K"/><br /><sub><b>Parth K</b></sub></a><br /><a href="https://github.com/null-open-security-community/null-jobs-backend-2.0/commits/main/?author=Parth858" title="Code">💻</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+This project follows the
+[all-contributors](https://github.com/all-contributors/all-contributors)
+specification. Contributions of any kind welcome!
+
+## License
+
+This project is licensed under the terms of the MIT License.
