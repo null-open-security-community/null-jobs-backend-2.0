@@ -31,7 +31,7 @@ class JobViewSets(viewsets.ModelViewSet):
     queryset = Job.objects.annotate(total_applicants=Count("applicants"))
     serializer_class = JobSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["job_role", "location", "is_active", "category"]
+    filterset_fields = ["job_role", "location", "is_active", "category", "is_featured"]
 
 
     def create(self, request, *args, **kwargs):
