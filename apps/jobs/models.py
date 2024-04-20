@@ -92,6 +92,7 @@ class Job(models.Model):
     is_active = models.BooleanField(default=False, null=False, editable=False)
     is_created = models.BooleanField(default=False, null=True, editable=False)
     is_deleted = models.BooleanField(default=False, null=True, editable=False)
+    is_featured = models.BooleanField(default=False, null=True)
 
     # These fields will be displayed as a part of "description" field and the
     # body of the job
