@@ -448,15 +448,7 @@ class CallbackHandleView(APIView):
                 },
             )
 
-            user_instance = user_profile.objects.get_or_create(
-                email=email,
-                defaults={
-                    "user_id": user.id,
-                    "name": user.name,
-                    "email": user.email,
-                    "user_type": "Job Seeker",
-                },
-            )
+            user_instance, user_instance_created = UserProfile.objects.get_or_create(user = user)
 
             if not created:
                 user.last_verified_identity = datetime.datetime.now()
