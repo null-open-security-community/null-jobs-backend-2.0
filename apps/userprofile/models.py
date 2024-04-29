@@ -67,6 +67,7 @@ class FavoriteProfiles(models.Model):
 
     class Meta:
         db_table = "tbl_favorite_profiles"
+        unique_together = [['employer', 'favorite_profile']]
 
     employer = models.ForeignKey(User, on_delete=models.CASCADE)
     favorite_profile = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
@@ -74,3 +75,4 @@ class FavoriteProfiles(models.Model):
     # time stamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
