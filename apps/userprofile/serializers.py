@@ -100,3 +100,8 @@ class UploadFilesSerializer(serializers.Serializer):
     resume = serializers.FileField(allow_null=True, required=False)
     profile_picture = serializers.ImageField(allow_null=True, required=False)
     cover_letter = serializers.FileField(allow_null=True, required=False)
+
+
+class ShortlistProfileRequestSerializer(serializers.Serializer):
+    shortlist = serializers.BooleanField(default=True)
+    profile_id = serializers.CharField()
