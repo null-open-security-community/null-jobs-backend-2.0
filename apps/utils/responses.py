@@ -14,3 +14,10 @@ class Response201Created(Response):
         data = {"msg": "Created", "id": id}
 
         super().__init__(data=data, status=status.HTTP_201_CREATED)
+
+
+class Response200Success(Response):
+    def __init__(self, detail = "", *args, **kwargs):
+        data = {"msg": "Success", "detail": detail}
+
+        super().__init__(data=data, status=status.HTTP_200_OK)
