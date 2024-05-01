@@ -440,7 +440,7 @@ class CallbackHandleView(APIView):
         try:
             # Finding if GoogleCallBack has gmail user
             user_type = ""
-            if "@gmail.com" in email:
+            if email.endswith("@gmail.com"):
                 user_type = "Job Seeker"
             else:
                 user_type = "Employer"
