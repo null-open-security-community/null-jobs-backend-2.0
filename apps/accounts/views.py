@@ -438,6 +438,13 @@ class CallbackHandleView(APIView):
             )
 
         try:
+            # Finding if GoogleCallBack has gmail user
+            user_type = ""
+            if email.endswith("@gmail.com"):
+                user_type = "Job Seeker"
+            else:
+                user_type = "Employer"
+
             # Login the user
             user, created = User.objects.get_or_create(
                 email=email,
@@ -445,6 +452,7 @@ class CallbackHandleView(APIView):
                     "name": name,
                     "login_method": "google_login",
                     "last_verified_identity": datetime.datetime.now(),
+                    "user_type": user_type,
                 },
             )
 
