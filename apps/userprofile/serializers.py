@@ -1,4 +1,5 @@
 import json
+from uuid import uuid4
 
 from rest_framework import serializers
 
@@ -6,6 +7,7 @@ from apps.accounts.serializers import UserSerializer as UserAuthSerializer
 
 
 class EducationSerializer(serializers.Serializer):
+    id = serializers.CharField(allow_null=True, default=uuid4)
     from_date = serializers.CharField()
     till_date = serializers.CharField()
     grade = serializers.CharField()
@@ -21,6 +23,7 @@ class ProfessionalSkillsSerializer(serializers.Serializer):
 
 
 class WorkExperienceSerializer(serializers.Serializer):
+    id = serializers.UUIDField(allow_null=True, default=uuid4)
     from_date = serializers.CharField()
     till_date = serializers.CharField()
     company_id = serializers.CharField(allow_null=True, default=None)

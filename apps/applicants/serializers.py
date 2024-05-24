@@ -19,6 +19,7 @@ class ApplicantModelSerializer(serializers.Serializer):
     updated_at = serializers.DateTimeField()
     is_deleted = serializers.BooleanField()
     is_active = serializers.BooleanField()
+    status = serializers.CharField()
 
 
 class ApplyToJobSerializer(serializers.Serializer):

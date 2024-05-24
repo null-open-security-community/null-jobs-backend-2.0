@@ -18,7 +18,6 @@ from apps.userprofile.serializers import (
 from apps.utils.pagination import  DefaultPagination
 from apps.utils.responses import InternalServerError, Response201Created, Response200Success
 
-
 class UserProfileFilter(df_filters.FilterSet):
     profession = df_filters.BaseInFilter(field_name='profession')
     experience = df_filters.BaseInFilter(field_name='experience')
@@ -61,7 +60,19 @@ class UserProfileViewSet(viewsets.ModelViewSet):
 
         return queryset
 
+    @extend_schema(tags=["user profile"])
+    def list(self, request, *args, **kwargs):
+        """
+        list all the job seekers profile only if
+        user is Employer, else raise an exception
+        """
 
+        # check if the user_id present in the request belongs to Employer or Moderator
+        if request.user.user_type == "Job Seeker":
+            raise exceptions.PermissionDenied()
+
+        return super().list(request, *args, **kwargs)
+    
     @extend_schema(tags=["user profile"], request=UserProfileRequestSerializer)
     def create(self, request, *args, **kwargs):
         """A job seeker has a user profile so when a user
