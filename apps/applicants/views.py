@@ -8,7 +8,7 @@ from apps.applicants.models import Applicants
 from apps.applicants.serializers import (
     ApplicantModelSerializer,
     ApplyToJobSerializer,
-    UpdateApplicationStatusSerializer,
+    UpdateApplicationStatusSerializer, AppliedJobSerializer,
 )
 from apps.jobs.models import Job
 from apps.userprofile.models import UserProfile
@@ -71,7 +71,7 @@ class UpdateApplicationStatus(APIView):
         serializer.is_valid(raise_exception=True)
 
         if not Applicants.objects.filter(id=serializer.data["application_id"]).update(
-            status=serializer.data["status"]
+                status=serializer.data["status"]
         ):
             raise exceptions.NotFound()
 
@@ -79,3 +79,40 @@ class UpdateApplicationStatus(APIView):
             {"msg": "Success", "detail": "Status updated successfully."},
             status=status.HTTP_200_OK,
         )
+
+
+class GetAppliedJobs(APIView):
+    """
+    get applied jobs will return all the applied jobs associated with that candidate
+    """
+    permission_classes = [permissions.IsAuthenticated, IsProfileCompleted]
+
+    @extend_schema(
+        responses={200: ApplicantModelSerializer(many=True)},
+        tags=["applied_jobs"]
+    )
+    def get(self, request):
+        """List all users that belong to the company, or a specific applicant by ID"""
+        job_id = request.query_params.get('job_id')
+
+        # finding out the user_id associated with logged in user_id
+        user_id = UserProfile.objects.get(user_id=request.user.id)
+
+        if job_id:
+            try:
+                applicant = Applicants.objects.get(user_id=user_id, job_id=job_id)
+                return Response(
+                    AppliedJobSerializer(applicant).data,
+                    status=status.HTTP_200_OK
+                )
+            except Applicants.DoesNotExist:
+                return Response(
+                    {"detail": "Applicant not found."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        else:
+            applicants = Applicants.objects.filter(user_id=user_id).order_by('-created_at')
+            return Response(
+                AppliedJobSerializer(applicants, many=True).data,
+                status=status.HTTP_200_OK
+            )
