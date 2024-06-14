@@ -55,6 +55,7 @@ class TokenUtility:
         return {
             "refresh": str(refresh),
             "access": str(refresh.access_token),
+            "user_type": user.user_type
         }
 
     @staticmethod

@@ -29,3 +29,25 @@ class ApplyToJobSerializer(serializers.Serializer):
 class UpdateApplicationStatusSerializer(serializers.Serializer):
     application_id = serializers.CharField(required=True)
     status = serializers.ChoiceField(choices=constants.STATUS_CHOICES, required=True)
+
+
+
+
+
+
+class AppliedJobSerializer(serializers.ModelSerializer):
+    job = JobSerializer(read_only=True)
+
+    class Meta:
+        model = Applicants
+        fields = [
+            'id',
+            'job',
+            'created_at',
+            'updated_at',
+            'is_deleted',
+            'is_active',
+            'status'
+        ]
+
+
