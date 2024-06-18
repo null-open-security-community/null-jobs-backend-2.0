@@ -1,21 +1,32 @@
 
 from django.db.models import Count
-from django_filters.rest_framework import DjangoFilterBackend
+import django_filters.rest_framework as df_filters
+from django.db.models import BooleanField, Case, Value, When
 from drf_spectacular.utils import extend_schema
-from rest_framework import exceptions, parsers, status, viewsets
+from rest_framework import exceptions, parsers, status, viewsets, filters
 from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from apps.accounts.permissions import Moderator
 from apps.jobs.constants import response, values
+from apps.userprofile.models import UserProfile
 from apps.jobs.models import Company, ContactMessage, Job
 from apps.jobs.serializers import CompanySerializer, ContactUsSerializer, JobSerializer, JobsCountByCategoriesSerializer
 from apps.jobs.utils.validators import validationClass
 from apps.utils.responses import InternalServerError
+from apps.utils.pagination import DefaultPagination
 
 from .utils.user_permissions import UserTypeCheck
 
+
+class JobsFilter(df_filters.FilterSet):
+    category = df_filters.BaseInFilter(field_name="category")
+    job_type = df_filters.BaseInFilter(field_name="job_type")
+
+    class Meta:
+        model = Job
+        fields = ["category", "job_type"]
 
 class JobViewSets(viewsets.ModelViewSet):
     """
@@ -30,9 +41,24 @@ class JobViewSets(viewsets.ModelViewSet):
 
     queryset = Job.objects.annotate(total_applicants=Count("applicants"))
     serializer_class = JobSerializer
-    filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["job_role", "location", "is_active", "category", "is_featured"]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter, df_filters.DjangoFilterBackend]
+    search_fields = ["job_role", "location"]
+    filterset_class = JobsFilter
+    pagination_class = DefaultPagination
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        if self.request.user.is_authenticated:
+            queryset = queryset.annotate(
+                has_applied=Case(
+                    When(applicants__user=UserProfile.objects.get(user=self.request.user), then=Value(True)),
+                    default=Value(False),
+                    output_field=BooleanField(),
+                )
+            )
+
+        return queryset
 
     def create(self, request, *args, **kwargs):
         """Overriding the create method to include permissions"""
@@ -172,7 +198,7 @@ class CompanyViewSets(viewsets.ModelViewSet):
     parser_classes = [parsers.MultiPartParser, parsers.FormParser]
 
     # Basic filters
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [df_filters.DjangoFilterBackend]
     filterset_fields = ["name", "location"]
 
     def list(self, request):

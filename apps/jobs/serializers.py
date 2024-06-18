@@ -9,6 +9,7 @@ class JobSerializer(serializers.ModelSerializer):
     """Job object serializer class"""
 
     total_applicants = serializers.IntegerField(read_only=True)
+    has_applied = serializers.BooleanField(read_only=True)
 
     class Meta:
         """
