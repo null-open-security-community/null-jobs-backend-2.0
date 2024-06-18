@@ -26,7 +26,7 @@ class JobsFilter(df_filters.FilterSet):
 
     class Meta:
         model = Job
-        fields = ["category", "job_type"]
+        fields = ["category", "job_type", "is_active", "is_featured"]
 
 class JobViewSets(viewsets.ModelViewSet):
     """
