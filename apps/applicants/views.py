@@ -50,6 +50,13 @@ class ApplyToJob(APIView):
             job = Job.objects.get(job_id=serializer.data["job_id"])
         except Job.DoesNotExist:
             raise exceptions.NotFound()
+        
+        application = Applicants.objects.first(job=job, user=user_profile)
+        if application is not None:
+            return Response(
+                {"msg": "Already Applied!"},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         application = Applicants(job=job, user=user_profile)
         application.save()
