@@ -4,14 +4,15 @@ import django_filters.rest_framework as df_filters
 from django.db.models import BooleanField, Case, Value, When
 from drf_spectacular.utils import extend_schema
 from rest_framework import exceptions, parsers, status, viewsets, filters
-from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 
 from apps.accounts.permissions import Moderator
 from apps.jobs.constants import response, values
 from apps.userprofile.models import UserProfile
 from apps.jobs.models import Company, ContactMessage, Job
+from apps.accounts.permissions import IsEmployer
 from apps.jobs.serializers import CompanySerializer, ContactUsSerializer, JobSerializer, JobsCountByCategoriesSerializer
 from apps.jobs.utils.validators import validationClass
 from apps.utils.responses import InternalServerError
@@ -23,10 +24,13 @@ from .utils.user_permissions import UserTypeCheck
 class JobsFilter(df_filters.FilterSet):
     category = df_filters.BaseInFilter(field_name="category")
     job_type = df_filters.BaseInFilter(field_name="job_type")
+    min_exp = df_filters.NumberFilter(field_name='experience', lookup_expr='gte')
+    max_exp = df_filters.NumberFilter(field_name='experience', lookup_expr='lte')
+
 
     class Meta:
         model = Job
-        fields = ["category", "job_type", "is_active", "is_featured"]
+        fields = ["category", "job_type", 'experience', "is_active", "is_featured"]
 
 class JobViewSets(viewsets.ModelViewSet):
     """
@@ -178,6 +182,16 @@ class JobViewSets(viewsets.ModelViewSet):
     def get_count_by_categories(self, request):
         category_job_counts = Job.objects.values('category').annotate(count=Count('job_id'))
         return Response(JobsCountByCategoriesSerializer(category_job_counts, many=True).data)
+    
+    
+    @action(
+        detail=False, 
+        methods=['get'],
+        permission_classes=[IsAuthenticated, IsEmployer]
+    )
+    def employer(self, request):
+        jobs = Job.objects.filter(employer = request.user)
+        return Response(JobSerializer(jobs, many=True).data)
 
 
     
