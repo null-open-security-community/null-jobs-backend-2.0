@@ -73,7 +73,7 @@ python manage.py test --settings=null_jobs_backend.test_settings
 ## Contributors and sponsors
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-4-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-3-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 Thanks goes to these wonderful people
@@ -88,7 +88,6 @@ Thanks goes to these wonderful people
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/hims1911"><img src="https://avatars.githubusercontent.com/u/26831864?v=4?s=100" width="100px;" alt="Himanshu Sharma"/><br /><sub><b>Himanshu Sharma</b></sub></a><br /><a href="https://github.com/null-open-security-community/null-jobs-backend-2.0/commits/main/?author=hims1911" title="Code">💻</a> <a href="https://github.com/null-open-security-community/null-jobs-backend-2.0/commits/main/?author=hims1911" title="Documentation">📖</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/YogeshUpdhyay"><img src="https://avatars.githubusercontent.com/u/53992168?v=4?s=100" width="100px;" alt="Yogesh Upadhyay"/><br /><sub><b>Yogesh Upadhyay</b></sub></a><br /><a href="https://github.com/yezz123/authx/issues?q=author%3AYogeshUpdhyay" title="Bug reports">🐛</a><a href="https://github.com/null-open-security-community/null-jobs-backend-2.0/commits/main/?author=YogeshUpdhyay" title="Code">💻</a> <a href="https://github.com/null-open-security-community/null-jobs-backend-2.0/commits/main/?author=YogeshUpdhyay" title="Documentation">📖</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Himan10"><img src="https://avatars.githubusercontent.com/u/33115688?v=4?s=100" width="100px;" alt="Himanshu Bhatnagar"/><br /><sub><b>Himanshu Bhatnagar</b></sub></a><br /><a href="https://github.com/null-open-security-community/null-jobs-backend-2.0/commits/main/?author=Himan10" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Parth858"><img src="https://avatars.githubusercontent.com/u/87690475?v=4?s=100" width="100px;" alt="Parth K"/><br /><sub><b>Parth K</b></sub></a><br /><a href="https://github.com/null-open-security-community/null-jobs-backend-2.0/commits/main/?author=Parth858" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
