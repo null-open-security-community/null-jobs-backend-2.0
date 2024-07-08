@@ -89,7 +89,7 @@ class Job(models.Model):
     updated_at = models.DateTimeField(auto_now=True)  # update timestamp on every save()
 
     # flags are un explained here
-    is_active = models.BooleanField(default=False, null=False, editable=False)
+    is_active = models.BooleanField(default=False, null=False)
     is_created = models.BooleanField(default=False, null=True, editable=False)
     is_deleted = models.BooleanField(default=False, null=True, editable=False)
     is_featured = models.BooleanField(default=False, null=True)

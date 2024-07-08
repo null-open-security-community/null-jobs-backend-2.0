@@ -265,3 +265,27 @@ class GoogleAuthSerializer(serializers.Serializer):
 
     def create(self, validate_data):
         return User.objects.create_user(**validate_data)
+
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+class AdminUserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = ['email', 'name', 'password']
+
+    def create(self, validated_data):
+        user = User(
+            email=validated_data['email'],
+            name=validated_data['name'],
+        )
+        user.set_password(validated_data['password'])
+        user.is_staff = True
+        user.is_superuser = True # for time being lets keep it this only
+        user.user_type = "Moderator"
+        user.is_verified = True
+        user.save()
+        return user

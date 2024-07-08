@@ -44,5 +44,6 @@ jobs:
             docker stop null_jobs_backend || true
             docker rm null_jobs_backend || true
             docker run -d --network null_jobs --env-file /home/dev@null/projects/nulljobs/backend/.env null_jobs_backend:latest python manage.py migrate
+            docker run -d --network null_jobs --env-file /home/dev@null/projects/nulljobs/backend/.env null_jobs_backend:latest python manage.py create_superuser
             docker run -d --name null_jobs_backend --network null_jobs --restart always --env-file /home/dev@null/projects/nulljobs/backend/.env null_jobs_backend:latest python manage.py runserver 0.0.0.0:8000
             rm -r /tmp/null_job_backend_latest.tar

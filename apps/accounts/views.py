@@ -9,7 +9,7 @@ import requests
 from django.conf import settings
 from django.contrib.auth import authenticate
 from drf_spectacular.utils import OpenApiParameter, extend_schema
-from rest_framework import status
+from rest_framework import status, generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -28,10 +28,11 @@ from apps.accounts.serializers import (
     UserPasswordResetSerializer,
     UserRegistrationResponseSerializer,
     UserRegistrationSerializer,
-    UserSerializer,
+    UserSerializer, AdminUserSerializer,
 )
 from apps.accounts.utils import *
 from apps.userprofile.models import UserProfile
+import logging
 
 # from django.shortcuts import render
 
@@ -473,3 +474,32 @@ class CallbackHandleView(APIView):
                 {"msg": "There was an error authenticating the user"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+
+
+class IsSuperuserOrStaff(IsAuthenticated):
+    def has_permission(self, request, view):
+        return super().has_permission(request, view) and (request.user.is_admin or request.user.is_staff)
+
+
+class CreateAdminUserView(generics.CreateAPIView):
+    serializer_class = AdminUserSerializer
+    permission_classes = [IsSuperuserOrStaff]
+
+    def create(self, request, *args, **kwargs):
+        # Check if the current user email matches the one in the environment variable
+        admin_email_env = os.getenv('DJANGO_ADMIN_EMAIL')
+        admin_password_env = os.getenv('DJANGO_ADMIN_PASSWORD')
+        if not (admin_email_env or admin_password_env):
+            return Response({'error': 'Admin email is not set in environment variables'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        if request.user.email != admin_email_env and request.user.password != admin_password_env:
+            return Response({'error': 'You are not authorized to create a new superuser'},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        response = super().create(request, *args, **kwargs)
+        if response.status_code == status.HTTP_201_CREATED:
+            logger.info(f"Admin user created: {response.data['email']} by {request.user.email}")
+        return response

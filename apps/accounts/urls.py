@@ -12,7 +12,7 @@ from apps.accounts.views import (
     UserLogOutView,
     UserPasswordResetView,
     UserProfileView,
-    UserRegistrationView,
+    UserRegistrationView, CreateAdminUserView,
 )
 
 app_name = "apps.accounts"
@@ -52,4 +52,5 @@ urlpatterns = [
     # google oauth endpoints
     path("google/login/", GoogleHandle.as_view(), name="google"),
     path("google/login/callback/", CallbackHandleView.as_view(), name="callback"),
+    path('create-admin', CreateAdminUserView.as_view(), name='create-admin'),
 ]
