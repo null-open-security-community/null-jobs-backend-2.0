@@ -2,6 +2,7 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import exceptions, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.db.models import Count, Q
 
 from apps.accounts.permissions import IsEmployer, IsJobSeeker, IsProfileCompleted
 from apps.applicants.models import Applicants
@@ -9,9 +10,11 @@ from apps.applicants.serializers import (
     ApplicantModelSerializer,
     ApplyToJobSerializer,
     UpdateApplicationStatusSerializer, AppliedJobSerializer,
+    ApplicationStatsResponseSerializer
 )
 from apps.jobs.models import Job
 from apps.userprofile.models import UserProfile
+from apps.utils.responses import InternalServerError
 
 
 class AllApplicantsOfCompany(APIView):
@@ -123,3 +126,23 @@ class GetAppliedJobs(APIView):
                 AppliedJobSerializer(applicants, many=True).data,
                 status=status.HTTP_200_OK
             )
+
+
+class ApplicationStats(APIView):
+
+    permission_classes = [permissions.IsAuthenticated, IsJobSeeker]
+
+    @extend_schema(responses={200: ApplicationStatsResponseSerializer}, tags=["applications"])
+    def get(self, request):
+        try:
+            userprofile = UserProfile.objects.get(user=request.user)
+            counts = Applicants.objects.filter(user=userprofile).aggregate(
+                applied_jobs=Count('id'),
+                recruiter_actions=Count('id', filter=~Q(status='applied')),
+                shortlisted_jobs=Count('id', filter=Q(status='shortlisted'))
+            )
+
+            return Response(ApplicationStatsResponseSerializer(counts).data, status=status.HTTP_200_OK)
+        except Exception as e:
+            raise InternalServerError()
+    
