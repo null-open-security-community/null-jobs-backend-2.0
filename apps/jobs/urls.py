@@ -3,7 +3,7 @@ from rest_framework import routers
 
 from apps.jobs.views import (
     CompanyViewSets, ContactUsViewSet, 
-    JobViewSets
+    JobViewSets, CompanyStats
 )
 
 # app name for namespace
@@ -17,4 +17,9 @@ router.register(r"contact-us", ContactUsViewSet, basename="contact-us")
 
 urlpatterns = [
     path("", include(router.urls), name="Default"),
+    path(
+        "company/stats",
+        CompanyStats.as_view(),
+        name="companystats"
+    )
 ]
