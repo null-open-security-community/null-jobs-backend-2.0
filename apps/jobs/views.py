@@ -1,19 +1,22 @@
-
+from django.db import connection
 from django.db.models import Count
 import django_filters.rest_framework as df_filters
-from django.db.models import BooleanField, Case, Value, When
 from drf_spectacular.utils import extend_schema
-from rest_framework import exceptions, parsers, status, viewsets, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
+from django.db.models import BooleanField, Case, Value, When
+from rest_framework import exceptions, parsers, status, viewsets, filters
+
 
 from apps.accounts.permissions import Moderator
 from apps.jobs.constants import response, values
 from apps.userprofile.models import UserProfile
+from apps.applicants.models import Applicants
 from apps.jobs.models import Company, ContactMessage, Job
 from apps.accounts.permissions import IsEmployer
-from apps.jobs.serializers import CompanySerializer, ContactUsSerializer, JobSerializer, JobsCountByCategoriesSerializer
+from apps.jobs.serializers import CompanySerializer, ContactUsSerializer, JobSerializer, JobsCountByCategoriesSerializer, CompanyStatsResponseSerializer
 from apps.jobs.utils.validators import validationClass
 from apps.utils.responses import InternalServerError
 from apps.utils.pagination import DefaultPagination
@@ -403,3 +406,40 @@ class ContactUsViewSet(viewsets.ModelViewSet):
                 return super().list(request, *args, **kwargs)
         else:
             return super().list(request, *args, **kwargs)
+
+
+class CompanyStats(APIView):
+
+    permission_classes = [IsAuthenticated, IsEmployer]
+
+    @extend_schema(tags=["company"], responses={200: CompanyStatsResponseSerializer})
+    def get(self, request):
+        """Get company stats"""
+        try:
+            raw_query = """
+            SELECT 
+                COUNT(DISTINCT(tj.job_id)) AS job_count, 
+                COUNT(ta.id) AS applications_count,
+                COUNT(CASE WHEN ta.status != 'applied' THEN 1 ELSE NULL END) AS reviewed_count,
+                COUNT(CASE WHEN ta.status = 'shortlisted' THEN 1 ELSE NULL END) AS shortlisted_count
+            FROM tbl_job tj 
+            JOIN tbl_applicants ta ON tj.job_id = ta.job_id 
+            WHERE tj.employer_id = %s
+            """
+
+            # Execute the raw SQL query
+            with connection.cursor() as cursor:
+                cursor.execute(raw_query, [str(request.user.id).replace("-", "")])
+                result = cursor.fetchone()
+
+            job_count, applications_count, reviewed_count, shortlisted_count = result
+            company_stats = CompanyStatsResponseSerializer({
+                "job_count": job_count,
+                "applications_count": applications_count,
+                "reviewed_count": reviewed_count,
+                "shortlisted_count": shortlisted_count
+            })
+
+            return Response(company_stats.data)
+        except Exception as e:
+            raise InternalServerError()
