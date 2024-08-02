@@ -51,3 +51,7 @@ class AppliedJobSerializer(serializers.ModelSerializer):
         ]
 
 
+class ApplicationStatsResponseSerializer(serializers.Serializer):
+    applied_jobs = serializers.IntegerField()
+    recruiter_actions = serializers.IntegerField()
+    shortlisted_jobs = serializers.IntegerField()

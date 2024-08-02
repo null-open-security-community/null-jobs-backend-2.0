@@ -85,3 +85,10 @@ class JobsCountByCategoriesSerializer(serializers.Serializer):
     category = serializers.CharField()
     count = serializers.CharField()
 
+
+class CompanyStatsResponseSerializer(serializers.Serializer):
+    job_count = serializers.IntegerField()
+    applications_count = serializers.IntegerField()
+    reviewed_count = serializers.IntegerField()
+    shortlisted_count = serializers.IntegerField()
+    

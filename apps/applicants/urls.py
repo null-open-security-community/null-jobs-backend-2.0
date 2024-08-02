@@ -4,6 +4,7 @@ from apps.applicants.views import (
     AllApplicantsOfCompany,
     ApplyToJob,
     UpdateApplicationStatus, GetAppliedJobs,
+    ApplicationStats
 )
 
 urlpatterns = [
@@ -15,4 +16,9 @@ urlpatterns = [
         UpdateApplicationStatus.as_view(),
         name="updateapplicationstatus",
     ),
+    path(
+        "application/stats",
+        ApplicationStats.as_view(),
+        name="applicationstats"
+    )
 ]
