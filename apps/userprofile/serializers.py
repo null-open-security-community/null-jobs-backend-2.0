@@ -41,17 +41,17 @@ class UserProfileRequestSerializer(serializers.Serializer):
 
     # comps
     name = serializers.CharField(write_only=True)
-    experience = serializers.CharField()
-    gender = serializers.CharField(allow_null=True)
-    age = serializers.IntegerField(allow_null=True)
-    profession = serializers.CharField()
-    address = serializers.CharField()
-    phone = serializers.CharField()
-    website = serializers.URLField()
+    experience = serializers.CharField(allow_null=True, default=None)
+    gender = serializers.CharField(allow_null=True, default=None)
+    age = serializers.IntegerField(allow_null=True, default=None)
+    profession = serializers.CharField(allow_null=True, default="")
+    address = serializers.CharField(allow_null=True, default="")
+    phone = serializers.CharField(allow_null=True, default="")
+    website = serializers.URLField(allow_null=True, default=None)
     social_handles = serializers.URLField(allow_null=True, default=None)
 
     # description
-    about = serializers.CharField()
+    about = serializers.CharField(allow_null=True, default="")
     education = serializers.ListField(child=EducationSerializer())
     professional_skills = serializers.ListField(child=ProfessionalSkillsSerializer())
     work_experience = serializers.ListField(child=WorkExperienceSerializer())

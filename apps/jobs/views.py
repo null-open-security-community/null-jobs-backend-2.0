@@ -46,7 +46,7 @@ class JobViewSets(viewsets.ModelViewSet):
         4. create or update job
     """
 
-    queryset = Job.objects.annotate(total_applicants=Count("applicants"))
+    queryset = Job.objects.annotate(total_applicants=Count("applicants")).order_by('-created_at')
     serializer_class = JobSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter, df_filters.DjangoFilterBackend]
     search_fields = ["job_role", "location"]
@@ -193,7 +193,7 @@ class JobViewSets(viewsets.ModelViewSet):
         permission_classes=[IsAuthenticated, IsEmployer]
     )
     def employer(self, request):
-        jobs = Job.objects.filter(employer = request.user)
+        jobs = Job.objects.filter(employer = request.user).order_by('-created_at')
         return Response(JobSerializer(jobs, many=True).data)
 
 

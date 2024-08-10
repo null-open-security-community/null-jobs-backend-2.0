@@ -42,9 +42,9 @@ class Company(models.Model):
 
     social_profiles = models.URLField(default=None, null=True)
 
-    about = models.TextField(max_length=500, default=False, null=False)
-    short_story = models.TextField(max_length=500, default=None, null=True)
-    speciality = models.TextField(max_length=500, default=None, null=True)
+    about = models.TextField(default=False, null=False)
+    short_story = models.TextField(default=None, null=True)
+    speciality = models.TextField(default=None, null=True)
 
     # deletion check for the company should not be present as on delete
     # of the user auth the company will be deleted as well as there is cascade
@@ -96,16 +96,10 @@ class Job(models.Model):
 
     # These fields will be displayed as a part of "description" field and the
     # body of the job
-    job_responsibilities = models.TextField(
-        default="No Job Responsibilities provided", max_length=1000
-    )
-    skills_required = models.TextField(
-        default="No skills details provided", max_length=1000
-    )
-    education_or_certifications = models.TextField(
-        default="No Education details provided", max_length=1000
-    )
-    about = models.TextField(default="No description provided", max_length=500)
+    job_responsibilities = models.TextField(default="No Job Responsibilities provided")
+    skills_required = models.TextField(default="No skills details provided")
+    education_or_certifications = models.TextField(default="No Education details provided")
+    about = models.TextField(default="No description provided")
 
 
 class ContactMessage(models.Model):
