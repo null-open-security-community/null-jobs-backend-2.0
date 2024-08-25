@@ -54,8 +54,8 @@ class ApplyToJob(APIView):
         except Job.DoesNotExist:
             raise exceptions.NotFound()
         
-        application = Applicants.objects.first(job=job, user=user_profile)
-        if application is not None:
+        application = Applicants.objects.filter(job=job, user=user_profile)
+        if application.exists():
             return Response(
                 {"msg": "Already Applied!"},
                 status=status.HTTP_403_FORBIDDEN
