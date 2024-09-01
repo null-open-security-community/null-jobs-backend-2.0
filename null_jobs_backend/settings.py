@@ -107,6 +107,11 @@ DATABASES = {
         "PASSWORD": os.getenv("DB_PWD"),
         "HOST": os.getenv("DB_HOST"),
         "PORT": os.getenv("DB_PORT"),
+    },
+    'local': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'mydatabase',  # This is where you put the name of the db file.
+        # If one doesn't exist, it will be created at migration time.
     }
 }
 
