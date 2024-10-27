@@ -131,6 +131,10 @@ AUTH_PASSWORD_VALIDATORS = [
 # User Model
 AUTH_USER_MODEL = "accounts.User"
 
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+]
+
 # google auth settings
 ACCOUNT_AUTHENTICATION_METHOD = "email"
 ACCOUNT_EMAIL_REQUIRED = True
@@ -186,12 +190,8 @@ from datetime import timedelta
 DISABLE_TOKEN_EXPIRATION = True if DEBUG else False
 ENABLE_AUTHENTICATION = True
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(days=365)
-    if DISABLE_TOKEN_EXPIRATION
-    else timedelta(minutes=3),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=365)
-    if DISABLE_TOKEN_EXPIRATION
-    else timedelta(minutes=7),
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=365) if DISABLE_TOKEN_EXPIRATION else timedelta(minutes=3),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=365) if DISABLE_TOKEN_EXPIRATION else timedelta(minutes=7),
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": False,
     "CHECK_REVOKE_TOKEN": True,
