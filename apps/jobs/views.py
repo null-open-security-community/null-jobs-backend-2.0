@@ -349,13 +349,18 @@ class CompanyViewSets(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def me(self, request):
-        if request.user.is_anonymous or not request.user.is_profile_completed:
+        if request.user.is_anonymous:
             raise exceptions.PermissionDenied()
 
-        # fetch user profile which has the company associated
-        company = Company.objects.get(creator=request.user)
-
-        return Response(self.serializer_class(company).data)
+        try:
+            # Attempt to fetch the company associated with the user
+            company = Company.objects.get(creator=request.user)
+            serializer = self.serializer_class(company)
+            return Response(serializer.data)
+        except Company.DoesNotExist:
+            # Return an empty serializer when no company is found
+            serializer = self.serializer_class()
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class ContactUsViewSet(viewsets.ModelViewSet):
