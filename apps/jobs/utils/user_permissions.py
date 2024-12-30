@@ -52,6 +52,6 @@ class UserTypeCheck(permissions.BasePermission):
 
         # check if the user_id belongs to any user
         user_data = User.objects.filter(
-            user_id=user_id, user_type__iexact=values.EMPLOYER
+            id=user_id, user_type__iexact=values.EMPLOYER
         )
         return True if user_data.exists() else False
