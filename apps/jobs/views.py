@@ -15,7 +15,7 @@ from apps.jobs.constants import response, values
 from apps.userprofile.models import UserProfile
 from apps.applicants.models import Applicants
 from apps.jobs.models import Company, ContactMessage, Job
-from apps.accounts.permissions import IsEmployer
+from apps.accounts.permissions import IsEmployer, IsJobSeeker
 from apps.jobs.serializers import CompanySerializer, ContactUsSerializer, JobSerializer, JobsCountByCategoriesSerializer, CompanyStatsResponseSerializer
 from apps.jobs.utils.validators import validationClass
 from apps.utils.responses import InternalServerError
@@ -56,7 +56,7 @@ class JobViewSets(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
 
-        if self.request.user.is_authenticated:
+        if self.request.user.is_authenticated and self.request.user.user_type != "Employer":
             queryset = queryset.annotate(
                 has_applied=Case(
                     When(applicants__user=UserProfile.objects.get(user=self.request.user), then=Value(True)),
@@ -104,7 +104,7 @@ class JobViewSets(viewsets.ModelViewSet):
 
         # check if the user_id present in the request belongs to Employer or Moderator
         if not (
-            UserTypeCheck.is_user_employer(request.user_id)
+            UserTypeCheck.is_user_employer(request.user.id)
             or Moderator().has_permission(request)
         ):
             return response.create_response(
@@ -112,7 +112,7 @@ class JobViewSets(viewsets.ModelViewSet):
                 + " You don't have permissions to update a job",
                 status.HTTP_401_UNAUTHORIZED,
             )
-
+        
         return super().update(request, *args, **kwargs)
 
     def destroy(self, request, pk, *args, **kwargs):
